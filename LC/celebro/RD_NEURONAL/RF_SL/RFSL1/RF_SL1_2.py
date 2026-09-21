@@ -5,7 +5,7 @@ RF_SL1_2.py - Support Vector Machines Avanzados (SVM)
 
 import numpy as np
 import logging
-from lucIA.Celebro.RF_SL import NeuronaMemoriaBase
+from lucIA.Celebro.RD_Neuronal.RF_SL import NeuronaMemoriaBase
 
 logger = logging.getLogger(__name__)
 

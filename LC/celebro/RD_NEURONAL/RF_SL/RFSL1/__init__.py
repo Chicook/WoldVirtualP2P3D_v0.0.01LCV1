@@ -31,4 +31,4 @@ __all__ = [
     'LinearRegressionOptimizer',
 ]
 
-logger.debug("RFSL1 cargado correctamente")
+logger.info("RFSL1 cargado correctamente")

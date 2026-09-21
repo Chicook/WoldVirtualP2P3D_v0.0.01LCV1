@@ -79,7 +79,9 @@ LUCIA_ADVANCED_RL_CONFIG = {
     'federated_privacy_factor': 0.1
 }
 
-# Seed global centralizado en lucIA/__init__.py (no re-sembrar aquí).
+# Configurar numpy para consistencia
+np.random.seed(LUCIA_ADVANCED_RL_CONFIG['random_seed'])
+random.seed(LUCIA_ADVANCED_RL_CONFIG['random_seed'])
 
 # Las importaciones se harán de forma lazy para evitar importaciones circulares
 # Se definirán aquí las exportaciones
@@ -528,7 +530,12 @@ class NeuronaRefuerzoAvanzadaBase(ABC):
         return self.__str__()
 
 
-# Logging centralizado en lucIA/__init__.py; aquí solo logger local.
+# Configuración de logging avanzada para debugging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 logger = logging.getLogger('RFENRN2')
 
 # Importar las neuronas desde sus archivos individuales
@@ -544,7 +551,7 @@ try:
     from .RFEN2_RN_9 import NeuronaRefuerzoFederada, crear_neurona_federada
     from .RFEN2_RN_10 import NeuronaRefuerzoTransformerAdaptativa, crear_neurona_transformer_adaptativa
 
-    logger.debug("Paquete RFENRN2 inicializado correctamente para LucIA Advanced Reinforcement Learning 2025")
+    logger.info("Paquete RFENRN2 inicializado correctamente para LucIA Advanced Reinforcement Learning 2025")
 except ImportError as e:
     logger.warning(f"Error al importar neuronas de RFENRN2: {e}")
     # Crear clases stubs para evitar errores de importación

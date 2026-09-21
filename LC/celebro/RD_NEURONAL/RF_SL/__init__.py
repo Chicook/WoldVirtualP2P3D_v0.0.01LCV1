@@ -9,7 +9,7 @@ import numpy as np
 import logging
 from typing import Dict, Any, Tuple
 
-from lucIA.Celebro.ENRN import NeuronaEntradaBase
+from lucIA.Celebro.RD_Neuronal.ENRN import NeuronaEntradaBase
 
 logger = logging.getLogger(__name__)
 
@@ -64,4 +64,4 @@ class NeuronaMemoriaBase(NeuronaEntradaBase):
         return f"{self.nombre}(ent={self.input_size},sal={self.output_size})"
 
 
-logger.debug("RF_SL base NeuronaMemoriaBase cargada")
+logger.info("RF_SL base NeuronaMemoriaBase cargada")

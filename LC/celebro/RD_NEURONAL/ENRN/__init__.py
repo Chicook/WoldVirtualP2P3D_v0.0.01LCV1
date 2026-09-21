@@ -33,7 +33,8 @@ LUCIA_CONFIG = {
     'batch_norm_epsilon': 1e-5
 }
 
-# Seed global centralizado en lucIA/__init__.py (no re-sembrar aquí).
+# Configurar numpy para consistencia
+np.random.seed(LUCIA_CONFIG['random_seed'])
 
 
 # Clase base para todas las neuronas
@@ -176,6 +177,13 @@ __all__ = [
 ]
 
 
-# Configuración de logging centralizada en lucIA/__init__.py; aquí solo logger local.
+# Configuración de logging para debugging
+
+# Configurar logging para LucIA
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 logger = logging.getLogger('ENRN')
-logger.debug("Paquete ENRN inicializado correctamente para LucIA")
+logger.info("Paquete ENRN inicializado correctamente para LucIA")

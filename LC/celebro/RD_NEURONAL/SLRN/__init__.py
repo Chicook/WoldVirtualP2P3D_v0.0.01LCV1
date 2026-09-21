@@ -347,4 +347,4 @@ def print_supervised_learning_neural_results(results: Dict[str, SupervisedLearni
     print("ANÁLISIS COMPLETO DE 10 SALIDAS EN TERMINAL FINALIZADO")
     print("="*80)
 
-logger.debug("SLRN/__init__.py - Configuración de Supervised Learning Neural Networks 2025+ cargada exitosamente")
+logger.info("SLRN/__init__.py - Configuración de Supervised Learning Neural Networks 2025+ cargada exitosamente")

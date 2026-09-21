@@ -45,9 +45,14 @@ from .base import (
     muestrear_buffer
 )
 
-# Logging centralizado en lucIA/__init__.py; aquí solo logger local.
+# Configuración de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 logger = logging.getLogger('RFENRN1')
-logger.debug("Paquete RFENRN1 inicializado correctamente para LucIA Reinforcement Learning")
+logger.info("Paquete RFENRN1 inicializado correctamente para LucIA Reinforcement Learning")
 
 
 # ============================================================================
