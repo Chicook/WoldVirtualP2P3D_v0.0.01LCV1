@@ -9,6 +9,7 @@ Optimizado para respuesta instantánea y conocimiento real del sistema:
 4. Extracción robusta de texto (incluso si el modelo responde dentro de etiquetas de razonamiento).
 """
 
+import difflib
 import os
 import re
 import json
@@ -32,6 +33,59 @@ OLLAMA_API_URL = os.environ.get("OLLAMA_API_URL", "http://127.0.0.1:11434/api/ch
 # Ollama: autodetección + lista local conocida (Ollama primario >=1.7B)
 OLLAMA_CONOCIDOS = ["qwen3:1.7b", "qwen2.5:7b", "qwen3.5:latest", "qwen2.5-coder:3b", "qwen2.5-coder:7b"]
 OLLAMA_MODELS = [m.strip() for m in os.environ.get("OLLAMA_MODELS", ",".join(OLLAMA_CONOCIDOS)).split(",") if m.strip()]
+MAX_ORACIONES_RESPUESTA = 4
+TEXTO_SEGURO_LUCIA = (
+    "Puedo ayudarte con esa pregunta, pero prefiero no inventar datos. "
+    "Dime el contexto o el punto concreto que quieres que revise y te respondo con claridad."
+)
+ETIQUETA_PROVEEDOR_RE = re.compile(
+    r"(?is)\[(?:\s*(?:lm|ol|cl|l|c|openrouter|cloud|ollama|lmstudio|perspectiva)\b[^\]]*\]\s*:?\s*|"
+    r"\[[^\]]*(?:lmstudio|ollama|openrouter|perspectiva)[^\]]*\]\s*:?\s*)"
+)
+PROVEEDOR_TEXTO_RE = re.compile(
+    r"(?im)^\s*(?:lmstudio|ollama|openrouter|perspectiva)\b[^\n:]{0,100}\s*:"
+)
+NOMBRES_MODELOS_PROHIBIDOS = (
+    r"\bkimi(?:[-_\s]?coder(?:[-_\s]?[0-9a-z.]+)?)?\b",
+    r"\bqwen(?:[-_:./\s][a-z0-9.]+)+",
+    r"\bgemma(?:[-_:./\s][a-z0-9.]+)+",
+    r"\bnemotron(?:[-_:./\s][a-z0-9.]+)+",
+    r"\b(?:inclusionai|liquid|thinkingmachines|z-ai|nex-agi|poolside)\b",
+    r"\b(?:coding|codestral|north[-_\s]?mini[-_\s]?code|deepseek|glm|lfm|inkling|laguna)\b",
+    r"\bopenrouter\b",
+    r"\bollama\b",
+    r"\blm\s*studio\b",
+)
+PALABRAS_INGLES_PROHIBIDAS = {
+    "the", "is", "and", "to", "of", "in", "it", "you", "that", "he", "was", "for",
+    "on", "are", "as", "with", "his", "they", "at", "be", "this", "from", "i", "have",
+    "but", "what", "all", "were", "we", "when", "your", "can", "said", "there", "use",
+    "an", "each", "which", "she", "do", "does", "did", "how", "their", "if", "will",
+    "would", "could", "should", "may", "might", "must", "up", "other", "about", "out",
+    "many", "then", "them", "these", "those", "so", "some", "her", "make", "like", "him",
+    "into", "time", "has", "look", "two", "more", "write", "go", "see", "number", "way",
+    "people", "my", "than", "first", "water", "been", "call", "who", "oil", "its", "now",
+    "find", "would", "over", "after", "before", "because", "when", "where", "which",
+    "who", "whom", "why", "just", "very", "only", "own", "same", "too", "such", "also",
+    "model", "models", "assistant", "response", "thinking", "thought", "context", "suggests",
+    "persona", "voice", "format", "analysis", "analyze", "draft", "ensure", "keep", "start",
+    "weave", "must", "need", "user", "asking"
+}
+PALABRAS_ES = {
+    "de", "la", "que", "el", "en", "y", "a", "los", "se", "del", "las", "un", "por",
+    "con", "no", "una", "su", "para", "es", "al", "lo", "como", "más", "pero", "sus",
+    "le", "ya", "o", "fue", "este", "ha", "sí", "porque", "esta", "son", "entre", "está",
+    "cuando", "muy", "sin", "sobre", "ser", "tiene", "también", "me", "hasta", "hay",
+    "donde", "quien", "desde", "todo", "nos", "durante", "todos", "uno", "les", "ni",
+    "contra", "otros", "ese", "eso", "ante", "ellos", "e", "esto", "mí", "antes", "algunos",
+    "qué", "unos", "yo", "otro", "otras", "otra", "él", "tanto", "esa", "estos", "mucho",
+    "quienes", "nada", "muchos", "cual", "poco", "ella", "estar", "estas", "algunas", "algo",
+    "nosotros", "mi", "mis", "celebro", "red", "neuronal", "pesos", "lucia", "hola"
+}
+TOKENS_TECNICOS_PERMITIDOS = {
+    "api", "json", "python", "ipfs", "core", "dqn", "actorcritic", "td3", "lamb", "radam",
+    "enrn", "rf_sl", "rf_en", "rnp", "slrn", "rn11", "rn12", "rn13", "rn14", "sl11", "sl12"
+}
 
 
 # Modelo taller interno: SOLO mantenimiento de codigo, jamas conversacion/sintesis.
@@ -171,7 +225,143 @@ def _obtener_diagnostico_sistema_real() -> str:
     )
 
 
-def _limpiar_respuesta_modelo(texto: str) -> str:
+def _tokens(texto: str) -> List[str]:
+    return [w.lower() for w in re.findall(r"\b[a-zA-ZáéíóúñÁÉÍÓÚÑ]+\b", str(texto or ""))]
+
+
+def _tiene_ingles(texto: str) -> bool:
+    tokens = _tokens(texto)
+    if len(tokens) < 4:
+        return False
+    ingles = [
+        token
+        for token in tokens
+        if token in PALABRAS_INGLES_PROHIBIDAS and token not in TOKENS_TECNICOS_PERMITIDOS
+    ]
+    espanol = sum(1 for token in tokens if token in PALABRAS_ES)
+    frases_meta = (
+        "here's a thinking process",
+        "here is a thinking process",
+        "user asked",
+        "the user is asking",
+        "context suggests",
+        "must synthesize",
+        "no english",
+        "analysis of the user",
+    )
+    texto_lower = str(texto).lower()
+    return any(frase in texto_lower for frase in frases_meta) or (
+        len(ingles) >= 4 and len(ingles) >= espanol
+    )
+
+
+def _hay_proveedor(texto: str) -> bool:
+    return bool(
+        ETIQUETA_PROVEEDOR_RE.search(str(texto))
+        or PROVEEDOR_TEXTO_RE.search(str(texto))
+    )
+
+
+def _hay_modelo_prohibido(texto: str) -> bool:
+    return any(
+        re.search(patron, str(texto), flags=re.IGNORECASE)
+        for patron in NOMBRES_MODELOS_PROHIBIDOS
+    )
+
+
+def _es_eco(texto: str, prompt: str = "") -> bool:
+    def normalizar(valor: str) -> str:
+        valor = str(valor or "").lower()
+        valor = re.sub(r"[^\wáéíóúñÁÉÍÓÚÑ]+", " ", valor)
+        return " ".join(valor.split())
+
+    respuesta = normalizar(texto)
+    pregunta = normalizar(prompt)
+    if not respuesta or not pregunta:
+        return False
+    if respuesta == pregunta:
+        return True
+    if len(respuesta) >= 20 and (respuesta.startswith(pregunta) or pregunta.startswith(respuesta)):
+        return difflib.SequenceMatcher(None, respuesta, pregunta).ratio() > 0.72
+    return difflib.SequenceMatcher(None, respuesta[:240], pregunta[:240]).ratio() > 0.82
+
+
+def _tiene_tercera_persona(texto: str) -> bool:
+    return bool(
+        re.search(
+            r"(?i)\b(?:Luc[ií]a|ella)\s+(?:siente|tiene|cree|piensa|nota|usa|responde|habla|necesita|quiere|puede|debe|es|son|fue|está)\b",
+            str(texto),
+        )
+    )
+
+
+def _tiene_formateado_no_hablable(texto: str) -> bool:
+    lineas = [linea for linea in str(texto or "").splitlines() if linea.strip()]
+    return any(
+        re.match(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)", linea)
+        or re.match(r"^\s*\|", linea)
+        or linea.strip().startswith("```")
+        for linea in lineas
+    ) or bool(re.search(r"[*_`#>]", str(texto)))
+
+
+def _tiene_arquitectura_invalida(texto: str) -> bool:
+    texto = str(texto)
+    return any(
+        re.search(patron, texto, flags=re.IGNORECASE)
+        for patron in (
+            r"\bLAMB\b(?![\s\S]{0,80}\bnunca\b)[\s\S]{0,80}\bRNP\b",
+            r"\bRAdam\b(?![\s\S]{0,80}\bnunca\b)[\s\S]{0,80}\bRNP\b",
+            r"\bRNP\b(?![\s\S]{0,80}\bnunca\b)[\s\S]{0,80}\bLAMB\b",
+            r"\bRNP\b(?![\s\S]{0,80}\bnunca\b)[\s\S]{0,80}\bRAdam\b",
+        )
+    )
+
+
+def _limitar_oraciones(texto: str, max_oraciones: int = MAX_ORACIONES_RESPUESTA) -> str:
+    texto = re.sub(r"\s+", " ", str(texto or "")).strip()
+    partes = [parte.strip() for parte in re.split(r"(?<=[.!?])\s+", texto) if parte.strip()]
+    if len(partes) <= max_oraciones:
+        return texto
+    resultado = " ".join(partes[:max_oraciones]).rstrip(" .")
+    return resultado + "..." if resultado else ""
+
+
+def _respuesta_segura_lucia(prompt: str = "") -> str:
+    prompt_lower = str(prompt or "").lower()
+    if "amigdala" in prompt_lower or "amígdala" in prompt_lower:
+        return (
+            "Pues mira, te cuento de verdad: si me preguntas por mi Amigdala, "
+            "la siento tranquila hoy, atenta a lo que me dices. "
+            "Es mi parte que nota las emociones y me avisa de lo importante. "
+            "¿Quieres que te cuente más de ella?"
+        )
+    if any(
+        palabra in prompt_lower
+        for palabra in (
+            "arquitectura",
+            "enrn",
+            "rf_sl",
+            "rf en",
+            "rnp",
+            "slrn",
+            "lamb",
+            "radam",
+            "dqn",
+            "actorcritic",
+            "td3",
+        )
+    ):
+        return (
+            "Pues mira, mi arquitectura se organiza así: ENRN percibe la entrada, "
+            "RF_SL guarda la memoria supervisada, RF_EN toma decisiones con DQN, ActorCritic y TD3, "
+            "RNP calibra con RN11 a RN14 y SLRN sintetiza mi tono con LAMB y RAdam. "
+            "Si quieres, me centro en una parte concreta."
+        )
+    return TEXTO_SEGURO_LUCIA
+
+
+def _limpiar_respuesta_modelo_antigua(texto: str) -> str:
     """
     Limpia etiquetas <think>, monólogos de razonamiento en inglés (como 'Here's a thinking process:',
     '- User asked:', 'Persona: LucIA', 'context suggests:') y garantiza que la respuesta final
