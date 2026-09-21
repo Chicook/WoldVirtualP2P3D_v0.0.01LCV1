@@ -24,6 +24,10 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+Celebro/cache/
+*/Celebro/cache/
+*.npz
+*.bin
 
 # Blender temporary files
 *.blend1
