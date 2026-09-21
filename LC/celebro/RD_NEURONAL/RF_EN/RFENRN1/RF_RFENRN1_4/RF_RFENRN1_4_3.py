@@ -26,6 +26,20 @@ try:
     import torch.optim as optim
 except ImportError:
     pass  # dependencia pesada opcional
+try:
+    torch
+except NameError:
+    import types as _t
+    torch = _t.SimpleNamespace(
+        no_grad=lambda *a, **k: (lambda f: f) if a and callable(a[0]) else (lambda f: f),
+        optim=_t.SimpleNamespace(Optimizer=object),
+        Tensor=object,
+    )
+try:
+    nn
+except NameError:
+    import types as _t2
+    nn = _t2.SimpleNamespace(Module=object)
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any, Union, Callable
 import logging
@@ -40,6 +54,20 @@ try:
     from scipy.sparse.linalg import cg, minres
 except ImportError:
     pass  # dependencia pesada opcional
+try:
+    torch
+except NameError:
+    import types as _t
+    torch = _t.SimpleNamespace(
+        no_grad=lambda *a, **k: (lambda f: f) if a and callable(a[0]) else (lambda f: f),
+        optim=_t.SimpleNamespace(Optimizer=object),
+        Tensor=object,
+    )
+try:
+    nn
+except NameError:
+    import types as _t2
+    nn = _t2.SimpleNamespace(Module=object)
 
 logger = logging.getLogger('RFENRN1.RF_RFENRN1_4_3')
 

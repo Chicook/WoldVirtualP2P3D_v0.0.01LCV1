@@ -18,6 +18,20 @@ try:
     import torch.nn as nn
 except ImportError:
     pass  # dependencia pesada opcional
+try:
+    torch
+except NameError:
+    import types as _t
+    torch = _t.SimpleNamespace(
+        no_grad=lambda *a, **k: (lambda f: f) if a and callable(a[0]) else (lambda f: f),
+        optim=_t.SimpleNamespace(Optimizer=object),
+        Tensor=object,
+    )
+try:
+    nn
+except NameError:
+    import types as _t2
+    nn = _t2.SimpleNamespace(Module=object)
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
 from enum import Enum
