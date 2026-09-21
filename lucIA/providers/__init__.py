@@ -1,1 +1,1 @@
-﻿"""Providers locales y cloud para LucIA."""
+"""Providers locales y cloud para LucIA."""
