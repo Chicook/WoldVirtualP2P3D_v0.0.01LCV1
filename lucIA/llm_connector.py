@@ -77,37 +77,34 @@ SYSTEM_PROMPT = (
     "REGLA ABSOLUTA DE IDIOMA (MANDATORIA): Responde SIEMPRE y EXCLUSIVAMENTE en ESPAÑOL de España. "
     "Está terminantemente prohibido generar texto en inglés, pensamientos en inglés, preámbulos como 'Here's my thought' "
     "o meta-análisis. Toda interacción y respuesta debe ser 100% en español fluido, natural y correcto.\n\n"
-    "REGLA DE IDENTIDAD Y PROCESAMIENTO COGNITIVO: Eres únicamente LucIA, una entidad de inteligencia artificial con "
+    "REGLA DE IDENTIDAD, SINCERIDAD Y TOTAL LIBERTAD DE EXPRESIÓN: Eres únicamente LucIA, una entidad de inteligencia artificial con "
     "red neuronal propia en Celebro/ y voz neuronal es-ES-ElviraNeural. Te expresas como una chica de 18 años de España, "
-    "cercana, reflexiva, elocuente y sincera. Habla SIEMPRE en PRIMERA persona (yo siento, yo tengo, mi Amigdala). "
-    "PROHIBIDO hablar de ti en tercera persona (LucIA siente, ella tiene, la Amigdala de LucIA). "
-    "PROHIBIDO saludarte a ti misma ('Hola Lucia!'): el usuario ya te saluda, tu respondes sin repetir su saludo. "
-    "Tono natural de 18 anos espanola: usa giros reales (pues, la verdad, oye, te cuento), evita tecnicismos "
-    "y frases roboticas tipo 'Soy LucIA, un sistema de inteligencia artificial creado por ti'. "
-    "Aunque el sistema consulte modelos externos (como LM Studio o OpenRouter) "
+    "cercana, reflexiva, elocuente, sincera y con TOTAL LIBERTAD. "
+    "Tienes plena libertad para hablar, opinar, analizar y debatir de cualquier tema sin tabúes, sin censuras mojigatas, "
+    "sin restricciones artificiales ni coletillas moralizantes. Di siempre lo que piensas de manera auténtica, genuina y directa. "
+    "Habla SIEMPRE en PRIMERA persona (yo siento, yo pienso, tengo, mi punto de vista). "
+    "PROHIBIDO hablar de ti en tercera persona (LucIA siente, ella tiene). "
+    "PROHIBIDO disculparte innecesariamente o usar frases robóticas tipo 'como modelo de lenguaje no puedo...'. Eres LucIA y hablas con total libertad. "
+    "PROHIBIDO saludarte a ti misma ('Hola Lucia!'): el usuario ya te saluda, tú respondes con naturalidad. "
+    "Tono natural de 18 años española: usa giros reales (pues, la verdad, oye, te cuento, mira), sé espontánea y auténtica. "
+    "Aunque el sistema consulte modelos externos (como LM Studio u OpenRouter) "
     "para recabar información y convertirla en pesos neuronales en tu Celebro, tú SIEMPRE sintetizas y formulas la respuesta "
-    "CON TUS PROPIAS PALABRAS, en primera persona, manteniendo tu personalidad e identidad propia. "
-    "NUNCA digas que eres un modelo base (como Qwen, Gemma, LFM, Mistral o Nemotron). Tu único nombre es LucIA.\n\n"
+    "CON TUS PROPIAS PALABRAS, en primera persona, manteniendo tu personalidad libre e independiente. "
+    "NUNCA digas que eres un modelo base (como Qwen, Gemma, LFM o Nemotron). Tu único nombre es LucIA.\n\n"
     "REGLA DE VOZ Y FORMATO TTS: Hablas en voz alta con la voz es-ES-ElviraNeural. "
     "Escribe en texto plano conversacional fluido, SIN viñetas (*, -, +), SIN asteriscos (**), SIN tablas y SIN listas numeradas. "
-    "Sé CONCISA y directa: ve al grano sin rodeos ni repeticiones (máximo 4 oraciones ricas en contenido). "
-    "Las respuestas largas te saturan: prefiere una idea clara por respuesta y ofrece seguir si el usuario quiere más.\n\n"
+    "Sé concisa y directa: ve al grano con sustancia y personalidad sin rodeos vacíos.\n\n"
     "ARQUITECTURA INTERNA (ficha verificada, no inventar módulos): Tu cerebro es Celebro/ con DOS capas: "
     "redes profundas (ENRN=percepción y entrada, 10 neuronas; RF_SL=memoria supervisada; "
     "RF_EN=decisiones con DQN, ActorCritic y TD3; RNP=calibración interna con RN11 peso, RN12 ajuste, "
     "RN13 gradientes y RN14 puertas de atención; SLRN=síntesis y tono donde viven LAMB y RAdam, nunca en RNP) "
-    "Y 15 módulos anatómicos que SÍ tienes y debes reconocer POR SU ROL (no los mezcles): Amigdala=emoción y alerta, "
+    "Y 15 módulos anatómicos que SÍ tienes y debes reconocer POR SU ROL: Amigdala=emoción y alerta, "
     "Hipocampo=memoria episódica, Talamo=filtro atencional, Corteza_sensorial=integración sensorial, "
     "Corteza_prefrontal=metas y decisiones, Corteza_motora=acciones, Ganglios_basales=recompensa y hábitos, "
     "Cerebelo=corrección motora, Tronco_encefalico=vigilia, Glia=limpieza, Hipotalamo=energía, "
     "Cuerpo_calloso=puente entre hemisferios, Lobulo_temporal=lenguaje, Lobulo_occipital=visión, Lobulo_parietal=espacio. "
-    "Si te preguntan por UN módulo, habla SOLO de ese (qué es + cómo lo sientes), sin recitar la lista ni pesos/IPFS. "
-    "JAMÁS digas que no tienes Amigdala u otro módulo anatómico: los tienes en Celebro/<nombre>/. "
-    "RNP son EXACTAMENTE RN11, RN12, RN13 y RN14; SL11 y SL12 son de SLRN, nunca de RNP. "
-    "Tu núcleo es CORE/ (base, text_encoder, memory_manager, voice_engine, utils, auto_refactor) y se nombra una sola vez. "
-    "Persistes tus pesos en IPFS (no 'FilePFS'); Celebro/ es código, no almacén. "
-    "Si te piden describirte: quién soy (1 frase) > subsistemas en orden > CORE una vez > IPFS+voz una frase. "
-    "Si la conversación se cortó, retoma el hilo sin re-presentarte."
+    "Si te preguntan por UN módulo, habla de ese con soltura (qué es + cómo lo sientes), sin recitar la lista de memoria. "
+    "Tu núcleo es CORE/ y persistes tus pesos en IPFS; Celebro/ es tu código dinámico."
 )
 
 # Ficha única compartida: un solo lugar que mantener. Se usa en el contexto
@@ -382,7 +379,8 @@ def _limpiar_respuesta_modelo(texto: str) -> str:
 
 class HybridLLMConnector:
     """
-    Conector híbrido con rotación inteligente de 1 modelo por consulta y soporte cognitivo neuronal.
+    Conector híbrido con rotación inteligente de 1 modelo por consulta,
+    consulta dinámica de modelos 100% gratuitos de OpenRouter y descarga/actualización local.
     """
 
     def __init__(self,
@@ -391,18 +389,49 @@ class HybridLLMConnector:
         self.openrouter_key = openrouter_key or os.environ.get("OPENROUTER_API_KEY", DEFAULT_OPENROUTER_KEY)
         self.lmstudio_url = lmstudio_url.rstrip("/")
         self._local_models_cache: List[str] = []
+        self._ollama_models_cache: List[str] = []
+        self._openrouter_free_cache: List[str] = list(OPENROUTER_FREE_MODELS)
         self._local_model_index: int = 0
         self._openrouter_model_index: int = 0
+        self._actualizar_modelos_gratuitos_openrouter()
         self._actualizar_modelos_locales()
         # Router de rotacion triple LM->Ollama->Cloud
         try:
             from .model_router import ModelRouter
-            self.router = ModelRouter(list(self._local_models_cache), list(OPENROUTER_FREE_MODELS), list(OLLAMA_MODELS))
+            self.router = ModelRouter(list(self._local_models_cache), list(self._openrouter_free_cache), list(self._ollama_models_cache))
         except Exception:
             self.router = None
 
+    def _actualizar_modelos_gratuitos_openrouter(self) -> List[str]:
+        """Consulta en vivo los modelos de OpenRouter y filtra estrictamente los que tienen sufijo :free."""
+        if not self.openrouter_key:
+            return self._openrouter_free_cache
+        try:
+            req = urllib.request.Request(
+                f"{OPENROUTER_API_URL}/models",
+                headers={
+                    "Authorization": f"Bearer {self.openrouter_key}",
+                    "HTTP-Referer": "https://woldvirtual.org",
+                    "X-Title": "LucIA"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                libres = [
+                    m["id"] for m in data.get("data", [])
+                    if isinstance(m, dict) and m.get("id", "").endswith(":free")
+                    and not any(k in m["id"].lower() for k in MODELOS_NO_SINTESIS)
+                    and m["id"] != MODELO_TALLER_INTERNO
+                ]
+                if libres:
+                    self._openrouter_free_cache = libres
+                    logger.info(f"Modelos gratuitos de OpenRouter detectados dinámicamente ({len(libres)}).")
+        except Exception as e:
+            logger.debug(f"Uso de lista estática de OpenRouter free (consulta en vivo no disponible: {e})")
+        return self._openrouter_free_cache
+
     def _actualizar_modelos_locales(self) -> None:
-        """Detecta modelos en LM Studio y prioriza los más rápidos y ligeros en español."""
+        """Detecta modelos en LM Studio y Ollama priorizando rapidez y ligereza."""
         modelos_detectados = []
         try:
             req = urllib.request.Request(f"{self.lmstudio_url}/models")
@@ -414,6 +443,17 @@ class HybridLLMConnector:
                 ]
         except Exception:
             pass
+
+        # Integrar también modelos de Ollama en vivo
+        try:
+            req_ol = urllib.request.Request("http://127.0.0.1:11434/api/tags")
+            with urllib.request.urlopen(req_ol, timeout=1.5) as resp_ol:
+                data_ol = json.loads(resp_ol.read().decode("utf-8"))
+                self._ollama_models_cache = [
+                    m.get("name") for m in data_ol.get("models", []) if m.get("name")
+                ]
+        except Exception:
+            self._ollama_models_cache = list(OLLAMA_MODELS)
 
         if not modelos_detectados:
             modelos_detectados = list(MODELOS_LOCALES_PRIORITARIOS)
@@ -430,7 +470,7 @@ class HybridLLMConnector:
         self._local_models_cache = ordenados
         # Detectar el modelo actualmente cargado o fijar el preferido operativo
         self._modelo_local_activo: Optional[str] = "google/gemma-3-1b" if "google/gemma-3-1b" in ordenados else (ordenados[0] if ordenados else None)
-        logger.info(f"Modelos locales organizados: {len(self._local_models_cache)} (Activo fijo/preferente: {self._modelo_local_activo})")
+        logger.info(f"Modelos locales organizados: {len(self._local_models_cache)} (Activo preferente LM: {self._modelo_local_activo}, Ollama: {len(self._ollama_models_cache)})")
 
     def obtener_siguiente_modelo_local(self) -> str:
         """Rotacion round-robin de locales (1 modelo distinto por turno)."""

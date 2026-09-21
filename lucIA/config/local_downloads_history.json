@@ -1,0 +1,12 @@
+{
+  "ultima_actualizacion": "2026-09-21 13:31:28",
+  "total_descargas": 1,
+  "descargas": [
+    {
+      "timestamp": "2026-09-21 13:31:28",
+      "backend": "ollama",
+      "modelo": "llama3.2:1b",
+      "exito": true
+    }
+  ]
+}

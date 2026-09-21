@@ -28,8 +28,16 @@ class BlockchainServer:
 
     PAQUETES = ("ENRN", "RF_SL", "RF_EN", "RNP", "SLRN")
 
-    def __init__(self, raiz: str = "LC/celebro/RD_NEURONAL") -> None:
-        self.raiz = Path(raiz)
+    def __init__(self, raiz: str | Path | None = None) -> None:
+        if raiz is None:
+            candidatos = [
+                Path("LC/celebro/RD_Neuronal"),
+                Path("celebro/RD_Neuronal"),
+                Path(__file__).parent / "celebro" / "RD_Neuronal",
+            ]
+            self.raiz = next((p for p in candidatos if p.is_dir()), Path("LC/celebro/RD_Neuronal"))
+        else:
+            self.raiz = Path(raiz)
         self.cadena: list[Bloque] = []
         self._vistos: set[str] = set()
         self._genesis()

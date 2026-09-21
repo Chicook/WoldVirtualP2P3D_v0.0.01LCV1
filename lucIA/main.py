@@ -77,6 +77,13 @@ class GestorEntornoVirtual:
 GestorEntornoVirtual.activar_si_necesario()
 # === FIN GESTOR ENTORNO VIRTUAL ===
 
+# Garantizar paths del proyecto
+_DIR_ACTUAL = Path(__file__).parent.resolve()
+_DIR_RAIZ = _DIR_ACTUAL.parent.resolve()
+for _camino in [str(_DIR_ACTUAL), str(_DIR_RAIZ)]:
+    if _camino not in sys.path:
+        sys.path.insert(0, _camino)
+
 # === PUENTE RD_NEURONAL (sustituto in-memory de Celebro/RD_Neuronal/) ===
 # Refactoriza los 7 re-exportadores (<1KB, sin logica propia) en esta clase:
 # expone EXACTAMENTE los mismos nombres desde sus paquetes reales y registra
@@ -385,6 +392,19 @@ def ejecutar_chat_principal():
         print("[Sistema] Sin OPENROUTER_API_KEY en .env: modo local (LM Studio + Ollama).")
     else:
         print("[Sistema] Clave OpenRouter cargada desde .env.")
+
+    # 1b. Gestión y descarga autónoma de modelos locales en cada sesión (Ollama / LM Studio)
+    try:
+        from lucIA.local_model_manager import get_local_model_manager
+        _model_mgr = get_local_model_manager()
+        _res_descarga = _model_mgr.asegurar_un_modelo_por_sesion(async_mode=False)
+        if _res_descarga.get("descargado"):
+            print(f"🤖 [Modelos Locales]: Descargado/Operativo '{_res_descarga.get('modelo')}' en {_res_descarga.get('backend').upper()}.")
+        else:
+            print(f"🤖 [Modelos Locales]: Modelos locales verificados ({_res_descarga.get('total_ollama')} Ollama, {_res_descarga.get('total_lmstudio')} LM Studio).")
+    except Exception as _e_mm:
+        logger.warning(f"Aviso gestor de modelos locales: {_e_mm}")
+
     connector = HybridLLMConnector()
     conversor = get_conversor_pesos()
     memoria = get_memory_manager()
