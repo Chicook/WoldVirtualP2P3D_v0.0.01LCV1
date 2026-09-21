@@ -629,6 +629,51 @@ def ejecutar_chat_principal():
                 speak(msg_olvido)
             continue
 
+        if cmd in ("/energia", "/energía", "/hipotalamo", "/hipotálamo"):
+            try:
+                ritmo = cerebro.hipotalamo.ritmo_sesion()
+                print(f"\n💚 ESTADO ENERGÉTICO (Hipotálamo):")
+                print(f"   - Energía actual   : {ritmo['energia']:.3f} / 1.000")
+                print(f"   - Estado           : {ritmo['estado'].upper()}")
+                print(f"   - Turnos sesión    : {ritmo['turnos']}")
+                print(f"   - Δ medio por turno: {ritmo['delta_medio']:.5f}")
+                print(f"   - Alertas emitidas : {ritmo['alertas']}")
+                print(f"   - Tiempo sesión    : {ritmo['segundos_sesion']:.0f}s")
+                # Top conceptos temporales
+                top_c = cerebro.temporal.conceptos_top(5) if cerebro.temporal else []
+                if top_c:
+                    print(f"   - Top conceptos    : {', '.join(top_c)}")
+                    print(f"   - Riqueza léxica   : {cerebro.temporal.riqueza_lexica()}")
+                _msg_e = (f"Mi energía está al {int(ritmo['energia']*100)} por ciento, "
+                          f"en estado {ritmo['estado']}.")
+                if ritmo["estado"] == "critico":
+                    _msg_e += " Necesito descansar urgente. Usa el comando descansa."
+                elif ritmo["estado"] == "alerta":
+                    _msg_e += " Podría beneficiarme de una pausa con el comando descansa."
+                if voz_activa:
+                    speak(_msg_e)
+            except Exception as _ee:
+                print(f"   ⚠️ Hipotálamo no disponible: {_ee}")
+            continue
+
+        if cmd in ("/podar", "/poda", "/glia", "/glía"):
+            try:
+                print("\n🧹 Ejecutando poda de Glía (sinapsis débiles)...")
+                _poda = cerebro.glia.podar_pesos_debiles(conversor)
+                _v = cerebro.glia.verificar()
+                print(f"   - Neuronas revisadas : {_poda['revisadas']}")
+                print(f"   - Sinapsis podadas   : {_poda['podadas']}")
+                if _poda["nombres_podadas"]:
+                    print(f"   - Podadas            : {_poda['nombres_podadas']}")
+                print(f"   - Limpieza disco     : {'✅ LIMPIO' if _v['limpio'] else '⚠️ ' + str(_v['restos'][:3])}")
+                _msg_poda = (f"He ejecutado la poda neuronal. "
+                             f"Revisé {_poda['revisadas']} sinapsis y pode {_poda['podadas']} débiles.")
+                if voz_activa:
+                    speak(_msg_poda)
+            except Exception as _ep:
+                print(f"   ⚠️ Glía no disponible: {_ep}")
+            continue
+
         # Comando de diagnóstico mejorado
         if cmd in ("/diagnostico", "/diagnóstico"):
             engine = get_autorefactor_engine(connector=connector)
