@@ -4,9 +4,17 @@ from __future__ import annotations
 import ast
 import hashlib
 import importlib.util
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+
+# --- Conexión modular lucIA / RD_Neuronal (imports perezosos vía PuenteRDNeuronal) ---
+_LUCIA_DIR = Path(__file__).parent / "celebro" / "lucIA"
+if str(_LUCIA_DIR) not in sys.path:
+    sys.path.insert(0, str(_LUCIA_DIR))
+if str(_LUCIA_DIR.parent) not in sys.path:
+    sys.path.insert(0, str(_LUCIA_DIR.parent))
 
 
 @dataclass
@@ -136,8 +144,81 @@ class BlockchainServer:
                 return False
         return True
 
+class LucIAKernel:
+    """Fachada modular: blockchain + sesión lucIA + cerebro + red neuronal.
+
+    RD_Neuronal real vive en lucIA/Celebro/ y se resuelve vía PuenteRDNeuronal.
+    """
+
+    def __init__(self, raiz: str | Path | None = None) -> None:
+        from lucIA.main import PuenteRDNeuronal
+        PuenteRDNeuronal.instalar()
+        self.puente = PuenteRDNeuronal
+        self.blockchain = BlockchainServer(raiz)
+        self.sesion = None
+        self.conector = None
+        self.conversor = None
+        self.memoria = None
+        self.cerebro = None
+
+    def arrancar(self, verbose: bool = True) -> list[Bloque]:
+        from lucIA import iniciar_sesion, HybridLLMConnector, get_conversor_pesos
+        from lucIA.CORE.memory_manager import get_memory_manager
+        from lucIA.main import SistemaCerebral
+        self.sesion = iniciar_sesion()
+        self.conector = HybridLLMConnector()
+        self.conversor = get_conversor_pesos()
+        self.memoria = get_memory_manager()
+        self.cerebro = SistemaCerebral()
+        self.cerebro.iniciar()
+        t0 = time.time()
+        nuevos = self.blockchain.registrar_todas(verbose=verbose)
+        if verbose:
+            self.blockchain.resumen(nuevos, time.time() - t0)
+        return nuevos
+
+    def turno(self, texto: str, hablar: bool = False) -> dict:
+        assert self.conector is not None, "llamar a arrancar() primero"
+        resp = self.conector.interactuar(texto)
+        if isinstance(resp, tuple):
+            respuesta, modelo = resp[0], (resp[1] if len(resp) > 1 else "?")
+        elif isinstance(resp, dict):
+            respuesta = resp.get("respuesta", str(resp))
+            modelo = resp.get("modelo", "?")
+        else:
+            respuesta, modelo = str(resp), "?"
+        info = self.conversor.procesar_consulta_a_pesos(texto) if self.conversor else {}
+        if self.cerebro is not None:
+            self.cerebro.tras_turno(texto, respuesta, modelo, info, self.memoria, self.conversor)
+        if hablar:
+            try:
+                from lucIA import speak
+                speak(respuesta)
+            except Exception:
+                pass
+        return {"respuesta": respuesta, "modelo": modelo, "pesos": info}
+
+    def chat(self) -> None:
+        from lucIA.main import ejecutar_chat_principal
+        ejecutar_chat_principal()
+
+    def estado(self) -> dict:
+        n = len(self.blockchain.cadena)
+        return {"bloques": n, "integra": self.blockchain.verificar(),
+                "cerebro": bool(getattr(self.cerebro, "activo", False))}
+
+    def apagar(self) -> dict:
+        from lucIA import cerrar_sesion
+        try:
+            if self.cerebro is not None:
+                self.cerebro.volcar_cierre()
+        except Exception:
+            pass
+        return cerrar_sesion()
+
+
 if __name__ == "__main__":
-    t0 = time.time()
-    srv = BlockchainServer()
-    nuevos = srv.registrar_todas()
-    srv.resumen(nuevos, time.time() - t0)
+    kernel = LucIAKernel()
+    kernel.arrancar()
+    kernel.chat()
+    kernel.apagar()
