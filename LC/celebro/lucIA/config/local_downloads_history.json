@@ -1,6 +1,6 @@
 {
-  "ultima_actualizacion": "2026-09-21 13:47:31",
-  "total_descargas": 2,
+  "ultima_actualizacion": "2026-09-21 14:14:42",
+  "total_descargas": 4,
   "descargas": [
     {
       "timestamp": "2026-09-21 13:31:28",
@@ -12,6 +12,18 @@
       "timestamp": "2026-09-21 13:47:31",
       "backend": "ollama",
       "modelo": "gemma2:2b",
+      "exito": true
+    },
+    {
+      "timestamp": "2026-09-21 14:09:48",
+      "backend": "ollama",
+      "modelo": "qwen3:1.7b",
+      "exito": true
+    },
+    {
+      "timestamp": "2026-09-21 14:14:42",
+      "backend": "ollama",
+      "modelo": "qwen3:1.7b",
       "exito": true
     }
   ]
