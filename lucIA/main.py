@@ -483,7 +483,8 @@ def ejecutar_chat_principal():
     info_tamano = verificar_limite_espacio()
     print(f"📊 Sistema LucIA: {info_tamano['tamano_mb']} MB / {info_tamano['limite_mb']} MB (Caché en Celebro/cache)")
     print(f"🧠 Memoria: {memoria.obtener_resumen_sesion()}")
-    print("Comandos rápidos: /modo <local|cloud|auto> | /voz <on|off> | /estado | /memoria | /olvida | /descansa | /bien | /mal | salir")
+    print("Comandos rápidos: /modo <local|cloud|auto> | /voz <on|off> | /estado | /memoria | /olvida | /descansa | /energia | /podar | /bien | /mal | salir")
+
     print("-" * 75)
 
     # Saludo inicial hablado con es-ES-ElviraNeural
