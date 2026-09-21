@@ -63,16 +63,48 @@ class BlockchainServer:
             except Exception:
                 return None
 
+    SEP = "+" + "-" * 78 + "+"
+    MID = "+" + "-" * 78 + "+"
+    TITULO = "LucIA - Blockchain de Neuronas Activas - servidor mainLC"
+
+    def cabecera(self) -> None:
+        print(self.SEP)
+        print(f"|{self.TITULO.center(78)}|")
+        print(self.MID)
+        print(f"| {'BLOQUE':<8} {'NEURONA':<38} {'FAMILIA':<8} {'HASH (sha256)':<17} |")
+        print(self.MID)
+
     def mostrar(self, b: Bloque) -> None:
-        print(f"[Bloque {b.index:04d}] {b.neurona_id} | hash={b.hash[:16]}... | prev={b.prev_hash[:8]}...")
+        neurona = b.neurona_id if len(b.neurona_id) <= 38 else b.neurona_id[:35] + "~"
+        print(f"| {b.index:<8} {neurona:<38} {b.modulo:<8} {(b.hash[:16] + '~'):<17} |")
+
+    def seccion(self, fam: str) -> None:
+        print(self.MID)
+        print(f"| > Familia {fam:<66} |")
+        print(self.MID)
+
+    def resumen(self, nuevos: list[Bloque], segundos: float) -> None:
+        from collections import Counter
+        por_fam = Counter(b.modulo for b in nuevos if b.modulo != "mainLC")
+        print(self.MID)
+        print(f"| Total bloques: {len(self.cadena)} ({len(nuevos)} neuronas)  "
+              f"{' '.join(f'{f}={por_fam.get(f, 0)}' for f in self.PAQUETES)}")
+        ok = "[OK] INTEGRA" if self.verificar() else "[FALLO] ROTA"
+        print(f"| Estado cadena: {ok}   Tiempo registro: {segundos:.2f} s")
+        print(self.SEP)
 
     def registrar_todas(self, verbose: bool = True) -> list[Bloque]:
         """Un bloque con hash unico por cada neurona activa en disco."""
         nuevos: list[Bloque] = []
+        if verbose:
+            self.cabecera()
+            self.mostrar(self.cadena[0])
         for fam in self.PAQUETES:
             d = self.raiz / fam
             if not d.is_dir():
                 continue
+            if verbose:
+                self.seccion(fam)
             for path in sorted(d.rglob("*.py")):
                 if path.name.startswith("_") and path.name != "__init__.py":
                     continue
@@ -97,7 +129,7 @@ class BlockchainServer:
         return True
 
 if __name__ == "__main__":
+    t0 = time.time()
     srv = BlockchainServer()
-    srv.mostrar(srv.cadena[0])
     nuevos = srv.registrar_todas()
-    print(f"Bloques: {len(srv.cadena)} (nuevos: {len(nuevos)}) | integra: {srv.verificar()}")
+    srv.resumen(nuevos, time.time() - t0)
