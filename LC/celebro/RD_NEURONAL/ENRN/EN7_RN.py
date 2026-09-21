@@ -1,7 +1,54 @@
 import numpy as np
 import math
 from typing import Tuple, Dict, Any
-from . import NeuronaEntradaBase, LUCIA_CONFIG
+try:
+    from . import NeuronaEntradaBase, LUCIA_CONFIG
+except ImportError:
+    import numpy as np
+    _np = np
+    from typing import Tuple as _Tuple, Dict as _Dict, Any as _Any
+
+    LUCIA_CONFIG = {
+        "precision": "float32",
+        "random_seed": 42,
+        "default_learning_rate": 0.001,
+    }
+
+    class NeuronaEntradaBase:
+        """Base autocontenida (fallback sin ciclo de import)."""
+
+        def __init__(self, input_size: int, output_size: int, nombre: str = "NeuronaEntrada"):
+            self.input_size = input_size
+            self.output_size = output_size
+            self.nombre = nombre
+            self.pesos = None
+            self.sesgo = None
+            self.historial_activaciones = []
+            self.historial_gradientes = []
+            self.llm_connector = None
+
+        def inicializar_pesos(self) -> None:
+            raise NotImplementedError
+
+        def forward(self, entrada: _np.ndarray) -> _np.ndarray:
+            raise NotImplementedError
+
+        def backward(self, g: _np.ndarray, e: _np.ndarray) -> _Tuple[_np.ndarray, _np.ndarray]:
+            raise NotImplementedError
+
+        def obtener_estadisticas(self) -> _Dict[str, _Any]:
+            return {"nombre": self.nombre, "input_size": self.input_size,
+                    "output_size": self.output_size,
+                    "activaciones": len(self.historial_activaciones)}
+
+        def obtener_estadisticas_completas(self) -> _Dict[str, _Any]:
+            return self.obtener_estadisticas()
+
+        def verificar_estabilidad(self) -> _Dict[str, bool]:
+            return {"pesos_inicializados": self.pesos is not None}
+
+        def __str__(self) -> str:
+            return f"{self.nombre}(entrada={self.input_size}, salida={self.output_size})"
 
 
 class NeuronaEntradaBatchNorm(NeuronaEntradaBase):
