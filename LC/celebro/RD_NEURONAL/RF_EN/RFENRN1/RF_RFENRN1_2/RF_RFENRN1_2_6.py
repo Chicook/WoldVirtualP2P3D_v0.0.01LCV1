@@ -19,9 +19,12 @@ Autor: LucIA Development Team
 Versión: 2.0.0
 """
 
-import torch
-import torch.utils.data as data
-from torch.utils.data import DataLoader, Dataset
+try:
+    import torch
+    import torch.utils.data as data
+    from torch.utils.data import DataLoader, Dataset
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import pickle
 try:

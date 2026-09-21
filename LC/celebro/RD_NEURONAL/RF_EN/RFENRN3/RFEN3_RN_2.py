@@ -4,9 +4,12 @@ Implementación de técnicas avanzadas de ajuste dinámico de tasas de aprendiza
 Incluye: schedulers inteligentes, aprendizaje adaptativo por capas, y meta-aprendizaje
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 from typing import Dict, List, Tuple, Optional, Union, Callable

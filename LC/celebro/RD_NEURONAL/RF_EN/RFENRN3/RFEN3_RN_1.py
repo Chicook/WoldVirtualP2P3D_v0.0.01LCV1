@@ -4,9 +4,12 @@ Implementación de los optimizadores más modernos y eficientes para optimizaci�
 Incluye: Lion, AdaBelief, RAdam, AdamW mejorado y técnicas de segunda derivada
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Union, Callable
 import logging

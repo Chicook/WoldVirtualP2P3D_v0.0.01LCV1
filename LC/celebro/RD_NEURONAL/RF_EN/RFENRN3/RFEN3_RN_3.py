@@ -4,9 +4,12 @@ Implementación de métodos modernos de regularización para prevenir sobreajust
 Incluye: Dropout adaptativo, BatchNorm mejorado, LayerNorm, Weight Decay inteligente
 """
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 from typing import Dict, List, Tuple, Optional, Union, Callable

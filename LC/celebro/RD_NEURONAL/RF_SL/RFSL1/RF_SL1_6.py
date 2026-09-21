@@ -5,7 +5,10 @@ RF_SL1_6.py - Naive Bayes Avanzado
 
 import numpy as np
 import logging
-from lucIA.Celebro.RD_Neuronal.RF_SL import NeuronaMemoriaBase
+try:
+    from .. import NeuronaMemoriaBase  # relativo
+except ImportError:
+    NeuronaMemoriaBase = object
 
 logger = logging.getLogger(__name__)
 

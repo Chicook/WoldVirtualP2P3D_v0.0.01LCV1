@@ -4,8 +4,11 @@ Implementación de sistema completo de monitoreo y análisis de rendimiento
 Incluye: Métricas en tiempo real, visualización, alertas, y análisis de tendencias
 """
 
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -18,8 +21,11 @@ import json
 import threading
 from collections import deque, defaultdict
 import warnings
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
-from sklearn.metrics import confusion_matrix, classification_report
+try:
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+    from sklearn.metrics import confusion_matrix, classification_report
+except ImportError:
+    pass  # dependencia pesada opcional
 import pandas as pd
 
 logger = logging.getLogger(__name__)

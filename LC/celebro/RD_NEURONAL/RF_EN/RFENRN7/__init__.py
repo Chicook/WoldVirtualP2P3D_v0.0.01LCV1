@@ -7,9 +7,12 @@ Descripción: Implementación de las técnicas más avanzadas de optimización d
              poda de pesos, cuantización y destilación de conocimiento.
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import logging
 import json

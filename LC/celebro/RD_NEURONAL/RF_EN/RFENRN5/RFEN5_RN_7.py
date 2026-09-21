@@ -1,5 +1,8 @@
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+except ImportError:
+    pass  # dependencia pesada opcional
 import logging
 import numpy as np
 from abc import ABC, abstractmethod

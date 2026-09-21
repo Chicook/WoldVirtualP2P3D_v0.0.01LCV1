@@ -20,9 +20,12 @@ Autor: LucIA Development Team
 Versión: 4.3.0
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any, Union, Callable
 import logging
@@ -32,8 +35,11 @@ from abc import ABC, abstractmethod
 import time
 from collections import defaultdict, deque
 import warnings
-from scipy.optimize import minimize
-from scipy.sparse.linalg import cg, minres
+try:
+    from scipy.optimize import minimize
+    from scipy.sparse.linalg import cg, minres
+except ImportError:
+    pass  # dependencia pesada opcional
 
 logger = logging.getLogger('RFENRN1.RF_RFENRN1_4_3')
 

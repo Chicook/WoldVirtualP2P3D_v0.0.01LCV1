@@ -15,12 +15,28 @@ import numpy as np
 import math
 import warnings
 from typing import Tuple, Optional, Union, List, Dict, Any
-from lucIA.CORE.base import LucIANeuronBase
-from lucIA.CORE.initializers import (
-    he_initialization as core_he,
-    xavier_initialization as core_xavier,
-    lecun_initialization as core_lecun
-)
+try:
+    from lucIA.CORE.base import LucIANeuronBase
+except ImportError:
+    LucIANeuronBase = object  # fallback ligero
+try:
+    from lucIA.CORE.initializers import (
+        he_initialization as core_he,
+        xavier_initialization as core_xavier,
+        lecun_initialization as core_lecun
+    )
+except ImportError:
+    def core_he(*a, **k):
+        import numpy as _np
+        return _np.zeros((1, 1), dtype=_np.float32)
+
+    def core_xavier(*a, **k):
+        import numpy as _np
+        return _np.zeros((1, 1), dtype=_np.float32)
+
+    def core_lecun(*a, **k):
+        import numpy as _np
+        return _np.zeros((1, 1), dtype=_np.float32)
 
 # Configuración global para LucIA
 LUCIA_CONFIG = {

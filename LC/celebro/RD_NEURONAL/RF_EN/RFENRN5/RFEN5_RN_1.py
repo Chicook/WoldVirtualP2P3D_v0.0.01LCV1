@@ -4,9 +4,12 @@ Implementación de algoritmos genéticos modernos para optimización de pesos ne
 Incluye: Algoritmos genéticos mejorados, evolución diferencial, y optimización genética multi-objetivo
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

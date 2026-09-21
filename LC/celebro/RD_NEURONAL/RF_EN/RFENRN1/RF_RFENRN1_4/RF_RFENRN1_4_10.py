@@ -19,8 +19,11 @@ Autor: LucIA Development Team
 Versión: 4.10.0
 """
 
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any, Union, Callable
 import logging
@@ -29,8 +32,11 @@ from dataclasses import dataclass, field
 import time
 from collections import defaultdict, deque
 import random
-from scipy.optimize import minimize
-from scipy.special import softmax
+try:
+    from scipy.optimize import minimize
+    from scipy.special import softmax
+except ImportError:
+    pass  # dependencia pesada opcional
 
 logger = logging.getLogger('RFENRN1.RF_RFENRN1_4_10')
 

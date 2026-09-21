@@ -5,7 +5,10 @@ RF_SL1_4.py - Neural Networks Avanzadas
 
 import numpy as np
 import logging
-from lucIA.Celebro.RD_Neuronal.RF_SL import NeuronaMemoriaBase
+try:
+    from .. import NeuronaMemoriaBase  # relativo
+except ImportError:
+    NeuronaMemoriaBase = object
 
 logger = logging.getLogger(__name__)
 

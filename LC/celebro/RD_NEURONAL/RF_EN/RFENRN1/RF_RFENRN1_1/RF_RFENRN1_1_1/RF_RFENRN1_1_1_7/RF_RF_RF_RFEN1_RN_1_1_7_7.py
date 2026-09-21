@@ -11,7 +11,10 @@ import numpy as np
 from typing import Dict, Any, List, Tuple, Optional
 import logging
 from dataclasses import dataclass, field
-from scipy.spatial import cKDTree
+try:
+    from scipy.spatial import cKDTree
+except ImportError:
+    pass  # dependencia pesada opcional
 
 
 logger = logging.getLogger(__name__)

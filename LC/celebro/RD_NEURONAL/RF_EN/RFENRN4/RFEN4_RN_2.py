@@ -4,9 +4,12 @@ Implementación de técnicas avanzadas para escalado dinámico y adaptativo de p
 Incluye: Escalado basado en importancia, escalado por capas, y escalado cuántico
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

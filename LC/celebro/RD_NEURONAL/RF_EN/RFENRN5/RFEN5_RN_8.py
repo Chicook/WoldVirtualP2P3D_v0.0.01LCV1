@@ -1,6 +1,9 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import logging
 import numpy as np
 from abc import ABC, abstractmethod

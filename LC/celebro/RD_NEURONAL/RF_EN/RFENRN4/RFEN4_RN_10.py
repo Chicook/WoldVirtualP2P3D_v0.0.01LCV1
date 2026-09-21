@@ -4,9 +4,12 @@ Implementación del sistema maestro que integra todas las técnicas de mejora de
 Incluye: Orquestación inteligente, coordinación automática, y optimización holística
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

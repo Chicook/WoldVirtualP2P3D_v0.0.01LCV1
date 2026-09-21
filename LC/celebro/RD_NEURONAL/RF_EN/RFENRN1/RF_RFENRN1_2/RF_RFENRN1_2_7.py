@@ -19,13 +19,16 @@ Autor: LucIA Development Team
 Versión: 2.0.0
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.optim.lr_scheduler import (
-    OneCycleLR, CosineAnnealingLR, CosineAnnealingWarmRestarts,
-    ExponentialLR, ReduceLROnPlateau, StepLR
-)
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+    from torch.optim.lr_scheduler import (
+        OneCycleLR, CosineAnnealingLR, CosineAnnealingWarmRestarts,
+        ExponentialLR, ReduceLROnPlateau, StepLR
+    )
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 try:
     import optuna

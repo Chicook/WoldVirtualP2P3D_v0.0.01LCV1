@@ -4,10 +4,13 @@ Implementación de métodos modernos para optimización y manipulación de gradi
 Incluye: Gradient Accumulation, Gradient Checkpointing, Mixed Precision, Gradient Scaling
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.cuda.amp as amp
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+    import torch.cuda.amp as amp
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 from typing import Dict, List, Tuple, Optional, Union, Callable

@@ -4,9 +4,12 @@ Implementación de algoritmos de enjambre de partículas para optimización de p
 Incluye: PSO clásico, PSO mejorado, y optimización por enjambre adaptativo
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

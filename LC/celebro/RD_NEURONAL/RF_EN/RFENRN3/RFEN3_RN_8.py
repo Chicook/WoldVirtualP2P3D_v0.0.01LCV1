@@ -4,9 +4,12 @@ Implementación de técnicas avanzadas para optimización automática de hiperpa
 Incluye: Bayesian Optimization, Grid Search, Random Search, y métodos evolutivos
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random
@@ -17,9 +20,12 @@ from abc import ABC, abstractmethod
 import time
 import json
 import itertools
-from scipy.optimize import minimize
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern, RBF, WhiteKernel
+try:
+    from scipy.optimize import minimize
+    from sklearn.gaussian_process import GaussianProcessRegressor
+    from sklearn.gaussian_process.kernels import Matern, RBF, WhiteKernel
+except ImportError:
+    pass  # dependencia pesada opcional
 
 logger = logging.getLogger(__name__)
 

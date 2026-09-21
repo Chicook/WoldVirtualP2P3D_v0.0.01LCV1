@@ -4,9 +4,12 @@ Sistema maestro que coordina todas las técnicas de optimización de pesos
 Incluye: Orquestación inteligente, coordinación de componentes, y gestión de flujo de trabajo
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import time
 import logging

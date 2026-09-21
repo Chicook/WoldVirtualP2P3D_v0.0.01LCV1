@@ -27,7 +27,10 @@ except ImportError:
     CV2_AVAILABLE = False
     logging.warning("OpenCV no disponible")
 
-from scipy.ndimage import convolve
+try:
+    from scipy.ndimage import convolve
+except ImportError:
+    pass  # dependencia pesada opcional
 
 
 logger = logging.getLogger(__name__)

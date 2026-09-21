@@ -24,8 +24,11 @@ Fecha: 11 de Julio 2025
 """
 
 import logging
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import random
 from abc import ABC, abstractmethod

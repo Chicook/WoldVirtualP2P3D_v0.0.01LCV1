@@ -27,8 +27,11 @@ except ImportError:
     OPEN3D_AVAILABLE = False
     logging.warning("open3d no disponible - funcionalidad limitada")
 
-from scipy.spatial import cKDTree
-from scipy.optimize import minimize
+try:
+    from scipy.spatial import cKDTree
+    from scipy.optimize import minimize
+except ImportError:
+    pass  # dependencia pesada opcional
 
 
 logger = logging.getLogger(__name__)

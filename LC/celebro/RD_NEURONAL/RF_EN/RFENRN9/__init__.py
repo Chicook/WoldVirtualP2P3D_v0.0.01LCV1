@@ -24,8 +24,12 @@ Fecha: 11 de Julio 2025
 """
 
 import logging
-import torch
-import torch.nn as nn
+try:
+    import torch  # opcional
+    import torch.nn as nn
+except ImportError:
+    torch = None
+    nn = None
 import numpy as np
 import random
 from abc import ABC, abstractmethod

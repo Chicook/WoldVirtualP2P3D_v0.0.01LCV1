@@ -19,9 +19,12 @@ Autor: LucIA Development Team
 Versión: 2.0.0
 """
 
-import torch
-import torch.nn as nn
-import torch.nn.utils.prune as prune
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.utils.prune as prune
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any, Union
 import logging

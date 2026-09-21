@@ -19,11 +19,14 @@ Autor: LucIA Development Team
 Versión: 2.0.0
 """
 
-import torch
-import torch.nn as nn
-import torch.distributed as dist
-import torch.multiprocessing as mp
-from torch.nn.parallel import DataParallel, DistributedDataParallel as DDP
+try:
+    import torch
+    import torch.nn as nn
+    import torch.distributed as dist
+    import torch.multiprocessing as mp
+    from torch.nn.parallel import DataParallel, DistributedDataParallel as DDP
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any, Union
 import logging

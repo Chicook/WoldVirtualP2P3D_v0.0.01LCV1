@@ -4,9 +4,12 @@ Implementación de técnicas avanzadas para optimización de pesos en modelos en
 Incluye: Ensemble dinámico, optimización colaborativa, y fusión inteligente de pesos
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

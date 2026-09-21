@@ -4,9 +4,12 @@ Implementación de métodos modernos para regularización inteligente de pesos n
 Incluye: Regularización adaptativa, regularización espectral, y regularización cuántica
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

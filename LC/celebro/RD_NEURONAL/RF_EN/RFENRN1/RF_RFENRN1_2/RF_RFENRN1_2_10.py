@@ -20,9 +20,12 @@ Autor: LucIA Development Team
 Versión: 2.0.0
 """
 
-import torch
-import torch.nn as nn
-import torch.profiler as profiler
+try:
+    import torch
+    import torch.nn as nn
+    import torch.profiler as profiler
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import time
 import json

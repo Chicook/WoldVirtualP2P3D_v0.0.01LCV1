@@ -9,7 +9,10 @@ import numpy as np
 import logging
 from typing import Dict, Any, Tuple
 
-from lucIA.Celebro.RD_Neuronal.ENRN import NeuronaEntradaBase
+try:
+    from ..ENRN import NeuronaEntradaBase  # relativo
+except ImportError:
+    NeuronaEntradaBase = object
 
 logger = logging.getLogger(__name__)
 

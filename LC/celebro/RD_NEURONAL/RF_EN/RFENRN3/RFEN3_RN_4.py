@@ -4,9 +4,12 @@ Implementación de técnicas avanzadas de inicialización para redes neuronales
 Incluye: Xavier/Glorot mejorado, He/Kaiming adaptativo, Orthogonal, Sparse, y métodos híbridos
 """
 
-import torch
-import torch.nn as nn
-import torch.nn.init as init
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.init as init
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 from typing import Dict, List, Tuple, Optional, Union, Callable

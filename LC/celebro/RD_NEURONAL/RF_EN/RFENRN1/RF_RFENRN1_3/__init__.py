@@ -34,9 +34,12 @@ from .RF_RFENRN1_3_3 import DynamicRegularizationManager
 from .RF_RFENRN1_3_2 import AdaptiveNormalizationManager
 from .RF_RFENRN1_3_1 import AdvancedWeightInitializer
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except ImportError:
+    pass  # dependencia pesada opcional
 from typing import Dict, List, Tuple, Optional, Any, Union, Callable
 import logging
 from dataclasses import dataclass, field

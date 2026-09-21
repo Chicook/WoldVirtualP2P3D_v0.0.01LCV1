@@ -24,8 +24,11 @@ Optimizadores integrados:
 - QHAdam (Quasi-Hyperbolic Adam)
 """
 
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import logging
 from typing import Dict, List, Optional, Tuple, Any, Union

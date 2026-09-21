@@ -4,9 +4,12 @@ Implementación de técnicas avanzadas para cuantización y optimización de pes
 Incluye: Cuantización dinámica, cuantización adaptativa, y cuantización cuántica inspirada
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

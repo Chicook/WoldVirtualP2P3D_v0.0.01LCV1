@@ -4,9 +4,12 @@ Implementación de técnicas de aprendizaje por refuerzo para optimización de p
 Incluye: Deep Q-Learning, Policy Gradient, y Actor-Critic para optimización de pesos
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

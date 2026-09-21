@@ -4,9 +4,12 @@ Implementación de métodos modernos para optimización individual de pesos neur
 Incluye: Optimización por gradientes, algoritmos evolutivos, y técnicas cuánticas inspiradas
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

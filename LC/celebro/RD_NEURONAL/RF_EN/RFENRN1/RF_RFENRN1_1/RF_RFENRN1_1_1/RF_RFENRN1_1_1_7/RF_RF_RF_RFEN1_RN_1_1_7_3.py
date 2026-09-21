@@ -11,8 +11,11 @@ import numpy as np
 from typing import Dict, Any, List, Tuple, Optional, Set
 import logging
 from dataclasses import dataclass, field
-from scipy.spatial.distance import cdist
-from scipy.optimize import minimize
+try:
+    from scipy.spatial.distance import cdist
+    from scipy.optimize import minimize
+except ImportError:
+    pass  # dependencia pesada opcional
 from collections import defaultdict
 
 

@@ -8,9 +8,12 @@ Descripción: Implementación de técnicas de IA más avanzadas para optimizaci�
 """
 
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import logging
 import json

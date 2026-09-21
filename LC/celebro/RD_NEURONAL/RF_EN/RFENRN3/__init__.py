@@ -7,9 +7,12 @@ Descripción: Implementación de técnicas avanzadas de optimización de pesos p
 """
 
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 from typing import Dict, List, Tuple, Optional, Union, Callable
 import logging
 import json

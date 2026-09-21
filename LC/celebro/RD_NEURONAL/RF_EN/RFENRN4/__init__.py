@@ -6,9 +6,14 @@ Descripción: Implementación de técnicas avanzadas para mejora y optimización
              en cada neurona individual, incluyendo técnicas modernas de 2025.
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch  # opcional
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    torch = None
+    nn = None
+    optim = None
 import numpy as np
 import logging
 import json

@@ -4,9 +4,12 @@ Implementación de redes neuronales fractales para optimización de pesos neuron
 Incluye: FractalNet, redes fractales adaptativas, y optimización fractal multi-escala
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

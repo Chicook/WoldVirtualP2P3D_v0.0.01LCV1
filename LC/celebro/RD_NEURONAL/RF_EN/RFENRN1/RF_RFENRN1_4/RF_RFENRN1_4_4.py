@@ -21,9 +21,12 @@ Autor: LucIA Development Team
 Versión: 4.4.0
 """
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any, Union, Callable
 import logging

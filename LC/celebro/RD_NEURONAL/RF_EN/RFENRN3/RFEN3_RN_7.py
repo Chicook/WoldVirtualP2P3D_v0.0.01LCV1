@@ -4,10 +4,13 @@ Implementación de técnicas modernas de transfer learning y fine-tuning
 Incluye: Feature extraction, domain adaptation, multi-task learning, y knowledge distillation
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+    import torch.nn.functional as F
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 from typing import Dict, List, Tuple, Optional, Union, Callable

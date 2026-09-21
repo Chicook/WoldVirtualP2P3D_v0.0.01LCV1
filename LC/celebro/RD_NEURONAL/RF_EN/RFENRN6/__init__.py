@@ -7,9 +7,12 @@ Descripción: Implementación de técnicas neuromórficas más avanzadas para op
              y sistemas de memoria episódica desarrollados en 2025.
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import logging
 import json

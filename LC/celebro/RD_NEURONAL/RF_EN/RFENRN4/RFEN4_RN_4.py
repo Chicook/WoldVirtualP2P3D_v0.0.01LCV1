@@ -4,9 +4,12 @@ Implementación de técnicas avanzadas para ajuste dinámico y en tiempo real de
 Incluye: Ajuste adaptativo, optimización bayesiana, y ajuste basado en rendimiento
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

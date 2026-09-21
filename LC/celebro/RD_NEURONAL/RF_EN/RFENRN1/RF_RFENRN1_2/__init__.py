@@ -30,9 +30,12 @@ from .RF_RFENRN1_2_3 import GradientControlManager
 from .RF_RFENRN1_2_2 import RegularizationManager
 from .RF_RFENRN1_2_1 import AdvancedOptimizerManager
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 from typing import Dict, List, Tuple, Optional, Any, Union
 import logging
 from dataclasses import dataclass, field

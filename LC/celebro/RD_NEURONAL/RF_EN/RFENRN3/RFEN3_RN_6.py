@@ -4,9 +4,12 @@ Implementación de técnicas de consolidación de memoria basadas en procesos de
 Incluye: Replay de experiencias, consolidación de pesos, y ciclos de sueño artificial
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

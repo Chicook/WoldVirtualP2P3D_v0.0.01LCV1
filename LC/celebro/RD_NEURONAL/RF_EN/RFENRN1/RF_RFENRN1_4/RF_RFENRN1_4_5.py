@@ -19,8 +19,11 @@ Autor: LucIA Development Team
 Versión: 4.5.0
 """
 
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any, Union, Callable
 import logging
@@ -30,8 +33,11 @@ from abc import ABC, abstractmethod
 import time
 from collections import defaultdict, deque
 import random
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern
+try:
+    from sklearn.gaussian_process import GaussianProcessRegressor
+    from sklearn.gaussian_process.kernels import Matern
+except ImportError:
+    pass  # dependencia pesada opcional
 
 logger = logging.getLogger('RFENRN1.RF_RFENRN1_4_5')
 

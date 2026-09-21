@@ -4,11 +4,14 @@ Conecta Python con librerías 3D (moderngl, pyglet, PyOpenGL)
 Sistema Avanzado de Redes Neuronales con Arquitectura Transformer
 """
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.optim import AdamW, SGD
-from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, OneCycleLR
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    from torch.optim import AdamW, SGD
+    from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts, OneCycleLR
+except ImportError:
+    pass  # dependencia pesada opcional
 from typing import Dict, List, Any, Optional, Tuple, Union
 from dataclasses import dataclass, field
 from collections import OrderedDict

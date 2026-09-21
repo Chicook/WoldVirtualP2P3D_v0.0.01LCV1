@@ -10,9 +10,12 @@ import numpy as np
 from typing import Dict, Any, List, Tuple, Optional
 import logging
 from dataclasses import dataclass, field
-from scipy.interpolate import interp1d, CubicSpline
-from scipy.signal import savgol_filter
-from scipy.spatial.transform import Rotation, Slerp
+try:
+    from scipy.interpolate import interp1d, CubicSpline
+    from scipy.signal import savgol_filter
+    from scipy.spatial.transform import Rotation, Slerp
+except ImportError:
+    pass  # dependencia pesada opcional
 
 
 logger = logging.getLogger(__name__)

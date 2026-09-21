@@ -4,9 +4,12 @@ Implementación de métodos avanzados para poda inteligente y eficiente de pesos
 Incluye: Poda por magnitud, poda estructurada, poda adaptativa, y poda cuántica
 """
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 import math
 import random

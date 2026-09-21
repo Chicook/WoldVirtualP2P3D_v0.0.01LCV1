@@ -20,8 +20,11 @@ Autor: LucIA Development Team
 Versión: 4.8.0
 """
 
-import torch
-import torch.nn as nn
+try:
+    import torch
+    import torch.nn as nn
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any, Union
 import logging
@@ -30,7 +33,10 @@ from dataclasses import dataclass, field
 import time
 from collections import defaultdict, deque
 import matplotlib.pyplot as plt
-from scipy import stats
+try:
+    from scipy import stats
+except ImportError:
+    pass  # dependencia pesada opcional
 
 logger = logging.getLogger('RFENRN1.RF_RFENRN1_4_8')
 

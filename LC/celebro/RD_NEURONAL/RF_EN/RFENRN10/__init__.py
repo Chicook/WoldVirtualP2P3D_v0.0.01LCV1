@@ -25,8 +25,12 @@ Fecha: 11 de Julio 2025
 """
 
 import logging
-import torch
-import torch.nn as nn
+try:
+    import torch  # opcional
+    import torch.nn as nn
+except ImportError:
+    torch = None
+    nn = None
 import numpy as np
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -38,9 +42,17 @@ import threading
 from pathlib import Path
 import math
 import random
-from scipy.optimize import minimize
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, Matern
+try:
+    from scipy.optimize import minimize  # opcional
+except ImportError:
+    minimize = None
+try:
+    from sklearn.gaussian_process import GaussianProcessRegressor
+    from sklearn.gaussian_process.kernels import RBF, Matern
+except ImportError:
+    GaussianProcessRegressor = None
+    RBF = None
+    Matern = None
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)

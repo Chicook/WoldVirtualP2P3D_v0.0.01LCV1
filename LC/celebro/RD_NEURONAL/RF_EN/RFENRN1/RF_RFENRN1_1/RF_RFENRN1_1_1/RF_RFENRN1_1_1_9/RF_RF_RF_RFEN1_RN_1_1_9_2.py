@@ -15,9 +15,12 @@ Autor: Sistema WoldVirtual3DlucIA v0.6.0
 Fecha: 2025
 """
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except ImportError:
+    pass  # dependencia pesada opcional
 from typing import Optional, Tuple
 
 

@@ -20,9 +20,12 @@ Autor: LucIA Development Team
 Versión: 3.0.0
 """
 
-import torch
-import torch.distributed as dist
-import torch.nn as nn
+try:
+    import torch
+    import torch.distributed as dist
+    import torch.nn as nn
+except ImportError:
+    pass  # dependencia pesada opcional
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any, Union
 import logging
