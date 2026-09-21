@@ -223,13 +223,32 @@ class SistemaCerebral:
                                      emocion=_emo_pond, delta=_delta,
                                      vector=info_pesos.get("vector_semantico"))
             self.cerebelo.marcar("respuesta")
-            self.hipotalamo.latido(_delta)
-            self.temporal.oir(pregunta)
+            # Hipotalamo: latido retorna dict con energia y estado
+            _hipo_info = self.hipotalamo.latido(_delta)
+            # Lobulo_temporal: analisis de tono de la pregunta y respuesta
+            _tono_usr = self.temporal.oir(pregunta)
             self.temporal.oir(respuesta)
             _turno_n = len(memoria._datos.get("turnos", []))
             self.parietal.situar(pregunta, modelo=modelo, turno=_turno_n)
+            # Cuerpo_calloso: integra las dos vias si hay respuesta doble
+            if hasattr(self, "calloso") and self.calloso is not None:
+                try:
+                    # Si la respuesta tiene un separador [L]/[C] (via dual)
+                    if "[L]" in respuesta and "[C]" in respuesta:
+                        partes = respuesta.split("[C]", 1)
+                        _local_part = partes[0].replace("[L]", "").strip()
+                        _cloud_part = partes[1].strip() if len(partes) > 1 else ""
+                        self.calloso.integrar(_local_part, _cloud_part)
+                except Exception:
+                    pass
             if _turno_n % 5 == 0:
                 self.hipocampo.consolidar(conversor, n=5)
+            # Glia: limpieza de buffer de eventos cada 10 turnos
+            if _turno_n % 10 == 0 and hasattr(self, "glia") and self.glia is not None:
+                try:
+                    self.glia.limpiar_eventos_antiguos(max_eventos=150)
+                except Exception:
+                    pass
         except Exception:
             pass
 
@@ -286,6 +305,14 @@ class SistemaCerebral:
         return lin
 
     def volcar_cierre(self, conversor, sesion) -> None:
+        # Poda de sinapsis debiles antes de volcar (Glia activa durante el "sueno")
+        try:
+            if self.glia is not None:
+                _poda = self.glia.podar_pesos_debiles(conversor)
+                if _poda["podadas"] > 0:
+                    print(f"🧹 Glía: podadas {_poda['podadas']} sinapsis débiles de {_poda['revisadas']} revisadas.")
+        except Exception:
+            pass
         try:
             rc = self.hipocampo.volcar_cierre(conversor, sesion=sesion)
             print(f"🧠 Hipocampo: {rc['consolidados']}/{rc['pendientes']} turnos -> pesos ({rc['archivo'] or 'sin archivo'})")
@@ -293,8 +320,22 @@ class SistemaCerebral:
             print(f"   ⚠️ Hipocampo no pudo volcar: {e}")
         try:
             for m in self.modulos:
-                m.a_pesos(conversor)
-            print("   ✅ Estado de los 13 modulos convertido a pesos neuronales")
+                try:
+                    m.a_pesos(conversor)
+                except Exception:
+                    pass
+            # Hipocampo y Glia tambien exportan
+            if self.hipocampo is not None:
+                try:
+                    self.hipocampo.a_pesos(conversor) if hasattr(self.hipocampo, "a_pesos") else None
+                except Exception:
+                    pass
+            if self.glia is not None:
+                try:
+                    self.glia.a_pesos(conversor)
+                except Exception:
+                    pass
+            print("   ✅ Estado de los 15 modulos convertido a pesos neuronales")
         except Exception as e:
             print(f"   ⚠️ Modulos no pudieron volcar: {e}")
         try:
@@ -307,7 +348,8 @@ class SistemaCerebral:
     def verificar_cierre(self) -> None:
         try:
             v = self.glia.verificar()
-            print(f"🧹 Glía: {'LIMPIO ✅ (0 restos)' if v['limpio'] else 'RESTOS: ' + str(v['restos'])}")
+            restos_str = ", ".join(v['restos'][:5]) if v['restos'] else "ninguno"
+            print(f"🧹 Glía: {'LIMPIO ✅ (0 restos)' if v['limpio'] else f'RESTOS: {restos_str}'}")
         except Exception as e:
             print(f"🧹 Glía no pudo verificar: {e}")
 # === FIN SISTEMA CEREBRAL ===
@@ -550,6 +592,21 @@ def ejecutar_chat_principal():
             except Exception:
                 segundos = 20
             cancel_speech()
+            # Reponer energia del hipotalamo
+            try:
+                if cerebro.hipotalamo is not None:
+                    _e_antes = cerebro.hipotalamo.energia
+                    cerebro.hipotalamo.reponer(parcial=True)
+                    _e_despues = cerebro.hipotalamo.energia
+                    print(f"💚 [Hipotálamo]: Energía repuesta {_e_antes:.2f} → {_e_despues:.2f}")
+            except Exception:
+                pass
+            # Glia: poda ligera de buffer durante el descanso
+            try:
+                if cerebro.glia is not None:
+                    cerebro.glia.limpiar_eventos_antiguos(max_eventos=80)
+            except Exception:
+                pass
             msg_descanso = (
                 f"Gracias por cuidarme. Voy a respirar {segundos} segundos: "
                 "pauso mi voz y no integro nada nuevo, solo descanso mi Celebro."
