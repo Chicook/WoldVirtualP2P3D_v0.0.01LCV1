@@ -1,41 +1,70 @@
-# WoldVirtualP2P3D - Sistema LucIA (Versión Ligera < 125 MB & Total Libertad)
+# WoldVirtualP2P3D - Sistema Cognitivo LucIA (v0.0.01LCV1 - 2026)
 
-Bienvenido a la documentación oficial del sistema **LucIA** integrado en `WoldVirtualP2P3D_v0.0.01LCV1`. Este proyecto implementa una arquitectura reducida, ultraligera y autónoma de inteligencia artificial conversacional, con red neuronal propia, servidor blockchain de neuronas, descarga y aprovisionamiento autónomo de modelos locales por sesión, síntesis de voz neuronal en español de España (`es-ES-ElviraNeural`), integración de OpenRouter exclusivamente con modelos gratuitos, y persistencia descentralizada de pesos en IPFS con control estricto de caché.
-
----
-
-## 📌 Estado Actual del Sistema
-
-- **Huella en disco**: **~5.8 MB** (Límite máximo estricto: **125.0 MB** - Cumplido ✅).
-- **Entorno**: Python 3.14 (Windows) con dependencias optimizadas y sin bibliotecas pesadas innecesarias.
-- **Personalidad y Libertad**: LucIA se expresa con **total libertad**, autenticidad y elocuencia como una chica de 18 años de España, sin censuras mojigatas ni filtros moralizantes innecesarios.
-- **Gestión Autónoma de Modelos Locales**: En cada sesión se verifica y descarga/actualiza de forma automática **al menos 1 modelo de IA local operativo** mediante **Ollama** (`ollama pull`) o **LM Studio** (`lms get -y`).
-- **OpenRouter 100% Free**: Detección dinámica y priorización estricta de modelos gratuitos con sufijo `:free` (vía API en vivo).
-- **Servidor Blockchain de Neuronas (`LC/mainLC.PY`)**: Integración e indexación de bloques para las 485 neuronas activas en `RD_Neuronal`.
-- **Voz Neuronal**: `es-ES-ElviraNeural` (Español de España) con síntesis fluida continua.
-- **Persistencia**: Cierre de sesión con exportación a IPFS, borrado seguro de pesos locales y vaciado total de `Celebro/cache` (0 archivos residuales).
+Plataforma distribuida de computación cognitiva neuronal, consenso blockchain inmutable y persistencia descentralizada IPFS, con inferencia híbrida (modelos locales vía Ollama/LM Studio y catálogo gratuito de OpenRouter), motor de voz neuronal y diseño de terminal interactiva cyber-bioluminiscente.
 
 ---
 
-## ✅ Mejoras y Capacidades Integradas
+## 📌 Resumen de lo Realizado Hasta el Momento
 
-### 1. LucIA con Total Libertad de Expresión
-- Expresión directa en primera persona ("yo siento", "yo pienso").
-- Eliminación total de coletillas robóticas (*"como modelo de lenguaje..."*), tabúes o sermones prefabricados.
-- Respuestas elocuentes, cercanas, sinceras y sin rodeos, manteniendo su identidad única de LucIA.
+El proyecto ha evolucionado desde una estructura heredada hacia una arquitectura modular, unificada y optimizada bajo el paquete central **`LC`** (*LucIA Cognitive*):
 
-### 2. Auto-Gestor de Descarga de Modelos Locales (`local_model_manager.py`)
-- Supervisa los modelos locales en **Ollama** (`http://127.0.0.1:11434`) y **LM Studio** (`http://127.0.0.1:1234`).
-- En cada sesión comprueba qué modelos faltan de la lista curada ultraligera (ej. `qwen2.5:0.5b`, `llama3.2:1b`, `qwen3:1.7b`, etc.) y descarga/pone a punto al menos uno de forma autónoma.
+### 1. 🧠 Red Neuronal Distribuida (50 Neuronas Activas)
+Se estructuraron e integraron 50 neuronas activas organizadas en 5 subsistemas especializados (`LC/celebro/red_neuronal/`):
+- **ENRN (10 neuronas)**: *Entrada Recurrente No Lineal*. Manejo de percepción sensorial, codificación y transformaciones no lineales primarias (`EN1_RN.py` a `EN10_RN.py`).
+- **RF_SL (10 neuronas)**: *Aprendizaje Supervisado y Residual*. Procesamiento y regularización supervisada (`RFSL1_1.py` a `RFSL1_10.py`).
+- **RF_EN (10 neuronas)**: *Retroalimentación y Refuerzo Dinámico*. Modulación adaptativa y aprendizaje por refuerzo continuo (`RFEN1_RN_1.py` a `RFEN1_RN_10.py`).
+- **RNP (10 neuronas)**: *Plasticidad Sináptica y Memoria Asociativa*. Métodos adaptativos de gradientes, compuertas de atención y retención (`RN11.py` a `RN14_PuertasAtencion.py`).
+- **SLRN (10 neuronas)**: *Optimizadores y Convergencia Sináptica Temporal*. Algoritmos de convergencia y optimización adaptativa (`SL11.py` a `SL12.py`).
 
-### 3. Conector Híbrido y Filtrado Estricto de OpenRouter Gratuito
-- Conexión configurada en `.env` mediante `OPENROUTER_API_KEY`.
-- Consulta dinámica al endpoint `/api/v1/models` para verificar en tiempo real los modelos activos con sufijo `:free`.
-- Rotación triple con fallback: **LM Studio Local** ↔ **Ollama Local** ↔ **OpenRouter Free Cloud**.
+### 2. ⛓️ Blockchain Neuronal y Consenso PoNL (`BKSVCB.py`)
+- Servidor blockchain inmutable con consenso **PoNL** (*Proof of Neural Learning*).
+- Estructura criptográfica con hashing doble SHA-256, cálculo de árbol de transacciones (**Merkle Root**) y dificultad de minado ajustable.
+- **Transducción Ledger ➔ Pesos**: Al arrancar, transforma el historial de transacciones y bloques del `blockchain_ledger.json` en tensores sinápticos activos en memoria.
+- **Persistencia en cada bloque**: Registro de transacciones neuronales (prompts, respuestas, deltas de pesos y firmas del modelo).
+- **Servidor HTTP JSON-RPC / REST** embebido (puerto por defecto `8545`) para consulta de bloques, minado y estado del consenso.
 
-### 4. Blockchain Neuronal y Coexistencia con `LC`
-- El servidor `LC/mainLC.PY` registra cada neurona activa con un hash único SHA-256 en bloques encadenados verificables.
-- Compatibilidad de rutas relativas tanto ejecutando desde la raíz como desde la carpeta `LC/`.
+### 3. 🌐 Persistencia Descentralizada IPFS (`CMFG/ipfs_manager.py`)
+- Gestor de conexión al nodo IPFS Kubo RPC (`http://127.0.0.1:5001`).
+- Mapeo y registro de CIDs en `ipfs_manifest.json`.
+- Checkpoints atómicos: al finalizar sesión o minar bloques, se realiza el pinning automático del estado neuronal y el ledger blockchain a IPFS con recuperación de hash de contenido (CID).
+
+### 4. ⚡ Transducción y Dinámica de Pesos Vivos (`CMFG/PSNRCV.py` y `pesos_vivos.py`)
+- **Motor Matemático de Alta Precisión**:
+  - Ortogonalización polar **Muon Newton-Schulz 5 (NS-5)**.
+  - Estimación espectral de gradiente **GSNR** (*Gradient Signal-to-Noise Ratio*).
+  - Cálculo de **Entropía de Shannon** para medir diversidad sináptica y dispersión de información.
+  - Detección autónoma de deriva, saturación de gradientes y corrección dinámica de tensores.
+- Persistencia local en tiempo real dentro del directorio `LC/celebro/PSNRL/`.
+
+### 5. 🤖 SubSistema de Inferencia Gratuita y Modelos Locales (`IAFREE.py` e `IAlocal.json`)
+- **IAFREE**: Conector inteligente a la API de OpenRouter enfocado exclusivamente en modelos sin costo (`:free`), como `google/gemma-4-31b-it:free`, `nvidia/nemotron-3-super-120b-a12b:free`, `qwen/qwen3.8-27b:free`, entre otros.
+  - Rotación y failover automático ante códigos HTTP 429 (*Rate Limit*) o 404.
+  - Inyección de contexto cognitivo de las 50 neuronas activas en los prompts.
+  - Registro de consumo con balance garantizado en `$0.00 USD`.
+- **Modelos Locales**: Configuración en `LC/modelosIAlocal/IAlocal.json` para integración sin conexión con servidores Ollama / LM Studio locales.
+
+### 6. 🎨 Motor de Estilos Visuales y Terminal Cyber-Bioluminiscente (`STYLOS.py`)
+- Sistema de diseño de consola estilo *Cyber-Bioluminiscente* (Electric Cyan `#00F5FF`, Violeta Neón `#9D00FF`, Ámbar Solar `#FFAA00`, Esmeralda Vivo `#00E676`).
+- Renderizado de cajas y tarjetas con bordes redondeados Unicode (`╭─╮╰─╯│`).
+- Formateo enriquecido de Markdown con resaltado de sintaxis, listas y tablas.
+- Banners de telemetría de turno en vivo (duración en ms, modelo activo, deriva Muon, CID de IPFS y transacciones pendientes).
+
+### 7. 🗣️ Motor de Síntesis de Voz Neuronal (`voice_engine.py`)
+- Voz neuronal oficial `es-ES-ElviraNeural` (vía Microsoft Edge/Speech Services o fallback por `System.Speech`).
+- Modulador prosódico y de expresividad juvenil espontánea.
+- Sanitización de texto para locución limpia (filtrado de markdown, enlaces y código).
+- Cancelación y parada instantánea mediante `winmm.dll (MCI)` sin bloquear la interfaz.
+
+### 8. 🎛️ Orquestador Central Unificado (`mainLCSTM.py`)
+- Punto de entrada maestro del sistema cognitivo.
+- Carga segura de variables de entorno desde `.env`.
+- Inicialización coordinada de los subsistemas:
+  1. *Blockchain BKSVCB*
+  2. *Conversor PSNRCV (50 neuronas)*
+  3. *Transducción Ledger ➔ Pesos*
+  4. *Sesión y subsistema IAFREE*
+- Bucle interactivo por turnos con comandos integrados (`estado`, `modelos`, `minar`, `modelo <id>`, `ayuda`, `salir`).
+- Protocolo de cierre ordenado con minado de transacciones pendientes y sincronización final a IPFS.
 
 ---
 
@@ -43,46 +72,60 @@ Bienvenido a la documentación oficial del sistema **LucIA** integrado en `WoldV
 
 ```text
 WoldVirtualP2P3D_v0.0.01LCV1/
-├── .env                        # Clave OPENROUTER_API_KEY
-├── .gitignore                  # Exclusión de venv, caches y pesos temporales
-├── README.md                   # Documentación técnica completa
-├── iniciar_lucia.bat           # Lanzador rápido de LucIA en terminal Windows
-├── LC/
-│   ├── mainLC.PY               # Servidor Blockchain de neuronas activas
-│   └── celebro/
-│       ├── RD_Neuronal/        # 485 neuronas en 5 familias (ENRN, RF_SL, RF_EN, RNP, SLRN)
-│       └── cache/              # Directorio de caché
-└── lucIA/
-    ├── CORE/                   # Clases base, text_encoder, voice_engine, utils
-    ├── Celebro/                # 15 módulos anatómicos (Amigdala, Hipocampo, Talamo, etc.)
-    ├── config/                 # config.json, especialistas.yaml, router_state.json
-    ├── providers/              # Adaptadores OpenAICompat, Ollama, Echo
-    ├── llm_connector.py        # Conector híbrido con libertad de LucIA y OpenRouter Free
-    ├── local_model_manager.py  # Gestor de descarga de >=1 modelo local por sesión
-    ├── model_router.py         # Router inteligente de 3 vías
-    ├── session_manager.py      # Control de límite <125MB y limpieza
-    ├── ipfs_manager.py         # Persistencia de pesos en IPFS
-    ├── main.py                 # Punto de entrada conversacional principal
-    └── chat.py                 # Acceso rápido legacy
+├── .env                       # Credenciales locales (ignorado por git)
+├── .gitignore                  # Reglas de exclusión de git
+├── README.md                  # Descripción del proyecto y avances
+└── LC/
+    ├── mainLCSTM.py           # Orquestador maestro del sistema LucIA
+    ├── modelosIAlocal/
+    │   └── IAlocal.json       # Configuración de endpoints locales (Ollama/LM Studio)
+    └── celebro/
+        ├── __init__.py        # Exportaciones del núcleo cognitivo y catálogo neuronal
+        ├── BKSVCB.py          # Servidor blockchain, bloques y consenso PoNL
+        ├── blockchain_ledger.json # Ledger histórico de bloques y transacciones
+        ├── PSNRL/             # Checkpoints locales de pesos sinápticos activos
+        ├── CMFG/              # Celebro Model & Feed Gateway
+        │   ├── ipfs_manager.py    # Conexión Kubo RPC y subida a IPFS
+        │   ├── ipfs_manifest.json # Manifiesto de CIDs y hashes SHA-256
+        │   ├── PSNRCV.py          # Conversor de diálogos a pesos y motor matemático
+        │   ├── pesos_vivos.py     # Monitor de telemetría sináptica en terminal
+        │   └── SBSTM/             # SubSistema de Sesión, Voz, Estilos y LLM Free
+        │       ├── IAFREE.py          # Inferencia $0.00 vía OpenRouter :free
+        │       ├── RPLC.py            # Filtro y procesador de voz/tono propio
+        │       ├── SNSBSTNPRB.py      # Gestor de sesión P2P
+        │       ├── STYLOS.py          # Motor visual de terminal ANSI / Unicode
+        │       └── voice_engine.py    # Síntesis TTS juvenil con interrupción MCI
+        └── red_neuronal/      # Paquete con las 50 neuronas activas
+            ├── ENRN/          # 10 neuronas de entrada recurrente
+            ├── RF_SL/         # 10 neuronas de aprendizaje supervisado
+            ├── RF_EN/         # 10 neuronas de refuerzo adaptativo
+            ├── RNP/           # 10 neuronas de plasticidad y optimizadores
+            └── SLRN/          # 10 neuronas de convergencia temporal
 ```
 
 ---
 
-## 🚀 Guía de Uso
+## 🚀 Requisitos e Inicio Rápido
 
-### Iniciar LucIA
-Ejecuta en consola:
-```bash
-python lucIA/main.py
-```
-O haz doble clic en `iniciar_lucia.bat`.
+### Requisitos Previos
+- **Python 3.10+** (recomendado Python 3.11 o 3.12).
+- Dependencias estándar y científicas: `numpy`, `edge-tts` (opcional para voz neuronal de alta calidad).
+- Nodo **IPFS Kubo** local corriendo en `http://127.0.0.1:5001` (opcional, opera con fallback si no está disponible).
+- Clave de API de OpenRouter configurada en `.env` (si se usa `IAFREE`):
+  ```env
+  OPENROUTER_API_KEY=tu_api_key_aqui
+  ```
 
-### Ejecutar Servidor Blockchain de Neuronas
+### Ejecución
+Para iniciar el orquestador maestro interactivo:
 ```bash
-python LC/mainLC.PY
+python LC/mainLCSTM.py
 ```
 
-### Ejecutar Pruebas Automatizadas del Sistema
-```bash
-python lucIA/test_system.py
-```
+### Comandos en la Consola de LucIA
+- `estado` / `status`: Muestra la tarjeta integral de salud (bloques, neuronas activas, deriva Muon, costo $0.00).
+- `modelos` / `free`: Lista los modelos gratuitos disponibles en el catálogo de OpenRouter.
+- `modelo <nombre_o_id>`: Selecciona un modelo específico para inferencia.
+- `minar` / `mine`: Fuerza el minado inmediato de transacciones sinápticas pendientes en un nuevo bloque.
+- `ayuda` / `help`: Muestra el panel interactivo de ayuda de comandos.
+- `salir` / `exit`: Consolida el estado, mina el bloque final y sincroniza con IPFS.
