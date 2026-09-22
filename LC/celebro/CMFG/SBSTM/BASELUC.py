@@ -152,6 +152,24 @@ except Exception:
     RefactorizadorSesion = None  # type: ignore
     refactorizar_overlay = None  # type: ignore
 
+# ─── IMPORTACION HRCNTR (monitor y refactorizador neural) ──
+try:
+    from LC.celebro.CMFG.SBSTM.HRCNTR import (
+        GestorHRCNTR,
+        get_gestor_hrctnr,
+        ejecutar_hrctnr,
+        estado_hrctnr,
+        actualizar_sistema_hrctnr,
+    )
+    _HRCNTR_DISPONIBLE = True
+except Exception:
+    _HRCNTR_DISPONIBLE = False
+    GestorHRCNTR = None  # type: ignore
+    get_gestor_hrctnr = None  # type: ignore
+    ejecutar_hrctnr = None  # type: ignore
+    estado_hrctnr = None  # type: ignore
+    actualizar_sistema_hrctnr = None  # type: ignore
+
 # ─── IMPORTACION INTEGRACIONRF (cierre: refactor->md->pesos->IPFS->rama) ──
 try:
     from LC.celebro.CMFG.SBSTM.INTEGRACIONRF import (

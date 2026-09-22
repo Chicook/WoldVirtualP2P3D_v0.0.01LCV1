@@ -456,6 +456,13 @@ __all__: Final[List[str]] = [
     "obtener_gestor_ia_local",
     "consultar_ia_local",
     "consultar_con_fallback",
+    # HRCNTR (Monitor y Refactorizador Neural)
+    "get_gestor_hrctnr",
+    "ejecutar_hrctnr",
+    "estado_hrctnr",
+    "actualizar_sistema_hrctnr",
+    "ciclo_cierre_hrctnr",
+    "confirmar_actualizacion_hrctnr",
 ]
 
 

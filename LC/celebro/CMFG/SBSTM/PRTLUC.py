@@ -145,6 +145,9 @@ class PRTLUCMixin:
         # 8. HRCTRC_RFCT: version de sesion con barra de progreso (modelo local)
         self._version_sesion_inicial()
 
+        # 9. HRCNTR: monitor y refactorizador neural del sistema
+        self._hrctnr_refactor_inicial()
+
         self.activa = True
         return True
 
@@ -170,6 +173,17 @@ class PRTLUCMixin:
                       f"Rutas: \033[38;5;51m{snap.get('rutas', 0)}\033[0m | .md->pesos->IPFS->devopencode")
             except Exception as exc:
                 print(f"  [8/8] Integracion RF          : \033[38;5;214mAVISO ({exc})\033[0m")
+
+    def _hrctnr_refactor_inicial(self) -> None:
+        """Barra de progreso: refactor neural al arrancar."""
+        try:
+            from LC.celebro.CMFG.SBSTM.HRCNTR import ejecutar_hrctnr
+            print("  [9/9] Refactor Neural HRCNTR:")
+            rep = ejecutar_hrctnr(mostrar_barra=True)
+            print(f"        \033[38;5;48m{rep.get('mensaje')}\033[0m")
+        except Exception as exc:
+            print(f"  [9/9] Refactor Neural HRCNTR: "
+                  f"\033[38;5;214mAVISO ({exc})\033[0m")
 
     def _inicializar_ia_local(self) -> None:
         """Perfila el hardware y marca la IA local como disponible para LucIA."""

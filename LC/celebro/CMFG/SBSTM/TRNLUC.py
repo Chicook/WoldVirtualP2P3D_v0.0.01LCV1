@@ -111,6 +111,19 @@ class TRNLUCMixin:
             except Exception:
                 pass
 
+        # Fase 1f: HRCNTR — orden de monitor/refactor neural se EJECUTA aqui.
+        if self.gestor_hrctrc is not None:
+            try:
+                if self.gestor_hrctrc.es_orden_constructor(prompt):
+                    from LC.celebro.CMFG.SBSTM.HRCNTR import ejecutar_hrctnr
+                    respuesta_h = ejecutar_hrctnr(mostrar_barra=False).get("mensaje", "")
+                    if respuesta_h:
+                        return self._cerrar_turno("Refactor Neural: " + respuesta_h,
+                                                  "LucIA-HRCNTR-local", 0.0,
+                                                  prompt, estado_previo, t_inicio)
+            except Exception:
+                pass
+
         # Fase 2: Inferencia gratuita con rotacion automatica via IAFREE
         respuesta = ""
         modelo_usado = "Reflejo-Interno"

@@ -125,6 +125,9 @@ class CMDLUCMixin:
             if entrada.lower() in ("integrar", "bitacora", "cierre-completo"):
                 self._cmd_integrar()
                 continue
+            if entrada.lower() in ("refactor-neural", "hrctnr", "refactor-hrctnr"):
+                self._cmd_hrctnr()
+                continue
 
             self.procesar_turno_dialogo(entrada)
 
@@ -234,6 +237,29 @@ class CMDLUCMixin:
         rep = self.integrador.cierre_completo()
         print(f"  {self.integrador.resumen_cierre_txt(rep)}")
 
+    def _cmd_hrctnr(self) -> None:
+        """Monitor y refactorizador neural del sistema."""
+        try:
+            from LC.celebro.CMFG.SBSTM.HRCNTR import (
+                ejecutar_hrctnr, confirmar_actualizacion_hrctnr,
+                actualizar_sistema_hrctnr, estado_hrctnr,
+            )
+            print("  HRCNTR - Monitor y Refactorizador Neural")
+            est = estado_hrctnr()
+            print(f"  Archivos: {est['monitoreo']['archivos']}"
+                  f" | Oversized: {est['monitoreo']['oversized']}"
+                  f" | Generados: {est['generados']}")
+            confirmacion = confirmar_actualizacion_hrctnr()
+            print(confirmacion)
+            entrada = input("  Confirmar [S/N]? ").strip().lower()
+            if entrada in ("s", "si", "sí", "y", "yes"):
+                rep = actualizar_sistema_hrctnr(confirmar=True)
+                print(f"  {rep.get('mensaje')}")
+            else:
+                print("  Actualización cancelada.")
+        except Exception as exc:
+            print(f"  [hrctnr] {exc}")
+
     def cerrar_sistema(self) -> None:
         """Cierre ordenado: minado final, persistencia IPFS y purga de residuos (CHG/__pycache__)."""
         with self.lock:
@@ -248,6 +274,31 @@ class CMDLUCMixin:
                     print(f"  Bloque final consolidado: \033[38;5;220m{blk.hash_bloque[:28]}...\033[0m")
             except Exception:
                 pass
+
+            # HRCNTR: confirmar actualizacion antes de INTEGRACIONRF
+            try:
+                from LC.celebro.CMFG.SBSTM.HRCNTR import (
+                    get_gestor_hrctnr, confirmar_actualizacion_hrctnr,
+                    actualizar_sistema_hrctnr,
+                )
+                g = get_gestor_hrctnr()
+                mon = g.monitor_sistema()
+                vivos = {"mainLCSTM.py", "__init__.py", "HRCTRC.py",
+                         "HRCTRC_RFCT.py", "HRCNTR.py", "BASELUC.py",
+                         "INTEGRACIONRF.py", "SNSBSTNPRB.py", "BKSVCB.py",
+                         "ipfs_manager.py"}
+                n_listos = len([e for e in mon["archivos"]
+                                if e["sobreescrito"]
+                                and e["ruta"] not in vivos])
+                if n_listos > 0:
+                    print("\n  HRCNTR - Confirmar actualizacion:")
+                    print(confirmar_actualizacion_hrctnr())
+                    entrada = input("  Confirmar [S/N]? ").strip().lower()
+                    if entrada in ("s", "si", "sí", "y", "yes"):
+                        rep_u = actualizar_sistema_hrctnr(confirmar=True)
+                        print(f"  \033[38;5;48m{rep_u.get('mensaje')}\033[0m")
+            except Exception as e_hc:
+                print(f"  \033[38;5;214mHRCNTR cierre: {e_hc}\033[0m")
 
             # INTEGRACIONRF: refactor -> .md -> pesos -> IPFS -> devopencode
             # (incluye la unificacion HRCTRC; si no esta, fallback directo)

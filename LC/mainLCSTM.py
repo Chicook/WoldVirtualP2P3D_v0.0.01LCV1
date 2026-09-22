@@ -47,6 +47,7 @@ def _reexportar(nombre: str) -> Any:
         "MDSTM": "LC.modelosIAlocal.MDSTM",
         "HRCTRC": "LC.celebro.CMFG.SBSTM.HRCTRC",
         "HRCTRC_RFCT": "LC.celebro.CMFG.SBSTM.HRCTRC_RFCT",
+        "HRCNTR": "LC.celebro.CMFG.SBSTM.HRCNTR",
         "INTEGRACIONRF": "LC.celebro.CMFG.SBSTM.INTEGRACIONRF",
         "MIXINS": "LC.celebro.CMFG.SBSTM",
     }
@@ -167,6 +168,25 @@ def estado_version_sesion(overlay: str = "") -> Dict[str, Any]:
     from LC.celebro.CMFG.SBSTM.HRCTRC_RFCT import RefactorizadorSesion
     ov = _P(overlay) if overlay else get_gestor_hrctrc().overlay
     return RefactorizadorSesion(ov).estado_version()
+
+
+# ─── HRCTNR (Monitor y Refactorizador Neural) ──────────────────
+def refactorizar_sistema(overlay: str = "") -> Dict[str, Any]:
+    """Ejecuta HRCNTR refactor completo con barra de progreso."""
+    from LC.celebro.CMFG.SBSTM.HRCNTR import ejecutar_hrctnr
+    return ejecutar_hrctnr(overlay)
+
+
+def actualizar_sistema_hrctnr(confirmar: bool = False) -> Dict[str, Any]:
+    """Actualiza la raiz del sistema. confirmar=True aplica todo."""
+    from LC.celebro.CMFG.SBSTM.HRCNTR import actualizar_sistema_hrctnr as _a
+    return _a(confirmar=confirmar)
+
+
+def ciclo_cierre_hrctnr() -> Dict[str, Any]:
+    """Ciclo completo: refactor -> confirmar -> actualizar."""
+    from LC.celebro.CMFG.SBSTM.HRCNTR import ciclo_cierre_hrctnr as _c
+    return _c()
 
 
 # ─── INTEGRACION Y CIERRE (INTEGRACIONRF) ────────────────────────────────
@@ -379,6 +399,9 @@ __all__: Final[List[str]] = [
     "crear_carpeta_lc",
     "version_sesion",
     "estado_version_sesion",
+    "refactorizar_sistema",
+    "actualizar_sistema_hrctnr",
+    "ciclo_cierre_hrctnr",
     "bitacora",
     "documentar_respaldos",
     "cierre_integracion",
