@@ -9,7 +9,7 @@ import sys as _sys
 _mod_orig = importlib.import_module('celebro\red_neuronal\RF_EN\RFEN1_RN_4.py')
 NeuronaRefuerzoDQN = getattr(_mod_orig, 'NeuronaRefuerzoDQN', None)
 
-```python
+
 """RFEN1_RN_4.py - Neurona de Refuerzo con DQN (refactor ampliado y documentado).
 
 Este módulo implementa una neurona de aprendizaje por refuerzo basada en
