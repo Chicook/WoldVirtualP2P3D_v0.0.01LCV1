@@ -1,0 +1,690 @@
+{
+  "version": "2026.3.1",
+  "servidor": "CelebroBlockchainServer-BKSVCB",
+  "total_bloques": 12,
+  "dificultad": 2,
+  "cadena": [
+    {
+      "indice": 0,
+      "hash_bloque": "085561caa8af289000bd9331d66d4fd5a1e7b5e3115079595fb85410a2ef8634",
+      "hash_previo": "0000000000000000000000000000000000000000000000000000000000000000",
+      "merkle_root": "0dccdfce214923de382ee80b635c36c2b4ab8400918e25f7a498bfa89108eed0",
+      "dificultad": 1,
+      "nonce": 5,
+      "total_transacciones": 1,
+      "transacciones": [
+        {
+          "tipo": "GENESIS_COGNITIVO",
+          "emisor": "SYSTEM_CELEBRO",
+          "receptor": "CLUSTER_P2P",
+          "descripcion": "Arranque formal de la blockchain neuronal WoldVirtualP2P3D",
+          "hash_semilla": "3b218672129981a04a1db4804536c640f281449eb882a8949b0ea226595de840"
+        }
+      ],
+      "estado_neuronal": {
+        "total_neuronas": 50,
+        "capas": [
+          "ENRN",
+          "RF_SL",
+          "RF_EN",
+          "RNP",
+          "SLRN"
+        ],
+        "version_cluster": "2026.3.1",
+        "consenso": "Proof-of-Neural-Learning (PoNL)"
+      }
+    },
+    {
+      "indice": 1,
+      "hash_bloque": "00beb62754a40eeda84c34058ba2378841e0dd4862df0ed861dba5ff3fac5cf2",
+      "hash_previo": "085561caa8af289000bd9331d66d4fd5a1e7b5e3115079595fb85410a2ef8634",
+      "merkle_root": "19423eb1f731ad6a22106337cc94471693427c7e17994b7b49916b8777de7df5",
+      "dificultad": 2,
+      "nonce": 158,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "2822384cfc906fbf",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiaepvj4rytvdipj4pu3234tsipx7y7okouldhp3uxakisflh4qqfm",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "¿lucia., para que  un pc con 8 vram y 8  gb de ram tenga ia local compactos y li",
+            "norma_delta": 25.79945,
+            "estado_emocional": 1.0,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4773.44
+          }
+        },
+        {
+          "id_tx": "eeae880a0da084b1",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiexmqqewqvtipgpoackqsrdtyylyrfyqpg4dn2a4pk3k65vpomh5a",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "¿lucia., para que  un pc con 8 vram y 8  gb de ram tenga ia local compactos y li",
+            "norma_delta": 44.06714,
+            "estado_emocional": -0.899,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4689.13
+          }
+        },
+        {
+          "id_tx": "3369740af9a64648",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreida7zsk6742l5r6owvcd2y5suuqzvfwk77jn4knz6pw5stj3mmmmy",
+          "datos": {
+            "modelo": "LucIA-LucIA-RFCT-local",
+            "prompt_resumen": "¿con estas caracteristicas  8 vram y  8  ram los modelos ligeros de los que me  ",
+            "norma_delta": 49.75832,
+            "estado_emocional": -0.984,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4681.43
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 1503.101153,
+        "pasos_sesion": 42,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 2,
+      "hash_bloque": "0029ba3c4dfebbb21f1000d69409004bae0cd3a1999eda409c6948737ac1f4ff",
+      "hash_previo": "00beb62754a40eeda84c34058ba2378841e0dd4862df0ed861dba5ff3fac5cf2",
+      "merkle_root": "01347777b6cffe8b830c9234e371fbf610e1c20336df6e0440a18dd3e960f243",
+      "dificultad": 2,
+      "nonce": 67,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "b46eca571213fe25",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreihbjehrz7ivhfsabxtwq64mhyhd2ysdhgzzgy5egzev6pjgr6r4te",
+          "datos": {
+            "modelo": "LucIA-LucIA-RFCT-local",
+            "prompt_resumen": "¿con estas caracteristicas  8 vram y  8  ram los modelos ligeros de los que me  ",
+            "norma_delta": 44.31629,
+            "estado_emocional": 1.0,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4695.07
+          }
+        },
+        {
+          "id_tx": "00bfac6fad01cf2d",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreietrmhburde6bke5yu7kehxeazeirmrpop4z4tazbuf4u72il4gcu",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "¿que mas me puedes decir de ti",
+            "norma_delta": 48.49498,
+            "estado_emocional": -0.994,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4684.25
+          }
+        },
+        {
+          "id_tx": "04b81cf3bf593610",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreia5qrrzliq5fxcal5pxfw35l3jrgcs2opulicoz4foccqwcsd6sym",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "Soy LucIA, el sistema cognitivo distribuido de WoldVirtualP2P3D. Mi versión arqu",
+            "norma_delta": 49.66626,
+            "estado_emocional": -1.0,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4687.27
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 2524.718765,
+        "pasos_sesion": 64,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 3,
+      "hash_bloque": "00fb3febc3d72e1cbb0cff9eb8de488850662ee50137ba711225b7b810014cc6",
+      "hash_previo": "0029ba3c4dfebbb21f1000d69409004bae0cd3a1999eda409c6948737ac1f4ff",
+      "merkle_root": "78a0db207add53cdff5efb7794b2f824149f86c1a67d632a0a900d052b2affa9",
+      "dificultad": 2,
+      "nonce": 120,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "55cb6b4b0a43b98b",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreibm4aey2snwiskskgma52leqvto6pwnnm7vcshmcdr5ikyjgubu54",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "proceso esto para ti con tareas técnicas como:",
+            "norma_delta": 46.79697,
+            "estado_emocional": -1.0,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4660.2
+          }
+        },
+        {
+          "id_tx": "835ed6d7e37e390f",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreibtzax627bgjcvsqq4suixzolnstiqlgrjx2rmgmgjjml3pt2s6zu",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Compatibilidad de imports heredados.",
+            "norma_delta": 45.84083,
+            "estado_emocional": -0.919,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4684.98
+          }
+        },
+        {
+          "id_tx": "94d24a09ec5b0291",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreieaynfgw7pzjmfh4p6svez2hv3fjgouafgxpi5xvwloqeqjaltu34",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Configuración local de IA con Ollama y LM Studio.",
+            "norma_delta": 49.83926,
+            "estado_emocional": -0.712,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4663.09
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 2948.75981,
+        "pasos_sesion": 73,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 4,
+      "hash_bloque": "0015265573a48f72e91d1c9fa3149d00cb768a8fc2d04631f11e996068e777c2",
+      "hash_previo": "00fb3febc3d72e1cbb0cff9eb8de488850662ee50137ba711225b7b810014cc6",
+      "merkle_root": "f5bdb03d01cb801d278dcb7187028b7033178d782ee75aa83c041b74d1a8ca9c",
+      "dificultad": 2,
+      "nonce": 952,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "566a3f99d935d6ab",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreigxlxxypbp36qddrld7j5xntxb3mi6sp7fx5z7yf26wuxa7y2wjau",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Seguridad de transacciones blockchain.",
+            "norma_delta": 50.64576,
+            "estado_emocional": 0.976,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4688.77
+          }
+        },
+        {
+          "id_tx": "320af9d857fdb3e1",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreihxrvifkionegquggbyvcl6ojusirsqb6ekswkzqupjxvktxqrsfi",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Normalización de la sesión Ollama.",
+            "norma_delta": 46.21797,
+            "estado_emocional": -1.0,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4685.9
+          }
+        },
+        {
+          "id_tx": "f96c2d1c246fdacc",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreieshxxadnrqafqagzoo45agxqogothedakscajfta777grhsj53qy",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Diagnóstico factual del refactor.",
+            "norma_delta": 45.55554,
+            "estado_emocional": -0.999,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4689.68
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 4089.729618,
+        "pasos_sesion": 97,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 5,
+      "hash_bloque": "00d75c33c2a99717f035637aa00cb9ea8acab0e4fe304d6ab7574804b3e7bd63",
+      "hash_previo": "0015265573a48f72e91d1c9fa3149d00cb768a8fc2d04631f11e996068e777c2",
+      "merkle_root": "2bffb7c457d5dc9fde1ea6a2d6b0a3ad3b2ad1994c5d05ff5c9142539b8936bc",
+      "dificultad": 2,
+      "nonce": 252,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "e69bb43e897dd6e4",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiafahnqn6albl7wsesaldrmexcqx3x2tesrssmkxdlfidbz2akqum",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Gestión segura de purga de módulos.",
+            "norma_delta": 45.42617,
+            "estado_emocional": 0.978,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4717.78
+          }
+        },
+        {
+          "id_tx": "19cef785628fdacc",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiajjwcrv6rwt6ayqngatqzbtj5l3ou34xseip4v46mgdkq2rzwc5i",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Resumen del estado de cierre del refactor.",
+            "norma_delta": 46.45069,
+            "estado_emocional": 1.0,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4674.29
+          }
+        },
+        {
+          "id_tx": "75d49f612847efd0",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiehwtiwdd3z2wbgzoy26z6fcjil3lxqdrzz2lgrxkm4dqtxgeyt7q",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "Estado relevante:",
+            "norma_delta": 46.7703,
+            "estado_emocional": 1.0,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4697.0
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 5457.4058,
+        "pasos_sesion": 127,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 6,
+      "hash_bloque": "007e52976f6673a7e6bd67e5ee597deee436167f863345c6443b314dc05e0601",
+      "hash_previo": "00d75c33c2a99717f035637aa00cb9ea8acab0e4fe304d6ab7574804b3e7bd63",
+      "merkle_root": "d16c8cd23943e47c928c3ea9913614dd96763e2fa0ac5a3d366a2771189eea82",
+      "dificultad": 2,
+      "nonce": 471,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "9cb0072902ac3621",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreicvcdyoqzhenuse7jgejfutksa7rmsq45wztkpxsafkyicqzfj4la",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• compatibility_layer: OK.",
+            "norma_delta": 46.29918,
+            "estado_emocional": 1.0,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4668.08
+          }
+        },
+        {
+          "id_tx": "79529fee77673a15",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreigute3nbzoe5reno4wupzpzauqighlxxtbslvjdkltrnmixhgex4q",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• local_ai_config: OK.",
+            "norma_delta": 46.37091,
+            "estado_emocional": 0.993,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4666.79
+          }
+        },
+        {
+          "id_tx": "4d0c162b49c7a9f2",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreibquyz4gnnk3g4r4zxnld4brcypvw6vgslx43zlahr2yjifctnrfu",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• transaction_safety_fix: OK.",
+            "norma_delta": 43.67938,
+            "estado_emocional": 0.991,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4676.57
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 5964.566597,
+        "pasos_sesion": 138,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 7,
+      "hash_bloque": "005ca447e5b2b314550505e509847dcdc7ae2a4a96554716534743f0f9474b21",
+      "hash_previo": "007e52976f6673a7e6bd67e5ee597deee436167f863345c6443b314dc05e0601",
+      "merkle_root": "e2fbced216b1057169c7fef2a28ab4b7cb1eb603671bd584a5a7252a37f1b029",
+      "dificultad": 2,
+      "nonce": 127,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "e2797a213ade713c",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreicvkmkifb3aye2r2kiwk6bjs4dlmuew3ioxpiagmfzr24tqdsvsnm",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• architecture_tests_available: OK.",
+            "norma_delta": 49.27398,
+            "estado_emocional": -0.632,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4659.74
+          }
+        },
+        {
+          "id_tx": "ff703e6d833022c2",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreihecyyxz53ttfhhgqvsqv7h5ysuimr4lcheei6je4fgagp667zvhe",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• architecture_tests_verified: pendiente.",
+            "norma_delta": 47.78065,
+            "estado_emocional": -0.908,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4669.88
+          }
+        },
+        {
+          "id_tx": "1dd0b4b4824ff9f6",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiepe6nr7kj5ac7zon5va3cuncecocwqvsny6pozvboq772odwwyve",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• purgador_logger: OK.",
+            "norma_delta": 49.81721,
+            "estado_emocional": 0.918,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4663.3
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 6399.688922,
+        "pasos_sesion": 147,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 8,
+      "hash_bloque": "0009ea1e4557975f524a47992e243ebb15b439909d0ff98b06c6e1c6121124b8",
+      "hash_previo": "005ca447e5b2b314550505e509847dcdc7ae2a4a96554716534743f0f9474b21",
+      "merkle_root": "141633c746f36f127ec5eb2717eaadd4ecda8eac70af2d4e43e8858f736786dc",
+      "dificultad": 2,
+      "nonce": 388,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "9bd804222d830c5b",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreibjoffnnopknqqjsnd65j4plghhxbdpln5tppbfvi3epepp3ie2oq",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "Capacidades verificadas:",
+            "norma_delta": 48.57979,
+            "estado_emocional": 1.0,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4673.62
+          }
+        },
+        {
+          "id_tx": "29b38f93eb1917c9",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiblgxuszwioa2zlj7q2p7uwffqd5fna7xrylhubdsxhdobjnaibe4",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Compatibilidad de imports.",
+            "norma_delta": 49.3373,
+            "estado_emocional": -0.781,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4669.23
+          }
+        },
+        {
+          "id_tx": "06e4423067b7200d",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiaztxlhqmby75qkdwwlgcq52gejon7wgn2566kpbhyhg36yt3m4f4",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Contexto factual para diagnósticos.",
+            "norma_delta": 45.22209,
+            "estado_emocional": -1.0,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4682.11
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 7235.077268,
+        "pasos_sesion": 165,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 9,
+      "hash_bloque": "007debb6c3a75b06e22fa6f6b72e6d2fed6b1de6ad68241f113fe84d6a033d65",
+      "hash_previo": "0009ea1e4557975f524a47992e243ebb15b439909d0ff98b06c6e1c6121124b8",
+      "merkle_root": "9729d65f3095577366748818f7e00ddab67aac8bded71bb5f0a0fda341849c76",
+      "dificultad": 2,
+      "nonce": 312,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "f7cfa62bdd772b9b",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreihy4uowzmlkvip5yptaqq647eoahdshjmp6ghmu7ckptayjhxtzbm",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Estado de cierre del refactor.",
+            "norma_delta": 46.79771,
+            "estado_emocional": -0.044,
+            "tono": "preciso y formal",
+            "duracion_ms": 4683.14
+          }
+        },
+        {
+          "id_tx": "f1c7e17fee2bb9e0",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreicbigmeg3pj67kyw3qikpdklmivuzudxi3arw6q4xxxoxdlrufbbe",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "Capacidades limitadas:",
+            "norma_delta": 50.06422,
+            "estado_emocional": 1.0,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4686.97
+          }
+        },
+        {
+          "id_tx": "bb65d760db758438",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiah5jywj6amor3tlyomyuchnjzv45ajeydzkfse3c52nhu36gevze",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Configuración de IA local.",
+            "norma_delta": 46.66849,
+            "estado_emocional": 1.0,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4660.13
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 7997.500486,
+        "pasos_sesion": 181,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 10,
+      "hash_bloque": "0012bced90bfd7501c38558584a9f9a6f53af320550649e83f70057cd15c73f5",
+      "hash_previo": "007debb6c3a75b06e22fa6f6b72e6d2fed6b1de6ad68241f113fe84d6a033d65",
+      "merkle_root": "d3d3b61cdc654508fb27cbcc70c37fbc7e548d0de96678df262e606fbbae0160",
+      "dificultad": 2,
+      "nonce": 17,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "99cb3fd19a988f14",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreihknkmhva77qxrhgpdblxugjoux6klis2u3pak2mnt5igklpiaylq",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Seguridad de transacciones.",
+            "norma_delta": 49.52643,
+            "estado_emocional": 0.894,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4693.06
+          }
+        },
+        {
+          "id_tx": "fe7b1cbcff349bf0",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiepsvf2kc3amwazxjdhq7yd5jq2jt36ynsp3snmpkuk26d3achwc4",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Configuración de Ollama.",
+            "norma_delta": 46.58964,
+            "estado_emocional": 0.995,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4688.34
+          }
+        },
+        {
+          "id_tx": "7882a9160a2ef264",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreibxwsr3v3vt4n77n34zqnfqzeig46seoe5b7ebcwd4bcxfsxpblkq",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "• Seguridad de rutas del purgador.",
+            "norma_delta": 46.36131,
+            "estado_emocional": -0.995,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4687.82
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 9044.224119,
+        "pasos_sesion": 203,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 11,
+      "hash_bloque": "00c119e7080c4479c29582144d6aeb2062351367abe5578d983b9fd231f4e112",
+      "hash_previo": "0012bced90bfd7501c38558584a9f9a6f53af320550649e83f70057cd15c73f5",
+      "merkle_root": "a5489019478fa657d18fede54fd881e95c2a7bcb9545c599123174b22bd61bff",
+      "dificultad": 2,
+      "nonce": 273,
+      "total_transacciones": 1,
+      "transacciones": [
+        {
+          "id_tx": "92ca1fe926363f9a",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreif6uc24lxpboojxbltjs3xjc42mjrq5d3cgdnflfsbw63i6ndgzti",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "El refactor en vivo está bloqueado porque HRCTRC omite módulos activos sin una p",
+            "norma_delta": 48.11077,
+            "estado_emocional": 1.0,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4682.85
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 9423.450269,
+        "pasos_sesion": 211,
+        "minero": "CelebroLocalNode"
+      }
+    }
+  ]
+}

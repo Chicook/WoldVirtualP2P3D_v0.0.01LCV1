@@ -1,0 +1,194 @@
+{
+  "version": "2026.3.1",
+  "servidor": "CelebroBlockchainServer-BKSVCB",
+  "total_bloques": 4,
+  "dificultad": 2,
+  "cadena": [
+    {
+      "indice": 0,
+      "hash_bloque": "085561caa8af289000bd9331d66d4fd5a1e7b5e3115079595fb85410a2ef8634",
+      "hash_previo": "0000000000000000000000000000000000000000000000000000000000000000",
+      "merkle_root": "0dccdfce214923de382ee80b635c36c2b4ab8400918e25f7a498bfa89108eed0",
+      "dificultad": 1,
+      "nonce": 5,
+      "total_transacciones": 1,
+      "transacciones": [
+        {
+          "tipo": "GENESIS_COGNITIVO",
+          "emisor": "SYSTEM_CELEBRO",
+          "receptor": "CLUSTER_P2P",
+          "descripcion": "Arranque formal de la blockchain neuronal WoldVirtualP2P3D",
+          "hash_semilla": "3b218672129981a04a1db4804536c640f281449eb882a8949b0ea226595de840"
+        }
+      ],
+      "estado_neuronal": {
+        "total_neuronas": 50,
+        "capas": [
+          "ENRN",
+          "RF_SL",
+          "RF_EN",
+          "RNP",
+          "SLRN"
+        ],
+        "version_cluster": "2026.3.1",
+        "consenso": "Proof-of-Neural-Learning (PoNL)"
+      }
+    },
+    {
+      "indice": 1,
+      "hash_bloque": "00afba0ca30472235d3bdbeb560296d5a78f8224fcf271cca9724c3c501ee74c",
+      "hash_previo": "085561caa8af289000bd9331d66d4fd5a1e7b5e3115079595fb85410a2ef8634",
+      "merkle_root": "fd906bc3e777b4e962593e0134da34e377515ecc764cd3e09fdbdac3aa1ae2e4",
+      "dificultad": 2,
+      "nonce": 178,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "518cba0530f22663",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiczrqscpzswbrjrjza7avuh7ykkcsygvl7kpq27rumvqbuv5q57rm",
+          "datos": {
+            "modelo": "LucIA-LucIA-MDSTM-local",
+            "prompt_resumen": "mi idea., es la siguiente., yo te hago una pregunta esa  pregunta  la procesa la",
+            "norma_delta": 7.46193,
+            "estado_emocional": 0.214,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4669.23
+          }
+        },
+        {
+          "id_tx": "30ab0cdf5baeb2e8",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiart3vkuofk5oz2xumk7xxdlc72ohpvxzqkambdjhi7uw7spuftwq",
+          "datos": {
+            "modelo": "LucIA-LucIA-MDSTM-local",
+            "prompt_resumen": "mi idea., es la siguiente., yo te hago una pregunta esa  pregunta  la procesa la",
+            "norma_delta": 13.37799,
+            "estado_emocional": 0.182,
+            "tono": "preciso y formal",
+            "duracion_ms": 4652.31
+          }
+        },
+        {
+          "id_tx": "8b05465ba54293b6",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiggbgx4zgcqr7pcemdoycmyppriuihwc3xkqhccgpu6dtyvd7m65y",
+          "datos": {
+            "modelo": "LucIA-LucIA-MDSTM-local",
+            "prompt_resumen": "mi idea., es la siguiente., yo te hago una pregunta esa  pregunta  la procesa la",
+            "norma_delta": 19.32051,
+            "estado_emocional": -0.98,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4652.96
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 110.753431,
+        "pasos_sesion": 11,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 2,
+      "hash_bloque": "001059a3f3f495d3da683eb226a289616ac9d02fcfc2c88fa205d4e29e73b1bb",
+      "hash_previo": "00afba0ca30472235d3bdbeb560296d5a78f8224fcf271cca9724c3c501ee74c",
+      "merkle_root": "86de172f589b4c926f2e8618eb3f7089840ab48f23276dff9cd5e76ee8683da6",
+      "dificultad": 2,
+      "nonce": 26,
+      "total_transacciones": 3,
+      "transacciones": [
+        {
+          "id_tx": "c58714de70251178",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreigqhdksnslqvhovxn53tptwibmjxu65yoradudjxzwkvks4yogacm",
+          "datos": {
+            "modelo": "LucIA-LucIA-sintesis:openrouter/free",
+            "prompt_resumen": "hola  lucia., que tal estas hoy",
+            "norma_delta": 24.45342,
+            "estado_emocional": 0.187,
+            "tono": "preciso y formal",
+            "duracion_ms": 6992.42
+          }
+        },
+        {
+          "id_tx": "1386fc9d12bc5e6b",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreidwt4im6cgu6ynu3eudote4mj5igqf5zfwpqzqkoiyul7dfesktz4",
+          "datos": {
+            "modelo": "LucIA-LucIA-MDSTM-local",
+            "prompt_resumen": "mi idea es esta \"mi idea., es la siguiente., yo te hago una pregunta esa  pregun",
+            "norma_delta": 41.04347,
+            "estado_emocional": -0.999,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4662.99
+          }
+        },
+        {
+          "id_tx": "39b498764e6f0a2a",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreigmtylrsii6joysnw3ntysbznp7hr33omiwtnz4wb2qjz537vwk6a",
+          "datos": {
+            "modelo": "LucIA-LucIA-MDSTM-local",
+            "prompt_resumen": "mi idea es esta \"mi idea., es la siguiente., yo te hago una pregunta esa  pregun",
+            "norma_delta": 43.23913,
+            "estado_emocional": 1.0,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4655.79
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 367.659746,
+        "pasos_sesion": 17,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 3,
+      "hash_bloque": "002cf3d2832aab7aafef47b1c05cb1d6720ecfb7cfe4fd2b11ccc025886e3043",
+      "hash_previo": "001059a3f3f495d3da683eb226a289616ac9d02fcfc2c88fa205d4e29e73b1bb",
+      "merkle_root": "e9b6b20d1372f52bc17d5d77432862ce39ea14e65e465d2041d2cc6bedab848e",
+      "dificultad": 2,
+      "nonce": 671,
+      "total_transacciones": 1,
+      "transacciones": [
+        {
+          "id_tx": "da602d5e0b6fdf16",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreiavjxdqenpj2bjlncdc3dqlzpidskwmuicsntqcauqeinkwha6xsq",
+          "datos": {
+            "modelo": "LucIA-LucIA-sintesis:openrouter/free",
+            "prompt_resumen": "mi idea es esta \"mi idea., es la siguiente., yo te hago una pregunta esa  pregun",
+            "norma_delta": 47.95954,
+            "estado_emocional": 1.0,
+            "tono": "cálido y comunicativo",
+            "duracion_ms": 4745.31
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 1525.25134,
+        "pasos_sesion": 43,
+        "minero": "CelebroLocalNode"
+      }
+    }
+  ]
+}

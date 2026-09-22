@@ -1,0 +1,18 @@
+{
+  "modelos": {
+    "qwen2.5:0.5b": {
+      "archivo": "qwen2.5_0.5b.gguf",
+      "tamano_gb": 0.4,
+      "origen": "gguf-cache",
+      "fecha": 1790119914.6238904,
+      "ollama_tag": "qwen2.5:0.5b"
+    },
+    "tinyllama:1.1b": {
+      "archivo": "tinyllama.gguf",
+      "tamano_gb": 0.7,
+      "origen": "gguf-cache",
+      "fecha": 1790119914.6690693,
+      "ollama_tag": "tinyllama"
+    }
+  }
+}

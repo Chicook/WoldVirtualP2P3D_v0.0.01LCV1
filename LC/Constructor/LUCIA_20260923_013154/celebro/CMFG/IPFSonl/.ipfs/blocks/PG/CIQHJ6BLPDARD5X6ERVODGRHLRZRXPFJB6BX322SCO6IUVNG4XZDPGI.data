@@ -1,0 +1,85 @@
+{
+  "version": "2026.3.1",
+  "servidor": "CelebroBlockchainServer-BKSVCB",
+  "total_bloques": 2,
+  "dificultad": 2,
+  "cadena": [
+    {
+      "indice": 0,
+      "hash_bloque": "085561caa8af289000bd9331d66d4fd5a1e7b5e3115079595fb85410a2ef8634",
+      "hash_previo": "0000000000000000000000000000000000000000000000000000000000000000",
+      "merkle_root": "0dccdfce214923de382ee80b635c36c2b4ab8400918e25f7a498bfa89108eed0",
+      "dificultad": 1,
+      "nonce": 5,
+      "total_transacciones": 1,
+      "transacciones": [
+        {
+          "tipo": "GENESIS_COGNITIVO",
+          "emisor": "SYSTEM_CELEBRO",
+          "receptor": "CLUSTER_P2P",
+          "descripcion": "Arranque formal de la blockchain neuronal WoldVirtualP2P3D",
+          "hash_semilla": "3b218672129981a04a1db4804536c640f281449eb882a8949b0ea226595de840"
+        }
+      ],
+      "estado_neuronal": {
+        "total_neuronas": 50,
+        "capas": [
+          "ENRN",
+          "RF_SL",
+          "RF_EN",
+          "RNP",
+          "SLRN"
+        ],
+        "version_cluster": "2026.3.1",
+        "consenso": "Proof-of-Neural-Learning (PoNL)"
+      }
+    },
+    {
+      "indice": 1,
+      "hash_bloque": "006753cab244f81b3e7950fc4fa5065845b742ef96c37b88aa6e320e2de40046",
+      "hash_previo": "085561caa8af289000bd9331d66d4fd5a1e7b5e3115079595fb85410a2ef8634",
+      "merkle_root": "ca81f9b0eb0a9b05cc093cb9b08f0fd457335bed425a0d23e613d3b6d36686bb",
+      "dificultad": 2,
+      "nonce": 1401,
+      "total_transacciones": 2,
+      "transacciones": [
+        {
+          "id_tx": "3b4ad4e4d3b6f7df",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreicr335ipzmyl7gpz4kwvifdm4c6ct2j2glc7zy4tldr43savyylem",
+          "datos": {
+            "modelo": "LucIA-LucIA-sintesis:fallback_agotado",
+            "prompt_resumen": "¿lucia., podrias relatarme  tu procesos internos de procesamiento de  respuestas",
+            "norma_delta": 46.64476,
+            "estado_emocional": -1.0,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4677.6
+          }
+        },
+        {
+          "id_tx": "1cafcb8537c9a733",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreifzogw5c4qqkuikoi5ijo2aywsa5rljuhxua75tbieizidtvtyub4",
+          "datos": {
+            "modelo": "LucIA-LucIA-sintesis:nvidia/nemotron-3-super-120b-a12b:free",
+            "prompt_resumen": "¿lucia., podrias relatarme  tu procesos internos de procesamiento de  respuestas",
+            "norma_delta": 48.51074,
+            "estado_emocional": -0.706,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4677.46
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 3005.742354,
+        "pasos_sesion": 72,
+        "minero": "CelebroLocalNode"
+      }
+    }
+  ]
+}
