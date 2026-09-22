@@ -43,90 +43,11 @@ from LC.celebro.red_neuronal.SLRN import SupervisedLearningNeuralConfig
 
 logger = logging.getLogger("WoldVirtualP2P3D.PSNRCV")
 
-
-# ===========================================================================
-# MOTOR MATEMATICO 2026 - Muon NS-5 + SOAP + GSNR + Trust-Ratio Clip
-# ===========================================================================
-class NeuralMathPrecision2026:
-    """Algoritmos matematicos 2026 para la conversion y ajuste de pesos neuronales."""
-    EPS: float = 1e-12
-
-    @staticmethod
-    def newton_schulz5(G: np.ndarray, steps: int = 5) -> np.ndarray:
-        """Ortogonalizacion polar por Newton-Schulz grado-5 (Muon 2026)."""
-        if G.ndim != 2:
-            return G
-        X = G / (np.linalg.norm(G, ord="fro") + NeuralMathPrecision2026.EPS)
-        for _ in range(steps):
-            X = 1.5 * X - 0.5 * X @ (X.T @ X)
-        return X
-
-    @staticmethod
-    def soap_precondition(G: np.ndarray, L: np.ndarray, R: np.ndarray, beta: float = 0.95) -> np.ndarray:
-        """Preacondicionador de curvatura de segundo orden tipo SOAP / Shampoo."""
-        m, n = G.shape
-        L[:] = beta * L + (1.0 - beta) * (G @ G.T)
-        R[:] = beta * R + (1.0 - beta) * (G.T @ G)
-        eps = NeuralMathPrecision2026.EPS
-        L_inv = np.linalg.pinv(L + eps * np.eye(m))
-        R_inv = np.linalg.pinv(R + eps * np.eye(n))
-        return L_inv @ G @ R_inv
-
-    @staticmethod
-    def gsnr(G: np.ndarray, G_sq: np.ndarray, t: int) -> float:
-        """Gradient Signal-to-Noise Ratio (GSNR) adaptativo."""
-        mean_g = G / max(t, 1)
-        mean_g2 = G_sq / max(t, 1)
-        signal = float(np.sum(mean_g ** 2))
-        noise = float(np.sum(np.maximum(mean_g2 - mean_g ** 2, 0.0)))
-        return signal / (noise + NeuralMathPrecision2026.EPS)
-
-    @staticmethod
-    def trust_ratio_clip(update: np.ndarray, param: np.ndarray, clip: float = 5.0) -> np.ndarray:
-        """Ajuste de ratio de confianza por capa con recorte hiperbolico."""
-        w_norm = float(np.linalg.norm(param))
-        u_norm = float(np.linalg.norm(update))
-        ratio = min(w_norm / (u_norm + NeuralMathPrecision2026.EPS), clip)
-        return update * ratio
-
-    @staticmethod
-    def to_8d(val: Any) -> np.ndarray:
-        """Normaliza cualquier activacion o tupla a formato matricial (1, 8)."""
-        if val is None:
-            return np.zeros((1, 8), dtype=np.float32)
-        if isinstance(val, (tuple, list)):
-            val = val[0]
-        arr = np.asarray(val, dtype=np.float32)
-        if arr.ndim == 1:
-            arr = arr.reshape(1, -1)
-        if arr.shape[1] == 8:
-            return arr
-        flat = arr.ravel()
-        reps = int(np.ceil(8 / max(1, flat.size)))
-        return np.tile(flat, reps)[:8].reshape(1, 8).astype(np.float32)
-
-
-# ===========================================================================
-# CODIFICADOR SEMANTICO LIGERO 4D AUTOCONTENIDO
-# ===========================================================================
-class SemanticEncoder4D:
-    """Codificador de texto a representacion semantica vectorial 4D para Celebro."""
-    @staticmethod
-    def encode(text: str) -> np.ndarray:
-        s = (text or "").strip()
-        if not s:
-            return np.zeros((1, 4), dtype=np.float32)
-        v0 = float(len(s) % 100) / 100.0
-        v1 = float(sum(ord(c) for c in s[:10]) % 256) / 128.0 - 1.0
-        v2 = float(sum(1 for c in s if c.isupper())) / max(1.0, float(len(s)))
-        v3 = float(math.sin(len(s.split())))
-        vec = np.array([[v0, v1, v2, v3]], dtype=np.float32)
-        return vec / (np.linalg.norm(vec) + 1e-8)
-
-    @staticmethod
-    def encode_pair(prompt: str, response: str) -> np.ndarray:
-        comb = 0.4 * SemanticEncoder4D.encode(prompt) + 0.6 * SemanticEncoder4D.encode(response)
-        return comb / (np.linalg.norm(comb) + 1e-8)
+from LC.celebro.CMFG.neural_math import (
+    NeuralMathPrecision2026,
+    SemanticEncoderSHA,
+    SemanticEncoder4D,
+)
 
 
 # ===========================================================================
@@ -181,8 +102,13 @@ class ConversorRespuestaPesos:
 
         # 4. RNP: 10 neuronas de optimizacion de pesos
         self.rnp_neuronas = []
+        import importlib as _il
         for i, (k, (mod, cls, _, _)) in enumerate(rnp_pkg._MODULE_MAP.items(), 1):
-            m = __import__(f"LC.celebro.red_neuronal.RNP.{mod}", fromlist=[cls])
+            try:
+                m = _il.import_module(f"LC.celebro.red_neuronal.RNP.{mod}")
+            except Exception as exc:
+                logger.warning("RNP %s no cargado: %s", mod, exc)
+                continue
             c, cfg_cls = getattr(m, cls), getattr(m, "NeuralWeightOptimizationConfig")
             inst = c(cfg_cls(learning_rate=self.learning_rate))
             inst.nombre = f"RNP{i}_{k.upper()}"
@@ -194,7 +120,11 @@ class ConversorRespuestaPesos:
         cfg_slrn = SupervisedLearningNeuralConfig(learning_rate=self.learning_rate)
         self.slrn_neuronas = []
         for i, (k, mod) in enumerate(slrn_pkg.OPTIMIZER_REGISTRY.items(), 1):
-            m = __import__(f"LC.celebro.red_neuronal.SLRN.{mod}", fromlist=["__all__"])
+            try:
+                m = _il.import_module(f"LC.celebro.red_neuronal.SLRN.{mod}")
+            except Exception as exc:
+                logger.warning("SLRN %s no cargado: %s", mod, exc)
+                continue
             for a in dir(m):
                 if a.endswith("Optimizer") and "Base" not in a and "Internal" not in a:
                     inst = getattr(m, a)(cfg_slrn)
@@ -281,24 +211,20 @@ class ConversorRespuestaPesos:
 
         self._grad_sum += delta_soap; self._grad_sq_sum += delta_soap ** 2
         score_gsnr = NeuralMathPrecision2026.gsnr(self._grad_sum, self._grad_sq_sum, t)
-        delta_final = NeuralMathPrecision2026.trust_ratio_clip(delta_soap, self.enrn_neuronas[0].pesos, clip=5.0)
-        norma_aplicada = float(np.linalg.norm(delta_final))
-        self.deriva_acumulada += norma_aplicada
-
-        def _ajustar(mat: np.ndarray, shape: Tuple[int, ...]) -> np.ndarray:
-            if mat.shape == shape: return mat
-            flat = mat.ravel()
-            reps = int(np.ceil(np.prod(shape) / max(1, flat.size)))
-            return np.tile(flat, reps)[:int(np.prod(shape))].reshape(shape).astype(np.float32)
-
-        sesgo_delta = np.mean(delta_final, axis=0, keepdims=True)
-
+        # Trust-ratio por-neurona: cada parametro escala su propio delta ajustado a su forma
+        norma_aplicada = 0.0
+        sesgo_delta = np.mean(delta_soap, axis=0, keepdims=True)
         for n in self.neuronas.values():
             for attr in ["pesos", "sesgo", "q_online", "q_objetivo", "pesos_actor", "pesos_critic", "q_table"]:
                 w = getattr(n, attr, None)
                 if isinstance(w, np.ndarray):
-                    d = sesgo_delta if "sesgo" in attr else delta_final
-                    setattr(n, attr, np.clip(w + _ajustar(d, w.shape), -10.0, 10.0))
+                    d = sesgo_delta if "sesgo" in attr else delta_soap
+                    d_fit = NeuralMathPrecision2026.ajustar_forma(d, w.shape)
+                    d_clip = NeuralMathPrecision2026.trust_ratio_clip(d_fit, w, clip=5.0)
+                    setattr(n, attr, np.clip(w + d_fit * 0 + d_clip, -10.0, 10.0))
+                    norma_aplicada += float(np.linalg.norm(d_clip))
+        norma_aplicada = float(norma_aplicada / max(1, len(self.neuronas)))
+        self.deriva_acumulada += norma_aplicada
 
         return norma_pre, norma_aplicada, f"Muon-NS5+SOAP (GSNR={score_gsnr:.2f})"
 

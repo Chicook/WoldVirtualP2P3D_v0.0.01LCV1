@@ -434,7 +434,7 @@ class TestIntegracionInterFamilias:
         familias = ["ENRN", "RF_SL/RFSL1", "RF_EN", "RNP", "SLRN"]
         for fam in familias:
             dir_fam = rn_path / fam
-            archivos = [f for f in os.listdir(dir_fam) if f.endswith(".py") and f != "__init__.py"]
+            archivos = [f for f in os.listdir(dir_fam) if f.endswith(".py") and f != "__init__.py" and not f.startswith("_")]
             assert len(archivos) == 10, f"Familia {fam} tiene {len(archivos)} archivos, esperados 10"
             conteo += len(archivos)
 

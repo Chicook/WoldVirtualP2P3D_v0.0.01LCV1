@@ -111,7 +111,7 @@ class CelebroBlockchain:
         self.dificultad = dificultad
         self.cadena: List[BloqueNeuronal] = []
         self.transacciones_pendientes: List[Dict[str, Any]] = []
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         self.conversor: ConversorRespuestaPesos = get_conversor_pesos()
         self.ipfs_mgr: IPFSManager = get_ipfs_manager()
         self.actualizador_activo = False
@@ -238,9 +238,10 @@ class CelebroBlockchain:
                 act, _ = self.conversor._propagar_todas_las_neuronas(v)
                 _, norma_app, _ = self.conversor._actualizar_pesos_en_todas_las_neuronas(v, act, factor=1.0)
                 norma_acum += norma_app
-            except Exception: pass
-        # Persistir UNA sola vez al final de la transformacion completa
-        npz_path, json_path = self.conversor.persistir_pesos_en_psnrl(etiqueta="blockchain_ledger")
+            except Exception as exc:
+                logger.warning("Transduccion bloque %s fallo: %s", b.get("indice"), exc)
+        with self.lock:
+            npz_path, json_path = self.conversor.persistir_pesos_en_psnrl(etiqueta="blockchain_ledger")
         print(f"  [PSNRL] {len(bloques)} bloques -> pesos neuronales | Norma total: {round(norma_acum,5)}")
         return {
             "total_bloques": len(bloques), "norma_acumulada": round(norma_acum, 5),
@@ -269,57 +270,59 @@ class CelebroBlockchain:
         self.actualizador_activo = False
 
     def cerrar_sesion_y_subir_ipfs(self) -> Dict[str, Any]:
-        """Hook de cierre: persiste pesos, sube ledger + PSNRL a IPFS y borra ledger local."""
+        """Hook de cierre: persiste pesos, sube ledger + PSNRL a IPFS sin borrar sin pin."""
         self.detener_actualizador_red()
-        # Checkpoint final de pesos antes de cerrar
-        self.conversor.persistir_pesos_en_psnrl(etiqueta="cierre_sesion_blockchain")
+        with self.lock:
+            self.conversor.persistir_pesos_en_psnrl(etiqueta="cierre_sesion_blockchain")
         cid_ledger = None
         ledger_borrado = False
         if LEDGER_PATH.exists():
             try:
-                # eliminar_local=True: borra si hay daemon real confirmado
                 res_l = self.ipfs_mgr.almacenar_pesos(
                     origen=LEDGER_PATH, nombre_modelo="blockchain_ledger_final", eliminar_local=True,
                 )
                 cid_ledger = res_l.get("cid")
                 ledger_borrado = res_l.get("borrado_local", False)
-            except Exception: pass
-            # Borrado garantizado: aunque no haya daemon, eliminar el ledger local
-            if not ledger_borrado and LEDGER_PATH.exists():
-                try:
-                    LEDGER_PATH.unlink()
-                    ledger_borrado = True
-                except Exception: pass
-        # Subir y limpiar PSNRL
-        res_psnrl = self.ipfs_mgr.subir_y_limpiar_psnrl(forzar_borrado_sin_daemon=True)
+            except Exception as exc:
+                logger.warning("Pin ledger fallo, se conserva local: %s", exc)
+        res_psnrl = self.ipfs_mgr.subir_y_limpiar_psnrl(forzar_borrado_sin_daemon=False)
         return {
             "cid_ledger": cid_ledger, "ledger_borrado": ledger_borrado,
             "cids_psnrl": res_psnrl.get("cids", []), "borrados": res_psnrl.get("borrados", []),
+            "pendiente_pin": res_psnrl.get("pendiente_pin", []),
         }
 
     def validar_cadena(self) -> Tuple[bool, Optional[str]]:
-        """Verifica la integridad criptografica total de hashes, enlaces y Merkle roots."""
-        prefijo = "0" * self.dificultad
+        """Verifica integridad; dificultad por bloque (genesis exento de PoW)."""
         for i in range(1, len(self.cadena)):
             act, prev = self.cadena[i], self.cadena[i - 1]
             if act.hash_previo != prev.hash_bloque: return False, f"Ruptura en #{act.indice}"
             if act.calcular_hash() != act.hash_bloque: return False, f"Hash corrupto en #{act.indice}"
             if act.calcular_merkle_root() != act.merkle_root: return False, f"Merkle invalido en #{act.indice}"
-            if not act.hash_bloque.startswith(prefijo) and act.indice > 0:
+            prefijo = "0" * int(getattr(act, "dificultad", self.dificultad) or 0)
+            if prefijo and not act.hash_bloque.startswith(prefijo):
                 return False, f"PoW insuficiente en #{act.indice}"
         return True, None
 
     def guardar_ledger(self) -> bool:
-        """Persiste toda la cadena en el archivo JSON ledger local."""
+        """Persiste cadena con backup .bak y escritura atomica."""
         data = {
             "version": __version__, "servidor": __server_name__,
             "total_bloques": len(self.cadena), "dificultad": self.dificultad,
             "cadena": [b.to_dict() for b in self.cadena],
         }
         try:
-            with open(LEDGER_PATH, "w", encoding="utf-8") as f: json.dump(data, f, indent=2, ensure_ascii=False)
+            with self.lock:
+                if LEDGER_PATH.exists():
+                    bak = LEDGER_PATH.with_suffix(".json.bak")
+                    bak.write_bytes(LEDGER_PATH.read_bytes())
+                tmp = LEDGER_PATH.with_suffix(".json.tmp")
+                with open(tmp, "w", encoding="utf-8") as f: json.dump(data, f, indent=2, ensure_ascii=False)
+                tmp.replace(LEDGER_PATH)
             return True
-        except Exception: return False
+        except Exception as exc:
+            logger.warning("guardar_ledger fallo: %s", exc)
+            return False
 
     def mostrar_cadena_hashes_terminal(self) -> None:
         """Muestra en terminal la cadena con el hash unico de cada bloque sin fechas."""

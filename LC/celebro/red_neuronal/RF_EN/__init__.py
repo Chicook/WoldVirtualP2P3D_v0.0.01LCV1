@@ -385,8 +385,9 @@ class SerializationHelper:
         with open(filepath, 'rb') as f: return SerializationHelper.deserialize_neuron(f.read(), neurona_class)
 
 logger = logging.getLogger('RFENRN1')
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger.info("Paquete RFENRN1 inicializado para LucIA Reinforcement Learning")
+if not logger.handlers:
+    logger.addHandler(logging.NullHandler())
+logger.debug("Paquete RFENRN1 inicializado para LucIA Reinforcement Learning")
 
 __all__ = [
     'NeuronaRefuerzoBase','NeuronaRefuerzoQLearning','NeuronaRefuerzoPolicyGradient','NeuronaRefuerzoActorCritic',

@@ -129,9 +129,14 @@ class GestorModelosGratuitos:
             return [m for m in self._modelos if m.get("categoria") == categoria]
 
     def actualizar_catalogo_online(self) -> int:
-        """Consulta la API de OpenRouter y agrega nuevos modelos gratuitos descubiertos."""
+        """Consulta la API de OpenRouter y agrega nuevos modelos gratuitos (máx 60, con caché)."""
         ahora = time.time()
         if (ahora - self._ultimo_refresco) < 300.0:
+            return len(self._modelos)
+        cached = self._cargar_cache()
+        if cached:
+            self._fusionar_items(cached)
+            self._ultimo_refresco = ahora
             return len(self._modelos)
 
         url = "https://openrouter.ai/api/v1/models"
@@ -160,16 +165,50 @@ class GestorModelosGratuitos:
                             "descripcion": item.get("description", "Modelo gratuito descubierto en linea.")[:120],
                         }
                         with self._lock:
-                            self._modelos.append(nuevo_m)
-                            existentes.add(m_id)
+                            if len(self._modelos) < 60:
+                                self._modelos.append(nuevo_m)
+                                existentes.add(m_id)
                         nuevos_registrados += 1
 
                 self._ultimo_refresco = ahora
+                self._guardar_cache(data.get("data", []))
                 logger.info("Catalogo gratuito actualizado: %d modelos anadidos.", nuevos_registrados)
                 return len(self._modelos)
         except Exception as exc:
             logger.debug("No se pudo actualizar el catalogo online: %s", exc)
             return len(self._modelos)
+
+    def _cargar_cache(self) -> List[Dict[str, Any]]:
+        try:
+            if CACHE_FILE.exists():
+                raw = json.loads(CACHE_FILE.read_text(encoding="utf-8"))
+                if isinstance(raw, dict) and "data" in raw:
+                    return raw["data"]
+                if isinstance(raw, list):
+                    return raw
+        except Exception as exc:
+            logger.debug("Cache IAFREE ilegible: %s", exc)
+        return []
+
+    def _guardar_cache(self, items: List[Dict[str, Any]]) -> None:
+        try:
+            CACHE_FILE.write_text(json.dumps({"ts": time.time(), "data": items[:200]}, ensure_ascii=False), encoding="utf-8")
+        except Exception as exc:
+            logger.debug("Cache IAFREE no guardada: %s", exc)
+
+    def _fusionar_items(self, items: List[Dict[str, Any]]) -> int:
+        nuevos = 0
+        existentes = {m["id"] for m in self._modelos}
+        for item in items:
+            m_id = item.get("id", "") if isinstance(item, dict) else ""
+            if ":free" in m_id and m_id not in existentes and len(self._modelos) < 60:
+                self._modelos.append({"id": m_id, "nombre": item.get("name", m_id),
+                                      "contexto": item.get("context_length", 262144),
+                                      "categoria": "descubierto",
+                                      "descripcion": "Desde caché local."})
+                existentes.add(m_id)
+                nuevos += 1
+        return nuevos
 
 
 # ─── CLIENTE DE INFERENCIA GRATUITA RESILIENTE (IAFREE CLIENT) ──────────────
@@ -285,14 +324,13 @@ class ClienteIAFree:
             except urllib.error.HTTPError as h_err:
                 codigo = h_err.code
                 razon = f"HTTP {codigo}"
-                # Rotacion automatica si el modelo da error o rate limit
                 self.gestor.rotar_al_siguiente_modelo(razon=razon)
                 intentos += 1
-                time.sleep(0.4)
+                time.sleep(min(8.0, 0.5 * (2 ** intentos)))
             except Exception as e_gen:
                 self.gestor.rotar_al_siguiente_modelo(razon=str(e_gen))
                 intentos += 1
-                time.sleep(0.4)
+                time.sleep(min(8.0, 0.5 * (2 ** intentos)))
 
         return (
             "[IAFREE] Todos los modelos gratuitos consultados se encuentran temporalmente saturados. "
@@ -315,7 +353,7 @@ class ClienteIAFree:
             }
 
     def benchmark_rapido_modelos(self, max_modelos: int = 3) -> Dict[str, float]:
-        """Mide la latencia de respuesta de los primeros modelos gratuitos del pool."""
+        """1 llamada corta por modelo con timeout de 10 s (sin quemar cuota)."""
         resultados: Dict[str, float] = {}
         for m in self.gestor.listar_modelos()[:max_modelos]:
             m_id = m["id"]

@@ -85,13 +85,22 @@ class IPFSManager:
             logger.error("Error guardando manifiesto: %s", e)
 
     def _rotar_manifiesto(self) -> None:
-        """Max 50 entradas; payload_b64 solo en las 10 mas recientes."""
+        """Max 500 entradas; payload_b64 solo en las 10 mas recientes + spill a disco."""
         ws = self.manifest.get("weights", {})
         orden = sorted(ws.keys(), key=lambda c: ws[c].get("timestamp", 0))
         for c in orden[:-10]:
             ws[c].pop("payload_b64", None)
-        for c in orden[:-50]:
-            del ws[c]
+        if len(orden) > 500:
+            spill_path = self.manifest_path.with_name("ipfs_manifest_spill.jsonl")
+            try:
+                with open(spill_path, "a", encoding="utf-8") as f:
+                    for c in orden[:-500]:
+                        f.write(json.dumps({"cid": c, **ws[c]}, ensure_ascii=False) + "\n")
+            except Exception as e:
+                logger.error("Error spill manifiesto: %s", e)
+                return
+            for c in orden[:-500]:
+                del ws[c]
         self.manifest["total_stored"] = len(ws)
 
     def _probe_url(self, url: str) -> bool:
@@ -299,33 +308,36 @@ class IPFSManager:
             return data
 
     def subir_y_limpiar_psnrl(self, forzar_borrado_sin_daemon: bool = False) -> Dict[str, Any]:
-        """Sube todos los archivos de PSNRL a IPFS y los borra localmente tras confirmar."""
+        """Sube PSNRL a IPFS; solo borra local si pin confirmado (daemon/CLI OK)."""
         archivos = [f for f in self._psnrl_dir.iterdir()
                     if f.is_file() and not f.name.startswith(".")]
         if not archivos:
-            return {"archivos_procesados": 0, "cids": [], "borrados": [], "errores": []}
+            return {"archivos_procesados": 0, "cids": [], "borrados": [], "errores": [], "pendiente_pin": []}
 
-        cids, borrados, errores = [], [], []
+        cids, borrados, errores, pendiente = [], [], [], []
         daemon_ok = bool(self.descubrir_daemon())
         cli_ok = self._cli_disponible()
+        pin_confirmado = daemon_ok or cli_ok
 
         for archivo in archivos:
             try:
                 res = self.almacenar_pesos(
                     origen=archivo, nombre_modelo=archivo.stem,
-                    eliminar_local=(daemon_ok or cli_ok or forzar_borrado_sin_daemon),
+                    eliminar_local=(pin_confirmado or forzar_borrado_sin_daemon),
                 )
                 cids.append(res["cid"])
                 if res["borrado_local"]:
                     borrados.append(archivo.name)
+                elif not res.get("subida_real"):
+                    pendiente.append(archivo.name)
             except Exception as e:
                 errores.append(f"{archivo.name}: {e}")
                 logger.error("Error subiendo %s: %s", archivo.name, e)
 
-        logger.info("PSNRL->IPFS | %d arch | %d borrados | %d errores",
-                    len(archivos), len(borrados), len(errores))
+        logger.info("PSNRL->IPFS | %d arch | %d borrados | %d pendientes | %d errores",
+                    len(archivos), len(borrados), len(pendiente), len(errores))
         return {"archivos_procesados": len(archivos), "cids": cids,
-                "borrados": borrados, "errores": errores,
+                "borrados": borrados, "errores": errores, "pendiente_pin": pendiente,
                 "daemon_real": daemon_ok, "cli_real": cli_ok}
 
     def listar_pesos(self) -> List[Dict[str, Any]]:

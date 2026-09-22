@@ -122,12 +122,13 @@ class OrquestadorSistemaLucIA:
 
     def __init__(self) -> None:
         self.lock = threading.Lock()
-        self.servidor_bks = None
-        self.conversor_psn = None
-        self.sesion_p2p = None
-        self.cliente_iafree = None
+        self.servidor_bks: Optional[Any] = None
+        self.conversor_psn: Optional[Any] = None
+        self.sesion_p2p: Optional[Any] = None
+        self.cliente_iafree: Optional[Any] = None
         self.activa = False
         self.turno_actual = 0
+        self.puerto_bks = int(os.getenv("LUCIA_BKS_PORT", "8545"))
         self.sesion_id = f"LUCIA_{time.strftime('%Y%m%d_%H%M%S')}"
         atexit.register(self.cerrar_sistema)
 
@@ -153,7 +154,15 @@ class OrquestadorSistemaLucIA:
             self.servidor_bks = get_blockchain_server()
             print(f"  [1/4] Blockchain BKSVCB    : \033[38;5;48mACTIVA\033[0m | Bloques: \033[38;5;220m{len(self.servidor_bks.cadena)}\033[0m")
             self.servidor_bks.mostrar_cadena_hashes_terminal()
-            iniciar_servidor_blockchain(puerto=8545)
+            for intento in range(3):
+                try:
+                    iniciar_servidor_blockchain(puerto=self.puerto_bks)
+                    break
+                except OSError as exc:
+                    logger.warning("Puerto %s ocupado (intento %s): %s", self.puerto_bks, intento + 1, exc)
+                    self.puerto_bks += 1
+            else:
+                print("  [1/4] HTTP REST: no disponible, sigo sin servidor HTTP")
         except Exception as e_bks:
             print(f"  [1/4] Blockchain BKSVCB    : \033[38;5;203mERROR ({e_bks})\033[0m")
             return False
@@ -200,6 +209,9 @@ class OrquestadorSistemaLucIA:
         self.turno_actual += 1
         t_inicio = time.perf_counter()
 
+        if self.conversor_psn is None or self.servidor_bks is None:
+            print("  [AVISO] Subsistemas no inicializados; turno omitido.")
+            return
         # Fase 1: Pre-activacion neuronal
         estado_previo = self.conversor_psn.procesar_consulta_a_pesos(prompt)
 
@@ -367,14 +379,61 @@ class OrquestadorSistemaLucIA:
                 else:
                     print(f"  \033[38;5;214mModelo '{nuevo_mod}' no encontrado en catalogo :free.\033[0m")
                 continue
+            if entrada.lower() in ("pin",):
+                self._cmd_pin()
+                continue
+            if entrada.lower().startswith("restaurar "):
+                self._cmd_restaurar(entrada[10:].strip())
+                continue
+            if entrada.lower() in ("benchmark",):
+                self._cmd_benchmark()
+                continue
+            if entrada.lower() in ("exportar-pesos", "exportar_pesos"):
+                self._cmd_exportar_pesos()
+                continue
 
             self.procesar_turno_dialogo(entrada)
 
         self.activa = False
 
+    def _cmd_pin(self) -> None:
+        """Sube PSNRL a IPFS sin borrar sin confirmación."""
+        try:
+            from LC.celebro.CMFG.ipfs_manager import get_ipfs_manager
+            res = get_ipfs_manager().subir_y_limpiar_psnrl(forzar_borrado_sin_daemon=False)
+            print(f"  Pin: {len(res.get('cids', []))} CIDs | borrados={len(res.get('borrados', []))} | pendientes={len(res.get('pendiente_pin', []))}")
+        except Exception as exc:
+            print(f"  [pin] {exc}")
+
+    def _cmd_restaurar(self, cid: str) -> None:
+        if not cid:
+            print("  Uso: restaurar <CID>")
+            return
+        try:
+            from LC.celebro.CMFG.ipfs_manager import get_ipfs_manager
+            data = get_ipfs_manager().recuperar_pesos(cid)
+            n = len(data) if isinstance(data, (bytes, list)) else len(str(data))
+            print(f"  Restaurado CID {cid[:24]}... ({n} B)")
+        except Exception as exc:
+            print(f"  [restaurar] {exc}")
+
+    def _cmd_benchmark(self) -> None:
+        if not self.cliente_iafree:
+            print("  IAFREE no disponible.")
+            return
+        res = self.cliente_iafree.benchmark_rapido_modelos(max_modelos=3)
+        for mid, lat in res.items():
+            print(f"  {mid}: {lat} ms")
+
+    def _cmd_exportar_pesos(self) -> None:
+        if self.conversor_psn is None:
+            print("  Conversor no inicializado.")
+            return
+        npz, js = self.conversor_psn.persistir_pesos_en_psnrl(etiqueta=f"export_{self.sesion_id}")
+        print(f"  Exportado: {npz.name} + {js.name}")
+
     def cerrar_sistema(self) -> None:
-        """Cierre ordenado: minado de bloques pendientes y persistencia a IPFS."""
-        with self.lock:
+        """Cierre ordenado: minado de bloques pendientes y persistencia a IPFS."""        with self.lock:
             if not self.servidor_bks:
                 return
             print("\n\033[38;5;51m" + "=" * 76 + "\033[0m")

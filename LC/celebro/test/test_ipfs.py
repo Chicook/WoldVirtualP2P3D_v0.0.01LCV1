@@ -134,10 +134,10 @@ class TestIPFSManagerManifiesto:
 # ============================================================================
 
 class TestIPFSManagerRotacionTTL:
-    """Verifica las políticas de rotación: máx 50 entradas y 10 payloads en memoria."""
+    """Verifica las políticas de rotación: máx 500 entradas y 10 payloads en memoria."""
 
     def test_rotacion_mas_de_50_entradas(self, tmp_path: Path, mock_ipfs_inactivo: None) -> None:
-        """Valida que el manifiesto se pode a 50 elementos al exceder la capacidad."""
+        """Valida que el manifiesto se pode a 500 elementos al exceder la capacidad."""
         ruta_manifiesto = tmp_path / "manifiesto_rotacion.json"
         mgr = IPFSManager(manifest_file=str(ruta_manifiesto))
 
@@ -149,8 +149,8 @@ class TestIPFSManagerRotacionTTL:
                 eliminar_local=False,
             )
 
-        assert len(mgr.manifest["weights"]) <= 50
-        assert mgr.manifest["total_stored"] <= 50
+        assert len(mgr.manifest["weights"]) <= 500
+        assert mgr.manifest["total_stored"] <= 500
 
     def test_purga_payload_base64_solo_10_recientes(self, tmp_path: Path, mock_ipfs_inactivo: None) -> None:
         """Comprueba que solo los 10 registros más recientes conserven payload_b64."""
@@ -406,7 +406,7 @@ class TestIPFSManagerGlobal:
         inst2 = get_ipfs_manager()
         assert inst1 is inst2
 
-    def test_estado_conexion_estructura(self) -> None:
+    def test_estado_conexion_estructura(self, mock_ipfs_inactivo: None) -> None:
         """Valida que estado_conexion() proporcione todas las claves de telemetría."""
         mgr = get_ipfs_manager()
         estado = mgr.estado_conexion()
@@ -415,7 +415,7 @@ class TestIPFSManagerGlobal:
         for k in claves_requeridas:
             assert k in estado, f"Clave ausente en estado_conexion: {k}"
 
-    def test_cerrar_sesion_hook(self, tmp_path: Path) -> None:
+    def test_cerrar_sesion_hook(self, tmp_path: Path, mock_ipfs_inactivo: None) -> None:
         """Comprueba la invocación segura del hook de cierre global."""
         res = cerrar_sesion_y_subir_psnrl(forzar=False)
         assert isinstance(res, dict)

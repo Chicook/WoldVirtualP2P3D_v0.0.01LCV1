@@ -26,9 +26,9 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 import logging
-logging.basicConfig(level=logging.CRITICAL)
-for _lg in ("", "WoldVirtualP2P3D", "LC", "urllib3", "ENRN", "SLRN", "RNP", "httpx"):
-    logging.getLogger(_lg).setLevel(logging.CRITICAL)
+LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
+logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.WARNING))
+logger = logging.getLogger("WoldVirtualP2P3D.SNSBSTNPRB")
 
 for _s in (sys.stdout, sys.stderr):
     if hasattr(_s, "reconfigure"):
@@ -171,7 +171,47 @@ class SesionNeuronalP2P:
         self._turno     = 0
         self._sesion_id = time.strftime("%Y%m%d_%H%M%S")
         self._cerrado   = False
+        self.peers: List[str] = [f"http://127.0.0.1:{puerto_bksvcb}"]
         atexit.register(self._cerrar)
+
+    # ── P2P MÍNIMO ──────────────────────────────────────────────────────────
+    def agregar_peer(self, url: str) -> None:
+        url = url.rstrip("/")
+        if url not in self.peers:
+            self.peers.append(url)
+
+    def sincronizar_ledger(self, timeout: float = 5.0) -> Dict[str, Any]:
+        """Descarga /blocks de cada peer y adopta la cadena más larga válida."""
+        import urllib.request as _url
+        mejor: Optional[List[Dict[str, Any]]] = None
+        vistos = []
+        for peer in list(self.peers):
+            try:
+                with _url.urlopen(f"{peer}/blocks", timeout=timeout) as r:
+                    data = json.loads(r.read().decode("utf-8"))
+                    cadena = data.get("cadena") or data.get("blocks") or []
+                    vistos.append({"peer": peer, "bloques": len(cadena)})
+                    if mejor is None or len(cadena) > len(mejor):
+                        mejor = cadena
+            except Exception as exc:
+                logger.debug("Peer %s inaccesible: %s", peer, exc)
+        adoptada = False
+        if mejor and self.bks and len(mejor) > len(self.bks.cadena):
+            try:
+                from LC.celebro.BKSVCB import BloqueNeuronal
+                nueva = [BloqueNeuronal(indice=b["indice"], hash_previo=b["hash_previo"],
+                                        transacciones=b.get("transacciones", []),
+                                        estado_neuronal=b.get("estado_neuronal", {}),
+                                        dificultad=b.get("dificultad", 2), nonce=b.get("nonce", 0),
+                                        hash_existente=b.get("hash_bloque"),
+                                        merkle_root_existente=b.get("merkle_root")) for b in mejor]
+                self.bks.cadena = nueva
+                self.bks.guardar_ledger()
+                adoptada = True
+            except Exception as exc:
+                logger.warning("Sync ledger falló: %s", exc)
+        return {"peers": vistos, "adoptada": adoptada,
+                "bloques_local": len(self.bks.cadena) if self.bks else 0}
 
     # ── ARRANQUE ──────────────────────────────────────────────────────────────
     def arrancar(self) -> None:

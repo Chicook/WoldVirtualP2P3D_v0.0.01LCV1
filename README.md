@@ -85,20 +85,21 @@ WoldVirtualP2P3D_v0.0.01LCV1/
         ├── blockchain_ledger.json # Ledger histórico de bloques y transacciones
         ├── PSNRL/             # Checkpoints locales de pesos sinápticos activos
         ├── CMFG/              # Celebro Model & Feed Gateway
-        │   ├── ipfs_manager.py    # Conexión Kubo RPC y subida a IPFS
-        │   ├── ipfs_manifest.json # Manifiesto de CIDs y hashes SHA-256
-        │   ├── PSNRCV.py          # Conversor de diálogos a pesos y motor matemático
+        │   ├── ipfs_manager.py    # Conexión Kubo RPC y subida a IPFS (pin confirmado, 500 entradas + spill)
+        │   ├── neural_math.py     # Motor matemático único: Muon NS-5, SOAP, GSNR, Shannon, SemanticEncoderSHA
+        │   ├── PSNRCV.py          # Conversor de diálogos a pesos (trust-ratio por neurona, importlib)
         │   ├── pesos_vivos.py     # Monitor de telemetría sináptica en terminal
         │   └── SBSTM/             # SubSistema de Sesión, Voz, Estilos y LLM Free
-        │       ├── IAFREE.py          # Inferencia $0.00 vía OpenRouter :free
+        │       ├── IAFREE.py          # Inferencia $0.00 vía OpenRouter :free (caché disco, backoff exp.)
         │       ├── RPLC.py            # Filtro y procesador de voz/tono propio
-        │       ├── SNSBSTNPRB.py      # Gestor de sesión P2P
+        │       ├── SNSBSTNPRB.py      # Gestor de sesión P2P (peers + sincronizar_ledger)
         │       ├── STYLOS.py          # Motor visual de terminal ANSI / Unicode
         │       └── voice_engine.py    # Síntesis TTS juvenil con interrupción MCI
         └── red_neuronal/      # Paquete con las 50 neuronas activas
+            ├── common/          # bases.py, init_utils.py, buffers.py (compartidos)
             ├── ENRN/          # 10 neuronas de entrada recurrente
             ├── RF_SL/         # 10 neuronas de aprendizaje supervisado
-            ├── RF_EN/         # 10 neuronas de refuerzo adaptativo
+            ├── RF_EN/         # 10 neuronas de refuerzo (+ _bases/_buffers/_optimizers/_serializers)
             ├── RNP/           # 10 neuronas de plasticidad y optimizadores
             └── SLRN/          # 10 neuronas de convergencia temporal
 ```
@@ -127,5 +128,19 @@ python LC/mainLCSTM.py
 - `modelos` / `free`: Lista los modelos gratuitos disponibles en el catálogo de OpenRouter.
 - `modelo <nombre_o_id>`: Selecciona un modelo específico para inferencia.
 - `minar` / `mine`: Fuerza el minado inmediato de transacciones sinápticas pendientes en un nuevo bloque.
+- `pin`: Sube PSNRL a IPFS (solo borra local con pin confirmado; resto queda `pendiente_pin`).
+- `restaurar <CID>`: Recupera pesos desde IPFS (daemon > CLI > vault > manifiesto).
+- `benchmark`: Mide latencia (1 llamada corta por modelo, timeout 10 s).
+- `exportar-pesos`: Checkpoint manual de las 50 neuronas en PSNRL.
 - `ayuda` / `help`: Muestra el panel interactivo de ayuda de comandos.
 - `salir` / `exit`: Consolida el estado, mina el bloque final y sincroniza con IPFS.
+
+### P2P mínimo
+`SesionNeuronalP2P.agregar_peer(url)` + `sincronizar_ledger()` adoptan la cadena más larga vía `GET /blocks` del puerto 8545 (+reintentos). Variable `LUCIA_BKS_PORT` configura el puerto.
+
+### Tests y CI
+```bash
+pip install -e .[dev]
+python -m pytest LC/celebro/test -q --timeout=60
+```
+CI en `.github/workflows/ci.yml` (py3.10/11/12, ubuntu+windows).

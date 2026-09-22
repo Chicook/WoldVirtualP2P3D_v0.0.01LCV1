@@ -34,7 +34,7 @@ except ImportError:
     _slrn = Path(__file__).parent
     if str(_slrn) not in sys.path:
         sys.path.insert(0, str(_slrn))
-    from __init__ import (  # noqa: E402
+    from LC.celebro.red_neuronal.SLRN import (  # noqa: E402
         BaseSupervisedLearningNeuralOptimizer,
         SupervisedLearningNeuralConfig,
         SupervisedLearningNeuralResult,
