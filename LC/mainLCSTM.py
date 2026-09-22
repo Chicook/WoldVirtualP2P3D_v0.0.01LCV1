@@ -124,6 +124,20 @@ except Exception:
     get_gestor_mdstm = None  # type: ignore
     ordenar_descarga_lucia = None  # type: ignore
 
+# ─── IMPORTACION HRCTRC (herrero constructor: overlay + unificacion) ──────
+try:
+    from LC.celebro.CMFG.SBSTM.HRCTRC import (
+        GestorConstructorSesion,
+        get_gestor_hrctrc,
+        ordenar_constructor_lucia,
+    )
+    _HRCTRC_DISPONIBLE = True
+except Exception:
+    _HRCTRC_DISPONIBLE = False
+    GestorConstructorSesion = None  # type: ignore
+    get_gestor_hrctrc = None  # type: ignore
+    ordenar_constructor_lucia = None  # type: ignore
+
 LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.WARNING))
 for _log_name in ("", "WoldVirtualP2P3D", "LC", "urllib3", "ENRN", "SLRN", "RNP", "httpx"):
@@ -189,6 +203,13 @@ class OrquestadorSistemaLucIA:
                 self.gestor_mdstm = get_gestor_mdstm()
             except Exception:
                 self.gestor_mdstm = None
+        # HRCTRC: herrero constructor (overlay de sesion en LC/Constructor)
+        self.gestor_hrctrc: Optional[Any] = None
+        if _HRCTRC_DISPONIBLE and get_gestor_hrctrc is not None:
+            try:
+                self.gestor_hrctrc = get_gestor_hrctrc(sesion_id=self.sesion_id)
+            except Exception:
+                self.gestor_hrctrc = None
         atexit.register(self.cerrar_sistema)
 
     def inicializar_subsistemas(self) -> bool:
@@ -267,6 +288,15 @@ class OrquestadorSistemaLucIA:
         # 6. DSIALCLGRG: registra VRAM/RAM y deja IA local lista (autonomo)
         self._inicializar_ia_local()
 
+        # 7. HRCTRC: abre la copia de trabajo en LC/Constructor para la sesion
+        if self.gestor_hrctrc is not None:
+            try:
+                rep = self.gestor_hrctrc.iniciar_sesion()
+                print(f"  [6/6] Constructor HRCTRC    : \033[38;5;48mACTIVO\033[0m | "
+                      f"Overlay: \033[38;5;51m{rep.get('archivos_versionados', 0)} archivos\033[0m")
+            except Exception as exc:
+                print(f"  [6/6] Constructor HRCTRC    : \033[38;5;214mAVISO ({exc})\033[0m")
+
         self.activa = True
         return True
 
@@ -343,6 +373,24 @@ class OrquestadorSistemaLucIA:
                                           "que puedes descargar")):
                     respuesta = self.gestor_mdstm.informe_para_lucia()
                     return self._cerrar_turno(respuesta, "LucIA-MDSTM-local", 0.0,
+                                              prompt, estado_previo, t_inicio)
+            except Exception:
+                pass
+
+        # Fase 1c: HRCTRC — orden de construccion se EJECUTA aqui con permisos
+        # via codigo (crear carpetas, overlay, unificar), sin modelo remoto.
+        if self.gestor_hrctrc is not None:
+            try:
+                if self.gestor_hrctrc.es_orden_constructor(prompt):
+                    respuesta_h = self.gestor_hrctrc.ejecutar_orden(prompt)
+                    if respuesta_h:
+                        return self._cerrar_turno(respuesta_h, "LucIA-HRCTRC-local", 0.0,
+                                                  prompt, estado_previo, t_inicio)
+                low_h = prompt.lower()
+                if any(k in low_h for k in ("estado del constructor", "estado constructor",
+                                            "que hay en constructor", "qué hay en constructor")):
+                    respuesta = self.gestor_hrctrc.informe_para_lucia()
+                    return self._cerrar_turno(respuesta, "LucIA-HRCTRC-local", 0.0,
                                               prompt, estado_previo, t_inicio)
             except Exception:
                 pass
@@ -543,6 +591,12 @@ class OrquestadorSistemaLucIA:
                 lim = int(partes[1]) if len(partes) > 1 and partes[1].isdigit() else 2
                 self._cmd_descargar_ia_local(limite=lim)
                 continue
+            if entrada.lower() in ("constructor", "constructor-estado"):
+                self._cmd_estado_constructor()
+                continue
+            if entrada.lower() in ("unificar", "unificar-constructor"):
+                self._cmd_unificar_constructor()
+                continue
 
             self.procesar_turno_dialogo(entrada)
 
@@ -611,6 +665,31 @@ class OrquestadorSistemaLucIA:
             marca = "\033[38;5;48mOK\033[0m" if rep.get("exito") else "\033[38;5;203mFALLO\033[0m"
             print(f"  [{marca}] {rep.get('modelo', '?')}: {rep.get('mensaje')}")
 
+    def _cmd_estado_constructor(self) -> None:
+        """Muestra overlay activo, pendientes y si Constructor esta vacia."""
+        if self.gestor_hrctrc is None:
+            print("  HRCTRC no disponible.")
+            return
+        try:
+            est = self.gestor_hrctrc.estado()
+            print("\n\033[38;5;51m" + "=" * 68 + "\033[0m")
+            print("  \033[1;37mCONSTRUCTOR HRCTRC (LC/Constructor):\033[0m")
+            print(f"  Activo: {est['activa']} | Sesion: {est['sesion']} | "
+                  f"Vacia: {est['constructor_vacia']}")
+            for p in est.get("pendientes", [])[:10]:
+                print(f"  [~] {p}")
+            print("\033[38;5;51m" + "-" * 68 + "\033[0m\n")
+        except Exception as exc:
+            print(f"  [constructor] {exc}")
+
+    def _cmd_unificar_constructor(self) -> None:
+        """Unifica el overlay en rutas reales y vacia Constructor."""
+        if self.gestor_hrctrc is None:
+            print("  HRCTRC no disponible.")
+            return
+        rep = self.gestor_hrctrc.finalizar_sesion(aplicar=True)
+        print(f"  {rep.get('mensaje')}")
+
     def cerrar_sistema(self) -> None:
         """Cierre ordenado: minado final, persistencia IPFS y purga de residuos (CHG/__pycache__)."""
         with self.lock:
@@ -625,6 +704,15 @@ class OrquestadorSistemaLucIA:
                     print(f"  Bloque final consolidado: \033[38;5;220m{blk.hash_bloque[:28]}...\033[0m")
             except Exception:
                 pass
+
+            # HRCTRC: unificar overlay en rutas reales y dejar Constructor vacia
+            try:
+                if self.gestor_hrctrc is not None and self.gestor_hrctrc.esta_activa():
+                    rep_h = self.gestor_hrctrc.finalizar_sesion(aplicar=True)
+                    print(f"  \033[38;5;48mConstructor unificado: {rep_h.get('aplicados', 0)} archivo(s) "
+                          f"en su ruta real; Constructor vacia.\033[0m")
+            except Exception as e_hrc:
+                print(f"  \033[38;5;214mConstructor: {e_hrc}\033[0m")
 
             try:
                 self.servidor_bks.cerrar_sesion_y_subir_ipfs()
