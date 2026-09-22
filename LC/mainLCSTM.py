@@ -34,35 +34,6 @@ class OrquestadorSistemaLucIA(PRTLUCMixin, TRNLUCMixin, CMDLUCMixin):
     Orquestador maestro que integra BKSVCB, SNSBSTNPRB, IAFREE, STYLOS y las 50 neuronas.
     """
 
-
-# ─── IMPORTACION DIRECTA HRCTNR ──────────────────────────
-def _importar_hrctnr():
-    """Importacion directa del subsistema HRCNTR."""
-    from LC.celebro.CMFG.SBSTM.HRCNTR import (
-        GestorHRCNTR, get_gestor_hrctnr, ejecutar_hrctnr,
-        estado_hrctnr, actualizar_sistema_hrctnr, ciclo_cierre_hrctnr,
-        confirmar_actualizacion_hrctnr,
-    )
-    return {
-        "GestorHRCNTR": GestorHRCNTR,
-        "get_gestor_hrctnr": get_gestor_hrctnr,
-        "ejecutar_hrctnr": ejecutar_hrctnr,
-        "estado_hrctnr": estado_hrctnr,
-        "actualizar_sistema_hrctnr": actualizar_sistema_hrctnr,
-        "ciclo_cierre_hrctnr": ciclo_cierre_hrctnr,
-        "confirmar_actualizacion_hrctnr": confirmar_actualizacion_hrctnr,
-    }
-
-_HRCNTR_API: Optional[Dict[str, Any]] = None
-
-
-def _get_hrctnr_api() -> Dict[str, Any]:
-    global _HRCNTR_API
-    if _HRCNTR_API is None:
-        _HRCNTR_API = _importar_hrctnr()
-    return _HRCNTR_API
-
-
 # ─── RE-EXPORT OFICIAL DE SUBSISTEMAS ─────────────────────────────────────
 def _reexportar(nombre: str) -> Any:
     """Importa perezosamente un simbolo de SBSTM sin romper el arranque."""
@@ -86,46 +57,6 @@ def subsistema(nombre: str) -> Any:
     """Devuelve el modulo de un subsistema: IAFREE, STYLOS, RPLC, VOZ,
     DSIALCLGRG, MDSTM, HRCTRC, HRCTRC_RFCT o INTEGRACIONRF."""
     return _reexportar(nombre.upper())
-
-
-# ─── CICLO DE VIDA PROGRAMATICO ──────────────────────────────────────────
-def iniciar_lucia() -> OrquestadorSistemaLucIA:
-    """Crea el orquestador e inicializa todos los subsistemas (pasos 0-8)."""
-    orq = OrquestadorSistemaLucIA()
-    if not orq.inicializar_subsistemas():
-        raise RuntimeError("[mainLCSTM] Fallo inicializando subsistemas.")
-    return orq
-
-
-def detener_lucia(orq: OrquestadorSistemaLucIA) -> None:
-    """Cierre ordenado: refactor -> .md -> pesos -> IPFS -> devopencode."""
-    orq.cerrar_sistema()
-
-
-def turno(orq: OrquestadorSistemaLucIA, prompt: str) -> Dict[str, Any]:
-    """Ejecuta un turno de dialogo y devuelve su telemetria basica."""
-    t0 = time.perf_counter()
-    orq.procesar_turno_dialogo(prompt)
-    return {"turno": orq.turno_actual, "segundos": round(time.perf_counter() - t0, 2)}
-
-
-def estado(orq: OrquestadorSistemaLucIA) -> Dict[str, Any]:
-    """Foto del sistema: cadena, neuronas, deriva, turnos y modelos."""
-    try:
-        valida, _ = orq.servidor_bks.validar_cadena()
-    except Exception:
-        valida = False
-    try:
-        mod = orq.cliente_iafree.gestor.obtener_modelo_activo()["id"] if orq.cliente_iafree else "N/A"
-    except Exception:
-        mod = "N/A"
-    return {"sesion": orq.sesion_id, "activa": orq.activa, "turnos": orq.turno_actual,
-            "cadena_valida": bool(valida),
-            "bloques": len(orq.servidor_bks.cadena) if orq.servidor_bks else 0,
-            "neuronas": len(orq.conversor_psn.neuronas) if orq.conversor_psn else 0,
-            "modelo_activo": mod,
-            "ia_local_lista": orq.ia_local_lista,
-            "constructor_activo": bool(orq.gestor_hrctrc and orq.gestor_hrctrc.esta_activa())}
 
 
 # ─── IA LOCAL Y DESCARGAS (DSIALCLGRG + MDSTM) ────────────────────────────
@@ -152,50 +83,6 @@ def preguntar_ia_local(prompt: str) -> Dict[str, Any]:
     from LC.celebro.CMFG.SBSTM.DSIALCLGRG import consultar_lucia_local
     texto, mid, lat = consultar_lucia_local(prompt, None)
     return {"texto": texto, "modelo": mid, "latencia_ms": lat}
-
-
-# ─── CONSTRUCTOR HRCTRC ──────────────────────────────────────────────────
-def abrir_constructor(sesion_id: str = "") -> Dict[str, Any]:
-    """Abre la copia de trabajo en LC/Constructor para la sesion."""
-    from LC.celebro.CMFG.SBSTM.HRCTRC import get_gestor_hrctrc
-    return get_gestor_hrctrc(sesion_id).iniciar_sesion()
-
-
-def estado_constructor() -> Dict[str, Any]:
-    """Overlay activo, pendientes y si Constructor esta vacia."""
-    from LC.celebro.CMFG.SBSTM.HRCTRC import get_gestor_hrctrc
-    return get_gestor_hrctrc().estado()
-
-
-def unificar_constructor() -> Dict[str, Any]:
-    """Unifica el overlay en rutas reales y vacia Constructor."""
-    from LC.celebro.CMFG.SBSTM.HRCTRC import get_gestor_hrctrc
-    return get_gestor_hrctrc().finalizar_sesion(aplicar=True)
-
-
-def crear_carpeta_lc(ruta_rel: str, tambien_en_lc: bool = False) -> Dict[str, Any]:
-    """Crea carpetas con permisos via codigo (overlay y opcionalmente LC)."""
-    from LC.celebro.CMFG.SBSTM.HRCTRC import get_gestor_hrctrc
-    return get_gestor_hrctrc().crear_carpeta(ruta_rel, tambien_en_lc=tambien_en_lc)
-
-
-# ─── VERSION DE SESION HRCTRC_RFCT ───────────────────────────────────────
-def version_sesion(overlay: str = "") -> Dict[str, Any]:
-    """Divide oversized a regla 400/450 con modelo local y barra de progreso."""
-    from pathlib import Path as _P
-    from LC.celebro.CMFG.SBSTM.HRCTRC import get_gestor_hrctrc
-    from LC.celebro.CMFG.SBSTM.HRCTRC_RFCT import RefactorizadorSesion
-    ov = _P(overlay) if overlay else get_gestor_hrctrc().overlay
-    return RefactorizadorSesion(ov).ejecutar(mostrar_barra=True)
-
-
-def estado_version_sesion(overlay: str = "") -> Dict[str, Any]:
-    """Oversized restantes, paquetes y cumplimiento de la regla."""
-    from pathlib import Path as _P
-    from LC.celebro.CMFG.SBSTM.HRCTRC import get_gestor_hrctrc
-    from LC.celebro.CMFG.SBSTM.HRCTRC_RFCT import RefactorizadorSesion
-    ov = _P(overlay) if overlay else get_gestor_hrctrc().overlay
-    return RefactorizadorSesion(ov).estado_version()
 
 
 # ─── HRCTNR (Monitor y Refactorizador Neural) ──────────────────
@@ -233,31 +120,6 @@ def confirmar_actualizacion_hrctnr() -> str:
     """Mensaje de confirmacion de actualizacion."""
     api = _get_hrctnr_api()
     return api["confirmar_actualizacion_hrctnr"]()
-
-
-# ─── INTEGRACION Y CIERRE (INTEGRACIONRF) ────────────────────────────────
-def bitacora() -> Dict[str, Any]:
-    """Genera el .md de actividad en CHG/ con monitoreo del sistema."""
-    from LC.celebro.CMFG.SBSTM.INTEGRACIONRF import get_integrador
-    return get_integrador().generar_md()
-
-
-def documentar_respaldos() -> Dict[str, Any]:
-    """Convierte los .bak_sesion de CHG/ en .md explicativo y luego a pesos."""
-    from LC.celebro.CMFG.SBSTM.INTEGRACIONRF import get_integrador
-    return get_integrador().documentar_respaldos_chg()
-
-
-def cierre_integracion() -> Dict[str, Any]:
-    """Pipeline de cierre: refactor -> .md -> pesos -> IPFS -> devopencode."""
-    from LC.celebro.CMFG.SBSTM.INTEGRACIONRF import cierre_integracion as _c
-    return _c()
-
-
-def informe_cierre(reporte: Dict[str, Any]) -> str:
-    """Resumen de una linea del pipeline de cierre para consola y voz."""
-    from LC.celebro.CMFG.SBSTM.INTEGRACIONRF import get_integrador
-    return get_integrador().resumen_cierre_txt(reporte)
 
 
 # ─── BLOCKCHAIN BKSVCB ───────────────────────────────────────────────────
@@ -402,23 +264,6 @@ CAPACIDADES: Final[Dict[str, str]] = {
 def texto_capacidades() -> str:
     """Frase factual de capacidades para inyectar en el contexto de LucIA."""
     return "Soy LucIA y SI puedo: " + " ".join(CAPACIDADES.values())
-
-
-# ─── GESTOR DE CONTEXTO PARA INTEGRACIONES EXTERNAS ─────────────────────────
-class ContextoOrquestadorLucIA:
-    """Gestor de contexto para pruebas, evaluacion o invocacion programatica."""
-
-    def __init__(self) -> None:
-        self.orquestador = OrquestadorSistemaLucIA()
-
-    def __enter__(self) -> OrquestadorSistemaLucIA:
-        if not self.orquestador.inicializar_subsistemas():
-            raise RuntimeError("Fallo durante la inicializacion de subsistemas en LucIA")
-        return self.orquestador
-
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
-        self.orquestador.cerrar_sistema()
-        return False
 
 
 # ─── SERVICIOS DE CONSULTA Y DIAGNOSTICO PROGRAMATICO ───────────────────────
