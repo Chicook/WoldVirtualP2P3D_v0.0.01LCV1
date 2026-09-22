@@ -91,6 +91,25 @@ LC/modelosIAlocal/*.safetensors
 logs/
 *.out
 
+# Repositorio local IPFS Kubo (blobs, datastore, keystore) y binarios del daemon
+# ------------------------------------------------------------------------------
+LC/celebro/CMFG/IPFSonl/.ipfs/
+LC/celebro/CMFG/IPFSonl/ipfs.exe
+LC/celebro/CMFG/IPFSonl/ipfs
+
+# Ledger blockchain generado en runtime
+LC/celebro/blockchain_ledger.json
+blockchain_ledger.json
+
+# Historiales y resúmenes de sesión locales
+downloads/
+download_history*.json
+session_summary*.json
+
+# Artefactos de build de este proyecto (pyproject/hatch)
+# ------------------------------------------------------------------------------
+*.egg-info/
+
 # Caches de editores e IDEs
 # ------------------------------------------------------------------------------
 .vscode/
