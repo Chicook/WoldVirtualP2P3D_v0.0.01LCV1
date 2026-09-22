@@ -1,0 +1,134 @@
+{
+  "version": "2026.3.1",
+  "servidor": "CelebroBlockchainServer-BKSVCB",
+  "total_bloques": 4,
+  "dificultad": 2,
+  "cadena": [
+    {
+      "indice": 0,
+      "hash_bloque": "085561caa8af289000bd9331d66d4fd5a1e7b5e3115079595fb85410a2ef8634",
+      "hash_previo": "0000000000000000000000000000000000000000000000000000000000000000",
+      "merkle_root": "0dccdfce214923de382ee80b635c36c2b4ab8400918e25f7a498bfa89108eed0",
+      "dificultad": 1,
+      "nonce": 5,
+      "total_transacciones": 1,
+      "transacciones": [
+        {
+          "tipo": "GENESIS_COGNITIVO",
+          "emisor": "SYSTEM_CELEBRO",
+          "receptor": "CLUSTER_P2P",
+          "descripcion": "Arranque formal de la blockchain neuronal WoldVirtualP2P3D",
+          "hash_semilla": "3b218672129981a04a1db4804536c640f281449eb882a8949b0ea226595de840"
+        }
+      ],
+      "estado_neuronal": {
+        "total_neuronas": 50,
+        "capas": [
+          "ENRN",
+          "RF_SL",
+          "RF_EN",
+          "RNP",
+          "SLRN"
+        ],
+        "version_cluster": "2026.3.1",
+        "consenso": "Proof-of-Neural-Learning (PoNL)"
+      }
+    },
+    {
+      "indice": 1,
+      "hash_bloque": "004cd9c329de778726281fa531ffc104a7658fdd4edbd790bb45a2917d555dd4",
+      "hash_previo": "085561caa8af289000bd9331d66d4fd5a1e7b5e3115079595fb85410a2ef8634",
+      "merkle_root": "0871d44195767417409478a5e7ece86623438741940fa4baa5465c7c067d297e",
+      "dificultad": 2,
+      "nonce": 678,
+      "total_transacciones": 1,
+      "transacciones": [
+        {
+          "id_tx": "9000b7279805c4c9",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreigwmv4fkx4j7ruugkwbudm5ikgzu4lneyn4uwekcpdagyjktx2kdm",
+          "datos": {
+            "modelo": "test",
+            "prompt_resumen": "p0",
+            "norma_delta": 5.5628,
+            "estado_emocional": -0.987,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4681.83
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 15.133228,
+        "pasos_sesion": 5,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 2,
+      "hash_bloque": "004df6a9926848ec003c808093dc244b6e79e9fa3effe77092c719198a03a647",
+      "hash_previo": "004cd9c329de778726281fa531ffc104a7658fdd4edbd790bb45a2917d555dd4",
+      "merkle_root": "6a21fc74e3aa3ef1d4628f97dfbb3ea67068ccf3cd544c804e8a3d280dbca828",
+      "dificultad": 2,
+      "nonce": 491,
+      "total_transacciones": 1,
+      "transacciones": [
+        {
+          "id_tx": "2ece7e2cab12d67f",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreidopkjmelrpfuhaapqjdu56k67rshmbmujo6tdiyfzocptwopmvnu",
+          "datos": {
+            "modelo": "test",
+            "prompt_resumen": "p1",
+            "norma_delta": 8.68778,
+            "estado_emocional": -1.0,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4693.34
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 23.821004,
+        "pasos_sesion": 6,
+        "minero": "CelebroLocalNode"
+      }
+    },
+    {
+      "indice": 3,
+      "hash_bloque": "000e054824ae102a12306b88c0e0bab1f28dfb2129698f3f3abf9ccfa4f75eaf",
+      "hash_previo": "004df6a9926848ec003c808093dc244b6e79e9fa3effe77092c719198a03a647",
+      "merkle_root": "343b15b970abd105f112b405578202124402316375b7417f905cfbcb3686fdb7",
+      "dificultad": 2,
+      "nonce": 73,
+      "total_transacciones": 1,
+      "transacciones": [
+        {
+          "id_tx": "8f1ac1375681b644",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreieiyexnyrfqkuta3nj7ts6kloawn65p3ydf4dkybiju4loxthesbi",
+          "datos": {
+            "modelo": "test",
+            "prompt_resumen": "p2",
+            "norma_delta": 12.95474,
+            "estado_emocional": -0.982,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4687.46
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 36.77574,
+        "pasos_sesion": 7,
+        "minero": "CelebroLocalNode"
+      }
+    }
+  ]
+}
