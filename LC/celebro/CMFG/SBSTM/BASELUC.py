@@ -260,6 +260,17 @@ def _descarga_ia_pre_sesion() -> Dict[str, Any]:
     """Descarga automatica de IAs locales antes de version de sesion."""
     res = {"exito": False, "modelos_descargados": [], "errores": []}
     try:
+        if _IALOCAL_DISPONIBLE and _descargar_recomendados is not None:
+            try:
+                recs = _descargar_recomendados(limite=2)
+                for r in recs:
+                    if r.get("exito") and r.get("modelo") not in res["modelos_descargados"]:
+                        res["modelos_descargados"].append(r.get("modelo", ""))
+            except Exception as e3:
+                res["errores"].append(f"recomendados: {e3}")
+        if _IALOCAL_HF_DISPONIBLE and _perfilar_hw_hf is not None:
+            try: _perfilar_hw_hf(guardar=True)
+            except Exception: pass
         if _IALOCAL_HF_DISPONIBLE and _descargar_ia_temporal is not None:
             print("\n[PRE-SESION] Descargando IA local para sesion...")
             dl = _descargar_ia_temporal(modelo_id="qwen2.5:0.5b")
@@ -274,14 +285,6 @@ def _descarga_ia_pre_sesion() -> Dict[str, Any]:
                     res["modelos_descargados"].append(dl2.get("modelo", ""))
             except Exception as e2:
                 res["errores"].append(f"qwen2.5:1.5b: {e2}")
-        if _IALOCAL_DISPONIBLE and _descargar_recomendados is not None:
-            try:
-                recs = _descargar_recomendados(limite=2)
-                for r in recs:
-                    if r.get("exito") and r.get("modelo") not in res["modelos_descargados"]:
-                        res["modelos_descargados"].append(r.get("modelo", ""))
-            except Exception as e3:
-                res["errores"].append(f"recomendados: {e3}")
     except Exception as e:
         res["errores"].append(str(e))
     return res

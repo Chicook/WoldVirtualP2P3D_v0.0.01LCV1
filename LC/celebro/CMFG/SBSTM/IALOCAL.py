@@ -65,9 +65,7 @@ def _cargar_temp() -> List[Path]:
             datos = json.loads(REGISTRO_TEMP.read_text(encoding="utf-8"))
             return [MODELOS_DIR / p for p in datos.get("archivos", [])]
     except Exception: pass
-    rutas: List[Path] = []
-    for f in MODELOS_DIR.glob("*.gguf"):
-        rutas.append(f)
+    rutas = [f for f in MODELOS_DIR.glob("*.gguf")]
     return rutas
 
 def _guardar_temp() -> None:
