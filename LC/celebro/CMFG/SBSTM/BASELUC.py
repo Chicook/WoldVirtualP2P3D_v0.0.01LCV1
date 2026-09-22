@@ -112,6 +112,28 @@ except Exception:
     _perfilar_hw_local = None  # type: ignore
     _recomendar_ia_local = None  # type: ignore
 
+# ─── IMPORTACION IALOCAL (Descarga HuggingFace) ──
+try:
+    from LC.celebro.CMFG.SBSTM.IALOCAL import (
+        perfilar_hardware_ialocal as _perfilar_hw_hf,
+        recomendar_y_descargar as _descargar_hf_recomendados,
+        recomendar_modelos_hf as _recomendar_hf,
+        descargar_modelo_hf as _descargar_modelo_hf,
+        verificar_capacidades as _verificar_capacidades_hf,
+        listar_modelos_hf as _listar_hf,
+        info_completa as _info_completa_hf,
+    )
+    _IALOCAL_HF_DISPONIBLE = True
+except Exception:
+    _IALOCAL_HF_DISPONIBLE = False
+    _perfilar_hw_hf = None  # type: ignore
+    _descargar_hf_recomendados = None  # type: ignore
+    _recomendar_hf = None  # type: ignore
+    _descargar_modelo_hf = None  # type: ignore
+    _verificar_capacidades_hf = None  # type: ignore
+    _listar_hf = None  # type: ignore
+    _info_completa_hf = None  # type: ignore
+
 try:
     from LC.celebro.CMFG.SBSTM.ROTACIONIA import RotadorIA, get_rotador_ia
     _ROTACIONIA_DISPONIBLE = True

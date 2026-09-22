@@ -69,6 +69,39 @@ class GestorDescargasIA:
         texto, mid, lat = consultar_lucia_local(prompt, None)
         return {"texto": texto, "modelo": mid, "latencia_ms": lat}
 
+# CLASE 2.5: GestorIALocal — descarga inteligente de modelos HuggingFace según hardware.
+class GestorIALocal:
+    @staticmethod
+    def perfilar_hardware() -> Dict[str, Any]:
+        from LC.celebro.CMFG.SBSTM.IALOCAL import perfilar_hardware_ialocal
+        return perfilar_hardware_ialocal(guardar=True)
+    @staticmethod
+    def verificar_capacidades(perfil: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        from LC.celebro.CMFG.SBSTM.IALOCAL import verificar_capacidades
+        return verificar_capacidades(perfil=perfil)
+    @staticmethod
+    def listar_modelos_hf() -> List[Dict[str, Any]]:
+        from LC.celebro.CMFG.SBSTM.IALOCAL import listar_modelos_hf
+        return listar_modelos_hf()
+    @staticmethod
+    def modelos_compatibles(perfil: Optional[Dict[str, Any]] = None,
+                               limite: Optional[int] = None) -> List[Dict[str, Any]]:
+        from LC.celebro.CMFG.SBSTM.IALOCAL import recomendar_modelos_hf
+        return recomendar_modelos_hf(perfil=perfil, limite=limite)
+    @staticmethod
+    def descargar_modelo_hf(modelo_id: str) -> Dict[str, Any]:
+        from LC.celebro.CMFG.SBSTM.IALOCAL import descargar_modelo_hf
+        return descargar_modelo_hf(modelo_id)
+    @staticmethod
+    def recomendar_y_descargar(limite: int = 2, mostrar_banner: bool = True) -> List[Dict[str, Any]]:
+        from LC.celebro.CMFG.SBSTM.IALOCAL import recomendar_y_descargar
+        return recomendar_y_descargar(limite=limite, mostrar_banner=mostrar_banner)
+    @staticmethod
+    def info_completa() -> Dict[str, Any]:
+        from LC.celebro.CMFG.SBSTM.IALOCAL import info_completa
+        return info_completa()
+
+
 # CLASE 3: GestorConstructor — sesiones del constructor HRCTRC: carpetas, versionado y refactor de sesión (HRCTRC + HRCTRC_RFCT).
 class GestorConstructor:
     @staticmethod
@@ -188,6 +221,7 @@ class GestorSistema:
     CAPACIDADES: Final[Dict[str, str]] = {
         "descargas_ia": "MDSTM descarga modelos ligeros reales en LC/modelosIAlocal.",
         "ia_local": "DSIALCLGRG responde offline con Ollama/GGUF si OpenRouter falla.",
+        "ia_hf": "IALOCAL descarga modelos HuggingFace segun hardware (RAM/VRAM/disco).",
         "constructor": "HRCTRC crea carpetas y versiona el sistema en LC/Constructor.",
         "refactor": "HRCTRC_RFCT divide oversized a 400/450 con modelo local.",
         "hrctnr": "HRCNTR monitorea, refactoriza y actualiza todo el sistema.",
@@ -204,6 +238,7 @@ class GestorSistema:
         return ("LucIA API: iniciar_lucia/detener_lucia/turno/estado | "
                 "consulta_gratis/listar_catalogo_gratis/seleccionar_modelo_gratis/benchmark_gratis | "
                 "perfilar_pc/listar_ia_local/descargar_modelo_local/preguntar_ia_local | "
+        "descargar_ia_local_hf/info_ia_local_hf | "
                 "abrir_constructor/estado_constructor/unificar_constructor/crear_carpeta_lc | "
                 "version_sesion/estado_version_sesion | "
                 "refactorizar_sistema/actualizar_sistema_hrctnr/ciclo_cierre_hrctnr/gestor_hrctnr/estado_hrctnr | "
@@ -350,11 +385,13 @@ def detener_lucia(orq: OrquestadorSistemaLucIA) -> None: orq.detener()
 def turno(orq: OrquestadorSistemaLucIA, prompt: str) -> Dict[str, Any]: return orq.turno(prompt)
 def estado(orq: OrquestadorSistemaLucIA) -> Dict[str, Any]: return orq.estado_sistema()
 
-# IA local y descargas -> GestorDescargasIA
+# IA local y descargas -> GestorDescargasIA + GestorIALocal
 def perfilar_pc() -> Dict[str, Any]: return GestorDescargasIA.perfilar_pc()
 def listar_ia_local() -> List[Dict[str, Any]]: return GestorDescargasIA.listar_modelos_locales()
 def descargar_modelo_local(modelo_id: str) -> Dict[str, Any]: return GestorDescargasIA.descargar(modelo_id)
 def preguntar_ia_local(prompt: str) -> Dict[str, Any]: return GestorDescargasIA.preguntar(prompt)
+def descargar_ia_local_hf(limite: int = 2) -> List[Dict[str, Any]]: return GestorIALocal.recomendar_y_descargar(limite=limite)
+def info_ia_local_hf() -> Dict[str, Any]: return GestorIALocal.info_completa()
 
 # Constructor HRCTRC -> GestorConstructor
 def abrir_constructor(sesion_id: str = "") -> Dict[str, Any]: return GestorConstructor.abrir(sesion_id)
@@ -430,8 +467,8 @@ CAPACIDADES: Final[Dict[str, str]] = GestorSistema.CAPACIDADES
 __all__: Final[List[str]] = [
     "OrquestadorSistemaLucIA", "STMRFMNFacade", "STMRFMNMixin", "ContextoOrquestadorLucIA", "GestorDescargasIA",
     "GestorConstructor", "GestorIntegracion", "GestorBlockchain", "GestorVoz", "GestorIAFree", "GestorPesos",
-    "GestorSistema", "subsistema", "iniciar_lucia", "detener_lucia", "turno", "estado", "perfilar_pc",
-    "listar_ia_local", "descargar_modelo_local", "preguntar_ia_local", "abrir_constructor", "estado_constructor",
+    "GestorSistema", "GestorIALocal", "subsistema", "iniciar_lucia", "detener_lucia", "turno", "estado", "perfilar_pc",
+    "listar_ia_local", "descargar_modelo_local", "preguntar_ia_local", "descargar_ia_local_hf", "info_ia_local_hf", "abrir_constructor", "estado_constructor",
     "unificar_constructor", "crear_carpeta_lc", "version_sesion", "estado_version_sesion", "refactorizar_sistema",
     "actualizar_sistema_hrctnr", "ciclo_cierre_hrctnr", "gestor_hrctnr", "estado_hrctnr",
     "confirmar_actualizacion_hrctnr", "monitor_sistema", "listar_modulos", "listar_neuronas", "seleccionar_clases",
