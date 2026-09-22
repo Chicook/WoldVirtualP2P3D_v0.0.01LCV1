@@ -293,7 +293,6 @@ def motor_voz() -> Any:
     from LC.celebro.CMFG.SBSTM.voice_engine import get_voice_engine
     return get_voice_engine()
 
-
 def version_sistema() -> Dict[str, str]:
     """Versiones de cada subsistema del stack LucIA."""
     return {"orquestador": __version__, "arquitectura": "WoldVirtualP2P3D-2026",
@@ -359,7 +358,6 @@ def obtener_diagnostico_orquestador() -> Dict[str, Any]:
         "timestamp": time.time(),
     }
 
-
 __all__: Final[List[str]] = [
     "OrquestadorSistemaLucIA",
     "ContextoOrquestadorLucIA",
@@ -403,7 +401,6 @@ __all__: Final[List[str]] = [
     "obtener_diagnostico_orquestador",
     "main",
 ]
-
 
 # ─── FUNCION PRINCIPAL DE ENTRADA AL SISTEMA ─────────────────────────────────
 def main() -> int:

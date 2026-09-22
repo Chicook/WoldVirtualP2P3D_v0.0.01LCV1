@@ -289,7 +289,7 @@ class IntegradorRefactor:
     def es_orden_integracion(self, texto: str) -> bool:
         t = texto.lower()
         return any(k in t for k in ("integrar", "bitacora", "bitácora", "sube a ipfs",
-                                    "actualiza la rama", "cierre completo", "devopencode"))
+                                    "cierre completo", "devopencode"))
 
     def ejecutar_orden(self, texto: str) -> Optional[str]:
         if not self.es_orden_integracion(texto):
@@ -397,10 +397,9 @@ class IntegradorRefactor:
 
     def estado(self) -> Dict[str, Any]:
         """Foto rapida: eventos, md, snapshot y rama objetivo."""
-        return {"version": __version__, "sesion": self.sesion_id,
-                "eventos": len(self.eventos()), "md_existe": self.md_path.exists(),
-                "snapshot": len(getattr(self, "_snapshot", None) or []),
-                "rama": RAMA_OBJETIVO, "lc_archivos": len(listar_rutas_originales())}
+        return {"version": __version__, "sesion": self.sesion_id, "eventos": len(self.eventos()),
+                "md_existe": self.md_path.exists(), "rama": RAMA_OBJETIVO,
+                "lc_archivos": len(listar_rutas_originales())}
 
     def resumen_cierre_txt(self, reporte: Dict[str, Any]) -> str:
         """Resumen de una linea del pipeline para consola y voz."""
