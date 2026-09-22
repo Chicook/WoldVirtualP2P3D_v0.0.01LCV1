@@ -63,6 +63,9 @@ class ResultadoPurga:
     pyc_eliminados: int = 0
     tmp_ipfs_eliminados: int = 0
     chg_eliminados: int = 0
+    pytest_cache_eliminados: int = 0
+    logs_tmp_eliminados: int = 0
+    bak_tmp_eliminados: int = 0
     bytes_liberados: int = 0
     rutas_eliminadas: List[str] = field(default_factory=list)
     errores: List[str] = field(default_factory=list)
@@ -97,6 +100,8 @@ class InformePurgador:
             "purga_filesystem": {
                 "pycache": p.pycache_eliminados, "pyc_sueltos": p.pyc_eliminados,
                 "tmp_ipfs": p.tmp_ipfs_eliminados, "chg": p.chg_eliminados,
+                "pytest_cache": p.pytest_cache_eliminados,
+                "logs_tmp": p.logs_tmp_eliminados, "bak_tmp": p.bak_tmp_eliminados,
                 "bytes_liberados": p.bytes_liberados, "errores": p.errores,
                 "duracion_seg": round(p.duracion_seg, 3),
             },
@@ -255,11 +260,34 @@ class PurgaFilesystem:
         if not self._chg_dir.exists():
             return
         for item in self._chg_dir.iterdir():
+            if item.name in (".gitkeep", "README.md"):
+                continue
             if not self._excluida(item):
                 es_dir = item.is_dir()
                 if self._borrar(item, res, es_dir=es_dir):
                     res.chg_eliminados += 1
                     logger.info("  🗑 CHG: %s", item.name)
+
+    def limpiar_pytest_cache(self, res: ResultadoPurga) -> None:
+        for d in self._raiz.rglob(".pytest_cache"):
+            if d.is_dir() and not self._excluida(d):
+                if self._borrar(d, res, es_dir=True):
+                    res.pytest_cache_eliminados += 1
+                    logger.info("  🗑 pytest_cache: %s", d.relative_to(self._raiz))
+
+    def limpiar_logs_tmp(self, res: ResultadoPurga) -> None:
+        for pat in ("*.log", "*.tmp", "*.bak", "*.orig", "*.rej"):
+            for f in self._raiz.rglob(pat):
+                if f.is_file() and not self._excluida(f) and ".git" not in f.parts:
+                    if self._borrar(f, res):
+                        res.logs_tmp_eliminados += 1
+
+    def limpiar_bak_ledger(self, res: ResultadoPurga) -> None:
+        """Limpia .json.tmp huérfanos (los .bak del ledger se conservan)."""
+        for f in self._raiz.rglob("*.json.tmp"):
+            if f.is_file() and not self._excluida(f):
+                if self._borrar(f, res):
+                    res.bak_tmp_eliminados += 1
 
     def ejecutar(self) -> ResultadoPurga:
         res = ResultadoPurga()
@@ -269,11 +297,15 @@ class PurgaFilesystem:
         self.limpiar_pyc(res)
         self.limpiar_tmp_ipfs(res)
         self.limpiar_chg(res)
+        self.limpiar_pytest_cache(res)
+        self.limpiar_logs_tmp(res)
+        self.limpiar_bak_ledger(res)
         res.duracion_seg = time.perf_counter() - t0
         logger.info(
-            "Purga OK: pycache=%d | pyc=%d | tmp=%d | chg=%d | %.2f KB | %.2fs",
+            "Purga OK: pycache=%d | pyc=%d | tmp=%d | chg=%d | pytest=%d | logs=%d | bak=%d | %.2f KB | %.2fs",
             res.pycache_eliminados, res.pyc_eliminados, res.tmp_ipfs_eliminados,
-            res.chg_eliminados, res.bytes_liberados / 1024, res.duracion_seg,
+            res.chg_eliminados, res.pytest_cache_eliminados, res.logs_tmp_eliminados,
+            res.bak_tmp_eliminados, res.bytes_liberados / 1024, res.duracion_seg,
         )
         return res
 
@@ -349,8 +381,25 @@ def purgar_proyecto(
 
 
 def solo_limpiar_pycache(raiz: Optional[Path] = None) -> ResultadoPurga:
-    """Solo limpia __pycache__ y .pyc — sin tocar IPFS. Útil en desarrollo."""
+    """Solo limpia residuos (__pycache__, .pyc, CHG, pytest_cache, logs) — sin tocar IPFS."""
     return PurgaFilesystem(raiz=raiz or ROOT_DIR).ejecutar()
+
+
+def depositar_en_chg(origen: Path, chg_dir: Optional[Path] = None) -> Optional[Path]:
+    """Mueve un residuo de sesión al directorio CHG (papelera). Retorna destino o None."""
+    try:
+        src = Path(origen)
+        if not src.exists():
+            return None
+        dst_dir = chg_dir or CHG_DIR
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        dst = dst_dir / f"{int(time.time_ns())}_{src.name}"
+        shutil.move(str(src), str(dst))
+        logger.info("Residuo → CHG: %s", dst.name)
+        return dst
+    except Exception as exc:
+        logger.warning("depositar_en_chg(%s): %s", origen, exc)
+        return None
 
 
 def solo_custodia_ipfs(forzar_borrado: bool = False) -> ResultadoCustodia:
@@ -404,6 +453,8 @@ def imprimir_informe(inf: InformePurgador) -> None:
           f".pyc: {ANSI['C']}{p.pyc_eliminados}{ANSI['R']} | "
           f"tmp: {ANSI['C']}{p.tmp_ipfs_eliminados}{ANSI['R']} | "
           f"CHG: {ANSI['C']}{p.chg_eliminados}{ANSI['R']} | "
+          f"pytest: {ANSI['C']}{p.pytest_cache_eliminados}{ANSI['R']} | "
+          f"logs: {ANSI['C']}{p.logs_tmp_eliminados}{ANSI['R']} | "
           f"{ANSI['G']}{tam}{ANSI['R']} | "
           f"{ANSI['D']}{p.duracion_seg:.3f}s{ANSI['R']}")
     for err in p.errores[:2]:

@@ -433,7 +433,8 @@ class OrquestadorSistemaLucIA:
         print(f"  Exportado: {npz.name} + {js.name}")
 
     def cerrar_sistema(self) -> None:
-        """Cierre ordenado: minado de bloques pendientes y persistencia a IPFS."""        with self.lock:
+        """Cierre ordenado: minado final, persistencia IPFS y purga de residuos (CHG/__pycache__)."""
+        with self.lock:
             if not self.servidor_bks:
                 return
             print("\n\033[38;5;51m" + "=" * 76 + "\033[0m")
@@ -451,6 +452,15 @@ class OrquestadorSistemaLucIA:
                 print("  \033[38;5;48mSincronizacion IPFS de bloques y pesos completada exitosamente.\033[0m")
             except Exception as e_close:
                 print(f"  \033[38;5;214mCierre IPFS: {e_close}\033[0m")
+
+            try:
+                from LC.celebro.CMFG.SBSTM.PURGADOR import solo_limpiar_pycache
+                r = solo_limpiar_pycache()
+                print(f"  \033[38;5;48mPurga residuos: __pycache__={r.pycache_eliminados} chg={r.chg_eliminados} "
+                      f"pytest={r.pytest_cache_eliminados} logs={r.logs_tmp_eliminados} "
+                      f"({r.bytes_liberados / 1024:.1f} KB)\033[0m")
+            except Exception as e_purga:
+                print(f"  \033[38;5;214mPurga: {e_purga}\033[0m")
 
             print("\033[38;5;51m" + "=" * 76 + "\033[0m\n")
             self.servidor_bks = None
