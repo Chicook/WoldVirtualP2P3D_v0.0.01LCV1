@@ -36,6 +36,7 @@ CMFG_DIR: Final[Path] = PACKAGE_ROOT.parent.resolve()
 CELEBRO_DIR: Final[Path] = CMFG_DIR.parent.resolve()
 LC_DIR: Final[Path] = CELEBRO_DIR.parent.resolve()
 ROOT_DIR: Final[Path] = LC_DIR.parent.resolve()
+CHG_DIR: Final[Path] = ROOT_DIR / "CHG"
 
 RAMA_OBJETIVO: Final[str] = "devopencode"
 EXCLUIR_DIRS: Final[Tuple[str, ...]] = ("__pycache__", "Constructor", "pycache",
@@ -116,7 +117,8 @@ class IntegradorRefactor:
         self.sesion_id = sesion_id or f"RF_{time.strftime('%Y%m%d_%H%M%S')}"
         self._eventos: List[Dict[str, Any]] = []
         self._lock = threading.Lock()
-        self.md_path = PACKAGE_ROOT / f"INTEGRACIONRF_{self.sesion_id}.md"
+        CHG_DIR.mkdir(parents=True, exist_ok=True)
+        self.md_path = CHG_DIR / f"INTEGRACIONRF_{self.sesion_id}.md"
         self.registrar("sesion_iniciada", f"Integrador {__version__} activo.")
 
     # ── Bitacora en vivo ──────────────────────────────────────
@@ -155,7 +157,7 @@ class IntegradorRefactor:
 
     # ── Paso 2: transcribir actividad a .md ───────────────────
     def generar_md(self, destino: Optional[Path] = None) -> Dict[str, Any]:
-        """Vuelca toda la actividad de ejecucion a .md en SBSTM."""
+        """Vuelca toda la actividad de ejecucion al .md en CHG/."""
         dest = destino or self.md_path
         evs = self.eventos()
         lineas = [f"# Bitacora INTEGRACIONRF - sesion {self.sesion_id}",
@@ -324,9 +326,9 @@ class IntegradorRefactor:
             return {"exito": False, "mensaje": str(exc)}
 
     def limpiar_mds_antiguos(self, conservar: int = 3) -> int:
-        """Borra bitacoras .md de sesiones viejas; conserva las recientes."""
+        """Borra bitacoras .md de sesiones viejas en CHG; conserva recientes."""
         try:
-            mds = sorted(PACKAGE_ROOT.glob("INTEGRACIONRF_*.md"),
+            mds = sorted(CHG_DIR.glob("INTEGRACIONRF_*.md"),
                          key=lambda p: p.stat().st_mtime, reverse=True)
             n = 0
             for viejo in mds[conservar:]:

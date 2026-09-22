@@ -1,5 +1,5 @@
 {
-  "timestamp": 1790079169.9828253,
+  "timestamp": 1790079502.1409898,
   "cpu": {
     "sistema": "Windows",
     "version": "10.0.26200",
@@ -8,7 +8,7 @@
     "nucleos": 12
   },
   "ram_total_gb": 8.47,
-  "ram_libre_gb": 2.02,
+  "ram_libre_gb": 1.48,
   "vram_total_gb": 0.0,
   "gpu": "sin GPU dedicada (CPU)",
   "disco_libre_gb": 55.19,
