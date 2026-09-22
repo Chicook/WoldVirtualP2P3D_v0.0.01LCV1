@@ -207,6 +207,7 @@ class GestorConstructorSesion:
             # paquete y el .bak para no tocar los archivos reales del sistema.
             norm = [c.replace("\\", "/") for c in cambios]
             descartar = set()
+            omitidos: List[Dict[str, Any]] = []
             for c, cn in zip(cambios, norm):
                 if not c.endswith(".py"):
                     continue
@@ -223,6 +224,7 @@ class GestorConstructorSesion:
                 lote_pkg = [x for x in norm if x.startswith(pkg_pref)]
                 if not lote_pkg:
                     descartar.add(cn)
+                    omitidos.append({"archivo": c, "motivo": "shim_huerfano"})
                     logger.warning("HRCTRC omite shim huerfano: %s", c)
                 elif self._refactor_con_test_ok(c):
                     logger.warning("HRCTRC acepta refactor con test_ok: %s (+%d partes)",
@@ -230,6 +232,11 @@ class GestorConstructorSesion:
                 else:
                     logger.warning("HRCTRC omite refactor de sistema vivo: %s (+%d partes)",
                                    c, len(lote_pkg))
+                    omitidos.append({
+                        "archivo": c,
+                        "partes": len(lote_pkg),
+                        "motivo": "sistema_vivo_sin_test_previo_aprobado",
+                    })
                     descartar.add(cn)
                     descartar.update(lote_pkg)
             cambios = [c for c, cn in zip(cambios, norm) if cn not in descartar]
@@ -257,7 +264,16 @@ class GestorConstructorSesion:
             except Exception as exc:
                 logger.warning("HRCTRC purga incompleta: %s", exc)
             self._activa = False
+            if errores:
+                estado_refactor = "fallido"
+            elif omitidos:
+                estado_refactor = "parcial_omitido"
+            elif aplicados:
+                estado_refactor = "aplicado"
+            else:
+                estado_refactor = "sin_cambios"
             return {"exito": errores == 0, "aplicados": aplicados, "errores": errores,
+                    "omitidos": omitidos, "estado_refactor": estado_refactor,
                     "mensaje": f"Sesion unificada: {aplicados} archivo(s) en su ruta real. "
                                "Constructor vacia hasta la proxima sesion."}
 

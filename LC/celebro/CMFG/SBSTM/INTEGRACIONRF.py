@@ -136,8 +136,10 @@ class IntegradorRefactor:
         try:
             from LC.celebro.CMFG.SBSTM.HRCTRC import get_gestor_hrctrc
             rep = get_gestor_hrctrc().finalizar_sesion(aplicar=True)
-            self.registrar("refactor_aplicado",
-                           f"{rep.get('aplicados', 0)} archivos sobreescritos; {rep.get('mensaje', '')}")
+            estado = rep.get("estado_refactor", "desconocido")
+            self.registrar("refactor_" + estado,
+                           f"{rep.get('aplicados', 0)} aplicados; "
+                           f"{len(rep.get('omitidos', []))} omitidos; {rep.get('mensaje', '')}")
             return {"exito": rep.get("exito", False), **rep}
         except Exception as exc:
             self.registrar("refactor_error", str(exc))
@@ -303,14 +305,16 @@ class IntegradorRefactor:
             return ("Bitacora generada: " + rep.get("md", "") if rep.get("exito")
                     else "No pude generar la bitacora: " + rep.get("mensaje", ""))
         rep = self.cierre_completo()
+        estado_refactor = rep["refactor"].get("estado_refactor", "desconocido")
         return (f"Cierre completo en {rep['segundos']}s: refactor "
-                f"{'OK' if rep['refactor'].get('exito') else 'FALLO'}, "
+                f"{estado_refactor}, "
                 f"IPFS {rep['ipfs'].get('cid', 'sin CID')}, rama: {rep['rama'].get('mensaje', '')}.")
 
     def informe_para_lucia(self) -> str:
         n = len(listar_rutas_originales())
-        return (f"Integro el refactor yo misma (INTEGRACIONRF v{__version__}): veo {n} archivos, "
-                f"sobreescribo al cerrar, .md en CHG -> pesos -> IPFS -> {RAMA_OBJETIVO}.")
+        return (f"INTEGRACIONRF v{__version__}: inventario de {n} archivos. "
+                "El cierre aplica solo cambios con prueba previa aprobada; "
+                "los refactors omitidos se informan como parciales.")
 
     # ── Snapshots, inventario e higiene ───────────────────────
     def snapshot_inicio(self) -> Dict[str, Any]:

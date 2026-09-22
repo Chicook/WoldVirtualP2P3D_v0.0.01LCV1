@@ -2,6 +2,50 @@
   "schema_version": 1,
   "project": "WoldVirtualP2P3D / LucIA",
   "architecture_version": "2026.3.1-refactor-1",
+  "capabilities": [
+    {
+      "id": "imports.compatibility",
+      "status": "verified",
+      "summary": "Resuelve aliases de imports heredados hacia modulos activos.",
+      "limitations": ["No migra plugins que alteren sys.modules en caliente."]
+    },
+    {
+      "id": "runtime.local-ai-config",
+      "status": "partial",
+      "summary": "Existe IAlocal.json versionado con Ollama y LM Studio.",
+      "limitations": ["No existe aun un ModelRouter con health-check y load-balancing reales."]
+    },
+    {
+      "id": "blockchain.transaction-safety",
+      "status": "partial",
+      "summary": "El pool se confirma despues de minar y guardar el bloque.",
+      "limitations": ["El mempool no se recupera entre reinicios; no hay WAL ni reorg automatico."]
+    },
+    {
+      "id": "session.ollama-config",
+      "status": "partial",
+      "summary": "SNSBSTNPRB normaliza el endpoint Ollama desde IAlocal.json.",
+      "limitations": ["No implementa validacion JSON Schema Draft-07 ni hot reload completo."]
+    },
+    {
+      "id": "diagnostics.factual-context",
+      "status": "verified",
+      "summary": "El manifiesto se inyecta en el contexto factual del modelo.",
+      "limitations": ["Solo conoce cambios registrados en este manifiesto."]
+    },
+    {
+      "id": "purger.path-safety",
+      "status": "partial",
+      "summary": "PURGADOR define logger y CHG_DIR en ambas partes divididas.",
+      "limitations": ["No existe aun modo dry-run ni auditoria de larga duracion."]
+    },
+    {
+      "id": "live-module-refactor",
+      "status": "blocked",
+      "summary": "HRCTRC omite modulos vivos sin prueba previa aprobada.",
+      "limitations": ["BKSVCB, SNSBSTNPRB, ipfs_manager y RFEN1_RN_4 no deben declararse refactorizados aun."]
+    }
+  ],
   "changes": [
     {
       "id": "imports.compatibility",

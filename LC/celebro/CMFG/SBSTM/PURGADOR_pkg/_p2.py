@@ -26,6 +26,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Final, List, Optional, Tuple
 
+logger = logging.getLogger("WoldVirtualP2P3D.PURGADOR")
+
 # ─── RUTAS CANÓNICAS ─────────────────────────────────────────────────────────
 _HERE:       Final[Path] = Path(__file__).resolve()
 # Esta parte vive un nivel por debajo de SBSTM al estar dentro de PURGADOR_pkg.
