@@ -150,6 +150,20 @@ except Exception:
     RefactorizadorSesion = None  # type: ignore
     refactorizar_overlay = None  # type: ignore
 
+# ─── IMPORTACION INTEGRACIONRF (cierre: refactor->md->pesos->IPFS->rama) ──
+try:
+    from LC.celebro.CMFG.SBSTM.INTEGRACIONRF import (
+        IntegradorRefactor,
+        get_integrador,
+        registrar_actividad,
+    )
+    _INTEGRACIONRF_DISPONIBLE = True
+except Exception:
+    _INTEGRACIONRF_DISPONIBLE = False
+    IntegradorRefactor = None  # type: ignore
+    get_integrador = None  # type: ignore
+    registrar_actividad = None  # type: ignore
+
 LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.WARNING))
 for _log_name in ("", "WoldVirtualP2P3D", "LC", "urllib3", "ENRN", "SLRN", "RNP", "httpx"):
@@ -224,6 +238,13 @@ class OrquestadorSistemaLucIA:
                 self.gestor_hrctrc = None
         # HRCTRC_RFCT: refactorizador de version de sesion (regla 400/450)
         self.refactorizador: Optional[Any] = None
+        # INTEGRACIONRF: bitacora .md -> pesos -> IPFS -> devopencode
+        self.integrador: Optional[Any] = None
+        if _INTEGRACIONRF_DISPONIBLE and get_integrador is not None:
+            try:
+                self.integrador = get_integrador(sesion_id=self.sesion_id)
+            except Exception:
+                self.integrador = None
         atexit.register(self.cerrar_sistema)
 
     def inicializar_subsistemas(self) -> bool:
@@ -330,6 +351,15 @@ class OrquestadorSistemaLucIA:
             print(f"        \033[38;5;48m{rep.get('mensaje')}\033[0m")
         except Exception as exc:
             print(f"  [7/7] Version de sesion      : \033[38;5;214mAVISO ({exc})\033[0m")
+
+        # 8. INTEGRACIONRF: snapshot de rutas originales + bitacora viva
+        if self.integrador is not None:
+            try:
+                snap = self.integrador.snapshot_inicio()
+                print(f"  [8/8] Integracion RF          : \033[38;5;48mARMADA\033[0m | "
+                      f"Rutas: \033[38;5;51m{snap.get('rutas', 0)}\033[0m | .md->pesos->IPFS->devopencode")
+            except Exception as exc:
+                print(f"  [8/8] Integracion RF          : \033[38;5;214mAVISO ({exc})\033[0m")
 
     def _inicializar_ia_local(self) -> None:
         """Perfila el hardware y marca la IA local como disponible para LucIA."""
@@ -438,6 +468,17 @@ class OrquestadorSistemaLucIA:
             except Exception:
                 pass
 
+        # Fase 1e: INTEGRACIONRF — integrar/bitacora/IPFS/rama se EJECUTA aqui.
+        if self.integrador is not None:
+            try:
+                if self.integrador.es_orden_integracion(prompt):
+                    respuesta_i = self.integrador.ejecutar_orden(prompt)
+                    if respuesta_i:
+                        return self._cerrar_turno(respuesta_i, "LucIA-INTEGRACIONRF-local", 0.0,
+                                                  prompt, estado_previo, t_inicio)
+            except Exception:
+                pass
+
         # Fase 2: Inferencia gratuita con rotacion automatica via IAFREE
         respuesta = ""
         modelo_usado = "Reflejo-Interno"
@@ -506,6 +547,15 @@ class OrquestadorSistemaLucIA:
 
         # Telemetria estilizada en consola
         self._imprimir_telemetria_turno(duracion_ms, cid_ipfs, modelo_usado)
+
+        # Bitacora viva INTEGRACIONRF: cada turno queda para el .md de cierre
+        try:
+            if self.integrador is not None:
+                self.integrador.registrar(
+                    "turno", f"#{self.turno_actual} mod={modelo_usado} "
+                             f"{duracion_ms:.0f}ms cid={str(cid_ipfs)[:12]}")
+        except Exception:
+            pass
 
     def _generar_reflejo_interno(self, prompt: str, info: Dict[str, Any]) -> str:
         tono = info.get("tono_cognitivo", "reflexivo")
@@ -643,6 +693,9 @@ class OrquestadorSistemaLucIA:
             if entrada.lower() in ("refactorizar", "version-sesion", "version_sesion"):
                 self._cmd_version_sesion()
                 continue
+            if entrada.lower() in ("integrar", "bitacora", "cierre-completo"):
+                self._cmd_integrar()
+                continue
 
             self.procesar_turno_dialogo(entrada)
 
@@ -744,6 +797,14 @@ class OrquestadorSistemaLucIA:
         rep = self.refactorizador.ejecutar(mostrar_barra=True)
         print(f"  {rep.get('mensaje')}")
 
+    def _cmd_integrar(self) -> None:
+        """Pipeline manual: refactor -> .md -> pesos -> IPFS -> devopencode."""
+        if self.integrador is None:
+            print("  INTEGRACIONRF no disponible.")
+            return
+        rep = self.integrador.cierre_completo()
+        print(f"  {self.integrador.resumen_cierre_txt(rep)}")
+
     def cerrar_sistema(self) -> None:
         """Cierre ordenado: minado final, persistencia IPFS y purga de residuos (CHG/__pycache__)."""
         with self.lock:
@@ -759,14 +820,18 @@ class OrquestadorSistemaLucIA:
             except Exception:
                 pass
 
-            # HRCTRC: unificar overlay en rutas reales y dejar Constructor vacia
+            # INTEGRACIONRF: refactor -> .md -> pesos -> IPFS -> devopencode
+            # (incluye la unificacion HRCTRC; si no esta, fallback directo)
             try:
-                if self.gestor_hrctrc is not None and self.gestor_hrctrc.esta_activa():
+                if self.integrador is not None:
+                    rep_i = self.integrador.cierre_completo()
+                    print(f"  \033[38;5;48m{self.integrador.resumen_cierre_txt(rep_i)}\033[0m")
+                elif self.gestor_hrctrc is not None and self.gestor_hrctrc.esta_activa():
                     rep_h = self.gestor_hrctrc.finalizar_sesion(aplicar=True)
                     print(f"  \033[38;5;48mConstructor unificado: {rep_h.get('aplicados', 0)} archivo(s) "
                           f"en su ruta real; Constructor vacia.\033[0m")
             except Exception as e_hrc:
-                print(f"  \033[38;5;214mConstructor: {e_hrc}\033[0m")
+                print(f"  \033[38;5;214mIntegracionRF: {e_hrc}\033[0m")
 
             try:
                 self.servidor_bks.cerrar_sesion_y_subir_ipfs()

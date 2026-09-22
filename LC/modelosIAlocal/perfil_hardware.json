@@ -1,5 +1,5 @@
 {
-  "timestamp": 1790077554.9580522,
+  "timestamp": 1790078625.778615,
   "cpu": {
     "sistema": "Windows",
     "version": "10.0.26200",
@@ -8,10 +8,10 @@
     "nucleos": 12
   },
   "ram_total_gb": 8.47,
-  "ram_libre_gb": 0.65,
+  "ram_libre_gb": 2.09,
   "vram_total_gb": 0.0,
   "gpu": "sin GPU dedicada (CPU)",
-  "disco_libre_gb": 55.44,
+  "disco_libre_gb": 55.43,
   "ollama_host": "http://127.0.0.1:11434",
   "dsialclgrg_version": "2026.3.1"
 }
