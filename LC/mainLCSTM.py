@@ -31,6 +31,14 @@ SBSTM_DIR: Final[Path] = CMFG_DIR / "SBSTM"
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+# ─── CACHE PYTHON → CHG (papelera de sesión, se vacía al cerrar) ─────────────
+# Todo __pycache__ generado durante la sesión aparece en CHG/ y se borra
+# en cerrar_sistema() vía PURGADOR.solo_limpiar_pycache().
+_CHG_DIR = ROOT_DIR / "CHG"
+_CHG_DIR.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("PYTHONPYCACHEPREFIX", str(_CHG_DIR / "pycache"))
+sys.dont_write_bytecode = False
+
 for _s in (sys.stdout, sys.stderr):
     if hasattr(_s, "reconfigure"):
         try:
@@ -141,6 +149,14 @@ class OrquestadorSistemaLucIA:
 
     def inicializar_subsistemas(self) -> bool:
         """Inicializa en secuencia la blockchain, transductor, IAFREE y credenciales."""
+        # 0. Recolectar caché Python pre-existente hacia CHG/
+        try:
+            from LC.celebro.CMFG.SBSTM.PURGADOR import recolectar_pycache_en_chg
+            n_chg = recolectar_pycache_en_chg()
+            if n_chg:
+                print(f"  [0/4] Cache Python → CHG   : \033[38;5;51m{n_chg} elementos\033[0m")
+        except Exception:
+            pass
         # 1. Cargar .env y subsistema IAFREE
         GestorEntornoSeguro.cargar_variables()
         if get_cliente_iafree is not None:
@@ -464,8 +480,12 @@ class OrquestadorSistemaLucIA:
                 print(f"  \033[38;5;214mCierre IPFS: {e_close}\033[0m")
 
             try:
-                from LC.celebro.CMFG.SBSTM.PURGADOR import solo_limpiar_pycache
-                r = solo_limpiar_pycache()
+                from LC.celebro.CMFG.SBSTM.PURGADOR import (
+                    recolectar_pycache_en_chg,
+                    solo_limpiar_pycache,
+                )
+                recolectar_pycache_en_chg()  # junta lo último en CHG…
+                r = solo_limpiar_pycache()   # …y lo vacía todo
                 print(f"  \033[38;5;48mPurga residuos: __pycache__={r.pycache_eliminados} chg={r.chg_eliminados} "
                       f"pytest={r.pytest_cache_eliminados} logs={r.logs_tmp_eliminados} "
                       f"({r.bytes_liberados / 1024:.1f} KB)\033[0m")
