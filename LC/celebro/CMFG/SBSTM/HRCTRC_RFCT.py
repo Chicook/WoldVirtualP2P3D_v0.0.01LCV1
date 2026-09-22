@@ -172,7 +172,6 @@ def _resumen_con_modelo_local(codigo: str) -> str:
 
 
 def test_previo_paquete(pkg_init: Path, sonda: str = "") -> bool:
-    """Test previo: carga el _pkg aislado (importlib) y corre la sonda."""
     import sys as _sys
     try:
         import importlib.util
@@ -221,6 +220,11 @@ class RefactorizadorSesion:
         cabecera, bloques = _partir_bloques(fuente)
         cab = "".join(l for l in cabecera.splitlines(keepends=True)
                       if l.strip() != "from __future__ import annotations")
+        # Izado: toda constante UPPER de nivel superior va a cada parte (si no,
+        # NameError en otras partes). Solo asignaciones de una linea, idempotentes.
+        for m in re.finditer(r"(?m)^[A-Z_][A-Z0-9_]*\s*(?::\s*[^=\n]+)?=\s*.+$", fuente):
+            if m.group(0) not in cab:
+                cab += m.group(0) + "\n"
         tope = max(100, MAX_LINEAS - (cab.count("\n") + 8))  # cabecera + plantilla
         partes = _empaquetar(bloques, limite=tope)
         if len(partes) <= 1 and contar_lineas(origen) <= MAX_LINEAS:
@@ -434,10 +438,6 @@ class RefactorizadorSesion:
             return len(baks)
         except Exception:
             return 0
-
-
-def get_refactorizador(overlay: Path) -> RefactorizadorSesion:
-    return RefactorizadorSesion(overlay)
 
 
 def refactorizar_overlay(overlay: Path, mostrar_barra: bool = True) -> Dict[str, Any]:

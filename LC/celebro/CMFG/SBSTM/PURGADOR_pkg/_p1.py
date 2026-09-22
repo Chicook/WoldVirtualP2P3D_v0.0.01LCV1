@@ -1,6 +1,6 @@
 """
 PURGADOR - parte 1/2 (version de sesion LucIA).
-Este código Python se encarga de realizar dos tareas principales: 1. **Reconocimiento de la ruta de seguridad**: Define la ruta donde se gua
+Este código Python está generando y procesando archivos y datos. Se crea una estructura de datos (`ResultadoCustodia`) que mantiene ciertos 
 """
 from __future__ import annotations
 

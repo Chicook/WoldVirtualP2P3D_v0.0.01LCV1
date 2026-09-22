@@ -1,6 +1,6 @@
 """
 PURGADOR - parte 2/2 (version de sesion LucIA).
-Este código muleva todo __pycache__ / *.pyc / *.pyo a CHG para ver la caché de la sesión y incrementa el contador de elementos.
+Este código se encarga de mover todos los archivos de caché (`__pycache__`) y sus subdirectorios (`*.pyc` y `*.pyo`) a la carpeta `CHG`, eli
 """
 from __future__ import annotations
 
