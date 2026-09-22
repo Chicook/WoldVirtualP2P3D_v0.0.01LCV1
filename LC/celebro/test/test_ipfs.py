@@ -334,7 +334,7 @@ class TestIPFSManagerBatchPSNRL:
         assert resumen["borrados"] == []
 
     def test_subir_y_limpiar_psnrl_con_archivos_forzado(self, tmp_path: Path, mock_ipfs_inactivo: None) -> None:
-        """Valida que con forzar_borrado_sin_daemon=True se limpien archivos procesados."""
+        """Valida que en modo offline se procesen los archivos y se generen CIDs autónomos sin borrar local."""
         dir_psnrl = tmp_path / "psnrl_con_pesos"
         dir_psnrl.mkdir()
         f1 = dir_psnrl / "neurona_en1.npz"
@@ -348,10 +348,10 @@ class TestIPFSManagerBatchPSNRL:
         resumen = mgr.subir_y_limpiar_psnrl(forzar_borrado_sin_daemon=True)
         assert resumen["archivos_procesados"] == 2
         assert len(resumen["cids"]) == 2
-        assert "neurona_en1.npz" in resumen["borrados"]
-        assert "neurona_sl1.npz" in resumen["borrados"]
-        assert not f1.exists()
-        assert not f2.exists()
+        # Sin confirmación de pin remoto (subida_real=False), el borrado seguro no procede
+        assert resumen["borrados"] == []
+        assert f1.exists()
+        assert f2.exists()
 
 
 # ============================================================================

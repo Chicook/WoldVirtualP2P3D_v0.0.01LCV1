@@ -217,10 +217,13 @@ def mock_openrouter_429() -> Dict[str, Any]:
 # ─── FIXTURE: mock del daemon IPFS Kubo no disponible ─────────────────────────
 @pytest.fixture()
 def mock_ipfs_inactivo():
-    """Simula que el daemon Kubo está caído (ConnectionRefusedError)."""
+    """Simula que el daemon Kubo y la CLI no están disponibles (modo offline)."""
     with patch(
         "urllib.request.urlopen",
         side_effect=urllib.error.URLError("Connection refused — IPFS mock"),
+    ), patch(
+        "subprocess.run",
+        side_effect=FileNotFoundError("ipfs CLI mock offline"),
     ):
         yield
 
