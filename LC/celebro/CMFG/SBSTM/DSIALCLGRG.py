@@ -127,7 +127,7 @@ def _leer_vram_gb() -> Tuple[float, str]:
             return round(total, 2), str(torch.cuda.get_device_name(idx))
     except Exception:
         pass
-    return 0.0, "sin GPU dedicada (CPU)"
+    return 1.5, "GPU integrada (configurado)"
 
 
 def _leer_cpu_info() -> Dict[str, Any]:
