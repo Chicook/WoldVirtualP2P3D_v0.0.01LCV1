@@ -124,37 +124,46 @@ class TRNLUCMixin:
             except Exception:
                 pass
 
-        # Fase 2: Inferencia gratuita con rotacion automatica via IAFREE
+        # Fase 2: Rotacion Ollama -> LM Studio -> OpenRouter gratuito.
+        # Los backends locales se prueban antes de consumir el pool gratuito.
         respuesta = ""
         modelo_usado = "Reflejo-Interno"
         latencia_llm = 0.0
 
-        if self.cliente_iafree and self.cliente_iafree.esta_autenticado():
-            resp_txt, mod_id, lat = self.cliente_iafree.generar_respuesta(
+        if self.rotador_ia is not None:
+            resultado_ia = self.rotador_ia.consultar(
                 prompt=prompt,
-                contexto_neuronal=estado_previo,
-                stream_en_vivo=False,
+                contexto=estado_previo,
+                cliente_openrouter=self.cliente_iafree,
             )
-            if resp_txt and not resp_txt.startswith("[IAFREE]"):
-                respuesta = resp_txt
-                modelo_usado = mod_id
-                latencia_llm = lat
-
-        # Fase 2b: Fallback autonomo a IA local (DSIALCLGRG) si OpenRouter fallo
-        if not respuesta and self.ia_local_lista:
+            respuesta = str(resultado_ia.get("texto", ""))
+            modelo_usado = str(resultado_ia.get("modelo", modelo_usado))
+            latencia_llm = float(resultado_ia.get("latencia_ms", 0.0))
+        elif self.ia_local_lista:
             txt_local, mid_local, lat_local = self._responder_ia_local(prompt, estado_previo)
-            if txt_local:
-                respuesta = txt_local
-                modelo_usado = mid_local
-                latencia_llm = lat_local
+            respuesta, modelo_usado, latencia_llm = txt_local, mid_local, lat_local
 
         if not respuesta:
             respuesta = self._generar_reflejo_interno(prompt, estado_previo)
-        elif _RPLC_DISPONIBLE and reprocesar_con_metricas is not None:
+        elif self.conversor_psn is not None:
+            # Fase 3: respuesta externa -> pesos -> propagación por las 50 neuronas.
             try:
-                respuesta, _ = reprocesar_con_metricas(respuesta, estado_previo)
+                sintesis = self.conversor_psn.asimilar_respuestas_y_calcular_sintesis(
+                    prompt=prompt,
+                    respuesta_modelo=respuesta,
+                    modelo_nombre=modelo_usado,
+                )
+                contexto_sintesis = {**estado_previo, **sintesis}
+                # Fase 4: voz propia de LucIA después de procesar los pesos.
+                if _RPLC_DISPONIBLE and reprocesar_con_metricas is not None:
+                    respuesta, metricas_rplc = reprocesar_con_metricas(respuesta, contexto_sintesis)
+                    modelo_usado = f"LucIA[{modelo_usado}]"
             except Exception:
-                pass
+                if _RPLC_DISPONIBLE and reprocesar_con_metricas is not None:
+                    try:
+                        respuesta, _ = reprocesar_con_metricas(respuesta, estado_previo)
+                    except Exception:
+                        pass
 
         self._cerrar_turno(respuesta, modelo_usado, latencia_llm, prompt, estado_previo, t_inicio)
 

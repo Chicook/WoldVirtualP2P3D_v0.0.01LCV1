@@ -169,7 +169,7 @@ class NeuronaEntradaBase(LucIANeuronBase):
                 model_to_use = "lyria_pro"
             elif "Dropout" in self.nombre:
                 model_to_use = "gemma4"
-            respuesta_propia = self.llm_connector.generate_response(prompt_propio, model_key=model_to_use, use_internet=True)
+            respuesta_propia = self.llm_connector.generate_response(prompt_propio, model_key=model_to_use, use_internet=False)
             self.distribuir_a_toda_la_red(respuesta_propia)
         else:
             print(f"[Neurona {self.nombre}] No tengo conector LLM para enviar mi prompt.")

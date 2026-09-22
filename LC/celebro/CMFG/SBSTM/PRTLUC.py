@@ -13,6 +13,7 @@ from LC.celebro.CMFG.SBSTM.BASELUC import (
     _perfilar_hw_local, _recomendar_ia_local, banner_bienvenida,
     consultar_lucia_local, get_cliente_iafree, get_gestor_hrctrc,
     get_gestor_mdstm, get_integrador, refactorizar_overlay,
+    _ROTACIONIA_DISPONIBLE, get_rotador_ia,
 )
 
 
@@ -25,6 +26,7 @@ class PRTLUCMixin:
         self.conversor_psn: Optional[Any] = None
         self.sesion_p2p: Optional[Any] = None
         self.cliente_iafree: Optional[Any] = None
+        self.rotador_ia: Optional[Any] = None
         self.activa = False
         self.turno_actual = 0
         self.puerto_bks = int(os.getenv("LUCIA_BKS_PORT", "8545"))
@@ -32,6 +34,11 @@ class PRTLUCMixin:
         # DSIALCLGRG: perfil HW + estado IA local (autonomo, sin bloquear arranque)
         self.perfil_hw_local: Optional[Dict[str, Any]] = None
         self.ia_local_lista: bool = False
+        if _ROTACIONIA_DISPONIBLE and get_rotador_ia is not None:
+            try:
+                self.rotador_ia = get_rotador_ia()
+            except Exception:
+                self.rotador_ia = None
         # MDSTM: gestor de descarga autonoma (clase real, no promesa)
         self.gestor_mdstm: Optional[Any] = None
         if _MDSTM_DISPONIBLE and get_gestor_mdstm is not None:

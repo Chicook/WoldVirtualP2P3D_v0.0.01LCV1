@@ -112,6 +112,14 @@ except Exception:
     _perfilar_hw_local = None  # type: ignore
     _recomendar_ia_local = None  # type: ignore
 
+try:
+    from LC.celebro.CMFG.SBSTM.ROTACIONIA import RotadorIA, get_rotador_ia
+    _ROTACIONIA_DISPONIBLE = True
+except Exception:
+    RotadorIA = None  # type: ignore
+    get_rotador_ia = None  # type: ignore
+    _ROTACIONIA_DISPONIBLE = False
+
 # ─── IMPORTACION MDSTM (descarga autonoma real en LC/modelosIAlocal) ──────
 try:
     from LC.modelosIAlocal.MDSTM import (
