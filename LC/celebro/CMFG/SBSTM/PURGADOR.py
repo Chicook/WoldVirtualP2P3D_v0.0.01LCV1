@@ -37,7 +37,6 @@ logger = logging.getLogger("WoldVirtualP2P3D.PURGADOR")
 ANSI = {"R": "\033[0m", "B": "\033[1m", "D": "\033[2m", "C": "\033[96m",
         "G": "\033[92m", "Y": "\033[93m", "M": "\033[95m", "RE": "\033[91m", "W": "\033[97m"}
 
-
 # ── ESTRUCTURAS DE DATOS ─────────────────────────────────────────────────────
 @dataclass
 class ResultadoCustodia:
@@ -102,7 +101,6 @@ class InformePurgador:
                 "duracion_seg": round(p.duracion_seg, 3),
             },
         }
-
 
 # ── FASE 1 — CUSTODIA IPFS ───────────────────────────────────────────────────
 class CustodiaIPFS:
@@ -180,7 +178,6 @@ class CustodiaIPFS:
         logger.info("CustodiaIPFS: %d/%d pinados | %d err | %.2fs",
                     res.archivos_pinados, res.archivos_procesados, res.archivos_fallidos, res.duracion_seg)
         return res
-
 
 # ── FASE 2 — PURGA DEL FILESYSTEM ────────────────────────────────────────────
 class PurgaFilesystem:
@@ -280,7 +277,6 @@ class PurgaFilesystem:
         )
         return res
 
-
 # ── ORQUESTADOR ──────────────────────────────────────────────────────────────
 class Purgador:
     """
@@ -341,7 +337,6 @@ class Purgador:
         if self._guardar:
             self._guardar_informe(inf)
         return inf
-
 
 # ── API PÚBLICA ──────────────────────────────────────────────────────────────
 def purgar_proyecto(
@@ -456,7 +451,6 @@ def _cli_main() -> None:
               f"bytes={r.bytes_subidos:,} {r.duracion_seg:.3f}s")
         return
     imprimir_informe(purgar_proyecto(raiz=raiz, forzar=args.forzar, guardar_informe=not args.no_informe))
-
 
 if __name__ == "__main__":
     _cli_main()
