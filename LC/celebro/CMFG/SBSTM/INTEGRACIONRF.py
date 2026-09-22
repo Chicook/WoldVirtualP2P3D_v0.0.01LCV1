@@ -408,8 +408,14 @@ class IntegradorRefactor:
     def resumen_cierre_txt(self, reporte: Dict[str, Any]) -> str:
         """Resumen de una linea del pipeline para consola y voz."""
         r = reporte
+        refactor = r.get("refactor", {})
+        estado_refactor = refactor.get("estado_refactor")
+        if not estado_refactor:
+            estado_refactor = "aplicado" if refactor.get("exito") else "fallido"
+        omitidos = len(refactor.get("omitidos", []))
+        detalle_omitidos = f" ({omitidos} omitidos)" if omitidos else ""
         return (f"Cierre {self.sesion_id} en {r.get('segundos', 0)}s: "
-                f"refactor {'OK' if r.get('refactor', {}).get('exito') else 'FALLO'} | "
+                f"refactor {estado_refactor}{detalle_omitidos} | "
                 f"md {'OK' if r.get('md', {}).get('exito') else 'FALLO'} | "
                 f"pesos {'OK' if r.get('pesos', {}).get('exito') else 'FALLO'} | "
                 f"IPFS {r.get('ipfs', {}).get('cid', 'sin CID')}.")

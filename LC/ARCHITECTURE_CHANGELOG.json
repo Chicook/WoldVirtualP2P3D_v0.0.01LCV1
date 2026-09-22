@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "project": "WoldVirtualP2P3D / LucIA",
-  "architecture_version": "2026.3.1-refactor-1",
+  "architecture_version": "2026.3.1-refactor-2",
   "capabilities": [
     {
       "id": "imports.compatibility",
@@ -40,10 +40,16 @@
       "limitations": ["No existe aun modo dry-run ni auditoria de larga duracion."]
     },
     {
+      "id": "diagnostics.closure-status",
+      "status": "verified",
+      "summary": "El cierre distingue refactor aplicado, parcial omitido y fallido, incluyendo el conteo de omisiones.",
+      "limitations": ["No convierte modulos vivos omitidos en refactors aplicados."]
+    },
+    {
       "id": "live-module-refactor",
       "status": "blocked",
       "summary": "HRCTRC omite modulos vivos sin prueba previa aprobada.",
-      "limitations": ["BKSVCB, SNSBSTNPRB, ipfs_manager y RFEN1_RN_4 no deben declararse refactorizados aun."]
+      "limitations": ["BKSVCB, INTEGRACIONRF, SNSBSTNPRB, ipfs_manager y RFEN1_RN_4 no deben declararse refactorizados aun."]
     }
   ],
   "changes": [
@@ -70,6 +76,10 @@
     {
       "id": "purger.path-safety",
       "summary": "PURGADOR define CHG_DIR tambien en su parte 2 para evitar errores durante el cierre."
+    },
+    {
+      "id": "diagnostics.closure-status",
+      "summary": "El resumen de cierre informa el estado real del refactor y la cantidad de modulos omitidos."
     }
   ]
 }
