@@ -4,7 +4,135 @@ Plataforma distribuida de computación cognitiva neuronal, consenso blockchain i
 
 ---
 
-## 📌 Resumen de lo Realizado Hasta el Momento
+## Estado actual verificable de LucIA
+
+> **Fuente factual:** `LC/ARCHITECTURE_CHANGELOG.json` y las comprobaciones estructurales ejecutadas por `LC.compatibility`. Esta sección distingue entre código presente, capacidad parcialmente integrada y comportamiento validado de extremo a extremo.
+
+- **Versión de arquitectura:** `2026.3.1-refactor-2`.
+- **Cambios registrados:** 7.
+- **Capacidades registradas:** 8.
+- **Estado operativo de LucIA:** observacional y reportorial. LucIA puede leer el manifiesto, diagnosticar el estado y comunicar limitaciones, pero no modifica por sí misma el código ni la configuración.
+- **Último cierre conocido:** el cierre informa correctamente `refactor parcial_omitido` cuando HRCTRC omite módulos vivos. El conteo observado más reciente fue de 5 omisiones.
+
+### Capacidades verificadas
+
+- `imports.compatibility`: resuelve aliases heredados hacia módulos activos sin cargar respaldos de `CHG`.
+- `diagnostics.factual-context`: inyecta el manifiesto factual en el contexto de LucIA y evita inventar changelogs.
+- `diagnostics.closure-status`: el resumen de cierre distingue entre refactor aplicado, parcial omitido y fallido, e informa el número de omisiones.
+
+### Capacidades parciales
+
+- `runtime.local-ai-config`: `LC/modelosIAlocal/IAlocal.json` existe y define Ollama, LM Studio y modo offline; todavía no está verificado el failover automático completo.
+- `blockchain.transaction-safety`: las transacciones pendientes se confirman después de minar y persistir el bloque; no están validados todos los escenarios de reorg, fork y concurrencia.
+- `session.ollama-config`: `SNSBSTNPRB` lee y normaliza la configuración de Ollama; faltan pruebas de timeout, TLS, autenticación y extremos de configuración.
+- `purger.path-safety`: `logger` y `CHG_DIR` están definidos en las partes del purgador; faltan pruebas de carga, dry-run y auditoría prolongada.
+
+### Capacidad bloqueada
+
+`live-module-refactor` permanece en estado `blocked`. HRCTRC no aplica refactors a módulos vivos sin una prueba previa aprobada. En el último cierre fueron omitidos:
+
+- `LC/celebro/BKSVCB.py`
+- `LC/celebro/CMFG/SBSTM/INTEGRACIONRF.py`
+- `LC/celebro/CMFG/SBSTM/SNSBSTNPRB.py`
+- `LC/celebro/CMFG/ipfs_manager.py`
+- `LC/celebro/red_neuronal/RF_EN/RFEN1_RN_4.py`
+
+Estas omisiones son deliberadas: no deben describirse como refactors aplicados hasta superar sus pruebas y el mecanismo de aprobación correspondiente.
+
+### Comprobaciones actuales
+
+- `compatibility_layer`: **OK**.
+- `local_ai_config`: **OK** como comprobación de presencia y estructura básica; no equivale a una prueba end-to-end.
+- `transaction_safety_fix`: **OK** como comprobación de la implementación presente; no cubre todavía todos los escenarios de consenso.
+- `architecture_tests_available`: **OK**; existen pruebas de arquitectura.
+- `architecture_tests_verified`: **PENDIENTE**; el arranque de LucIA no ejecuta automáticamente toda la suite.
+- `purgador_logger`: **OK**.
+
+No se deben afirmar como implementados o verificados, sin pruebas adicionales, WAL, `fsync`, reorg automático, cron seguro, mitigación CVE, balanceo entre backends, validación completa de JSON Schema ni tests end-to-end.
+
+---
+
+## Pendientes de desarrollo y plan de cierre
+
+El orden siguiente prioriza observabilidad y seguridad antes de desbloquear módulos vivos.
+
+### Fase 0 — Línea base reproducible
+
+1. Ejecutar la suite de arquitectura en el entorno real con todas sus dependencias.
+2. Guardar el resultado, duración, versión de Python y dependencias utilizadas.
+3. Separar en los informes `tests disponibles`, `tests ejecutados` y `tests aprobados`.
+4. Hacer que el cierre de LucIA marque `architecture_tests_verified=OK` únicamente cuando exista un resultado válido de esa ejecución.
+
+**Criterio de cierre:** informe reproducible y verificable; ningún diagnóstico debe afirmar que la suite pasa si no se ha ejecutado.
+
+### Fase 1 — Configuración y failover de IA local
+
+1. Validar `IAlocal.json` contra un esquema versionado.
+2. Implementar health-check real para Ollama y LM Studio con timeout explícito.
+3. Definir la política de selección: backend primario, fallback, modo offline y recuperación.
+4. Registrar en el diagnóstico qué backend está vivo y cuál fue utilizado.
+5. Probar reinicio, backend inexistente, timeout, respuesta inválida y recuperación posterior.
+
+**Criterio de cierre:** una prueba end-to-end demuestra la transición Ollama → LM Studio → offline sin intervención manual y sin perder el contexto de sesión.
+
+### Fase 2 — Endurecimiento de la sesión Ollama
+
+1. Validar endpoint, modelo, timeout, TLS, autenticación y `keep_alive`.
+2. Rechazar configuraciones incompletas con mensajes accionables.
+3. Definir qué parámetros pueden cambiarse en caliente y cuáles requieren reinicio.
+4. Añadir pruebas de endpoint caído, modelo inexistente y respuesta lenta.
+
+**Criterio de cierre:** `SNSBSTNPRB` informa una configuración normalizada y falla de forma controlada ante cada error previsto.
+
+### Fase 3 — Seguridad transaccional y persistencia
+
+1. Añadir recuperación del mempool después de reinicio.
+2. Diseñar persistencia atómica de transacciones pendientes y bloques.
+3. Probar doble gasto, concurrencia, reinicio durante persistencia y bloques huérfanos.
+4. Definir y probar la política de reorg/fork antes de declarar esa capacidad verificada.
+5. Medir la latencia y el comportamiento ante errores de disco.
+
+**Criterio de cierre:** las pruebas demuestran que no se pierden transacciones pendientes ni se confirman estados que no estén persistidos.
+
+### Fase 4 — Purgador seguro y auditable
+
+1. Añadir modo `dry-run` antes de cualquier purga programada.
+2. Validar que cada ruta objetivo permanezca dentro del directorio permitido.
+3. Probar directorios vacíos, archivos bloqueados, enlaces, rutas inexistentes y grandes volúmenes.
+4. Centralizar el logger y conservar auditoría más allá de la rotación corta.
+5. Registrar en el informe qué se eliminó, qué se omitió y por qué.
+
+**Criterio de cierre:** una ejecución de prueba no destructiva y una ejecución controlada producen informes completos y no permiten salir del ámbito autorizado.
+
+### Fase 5 — Desbloqueo progresivo de módulos vivos
+
+Aplicar el mismo ciclo a cada módulo, uno por uno:
+
+1. Capturar el comportamiento actual con pruebas de contrato.
+2. Crear una prueba de regresión específica para el cambio.
+3. Ejecutar el refactor en una copia o rama aislada.
+4. Comparar imports, interfaces, estado persistido y rendimiento.
+5. Aprobar el resultado antes de permitir que HRCTRC lo aplique al sistema vivo.
+6. Mantener rollback y registrar el resultado en el manifiesto.
+
+Orden recomendado: `INTEGRACIONRF.py`, `SNSBSTNPRB.py`, `BKSVCB.py`, `ipfs_manager.py` y, por último, `RFEN1_RN_4.py`.
+
+**Criterio de cierre:** cada módulo tiene pruebas aprobadas, rollback documentado y aparece como `verified` o `partial` con evidencia; nunca se cambia a `verified` solo porque el proceso terminó sin excepción.
+
+### Fase 6 — Diagnóstico y documentación continua
+
+1. Actualizar `LC/ARCHITECTURE_CHANGELOG.json` en cada cambio real.
+2. Mantener el diagnóstico de LucIA alineado con los logs de cierre.
+3. No registrar como capacidad verificada una función que solo esté definida en configuración.
+4. Conservar la diferencia entre estado estructural, prueba unitaria y prueba end-to-end.
+
+**Criterio de cierre:** el manifiesto, el cierre de sesión, los tests y este README describen el mismo estado.
+
+---
+
+## Diseño y capacidades declaradas del sistema
+
+La sección siguiente describe la arquitectura y las funciones previstas o integradas en el código. Para conocer qué está verificado actualmente, prevalece siempre la sección [Estado actual verificable de LucIA](#estado-actual-verificable-de-lucia) y el manifiesto `LC/ARCHITECTURE_CHANGELOG.json`.
 
 El proyecto ha evolucionado desde una estructura heredada hacia una arquitectura modular, unificada y optimizada bajo el paquete central **`LC`** (*LucIA Cognitive*):
 

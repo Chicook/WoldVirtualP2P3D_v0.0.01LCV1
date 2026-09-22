@@ -31,6 +31,8 @@ include = ["LC*"]
 [tool.setuptools.package-data]
 "LC.modelosIAlocal" = ["*.json"]
 "LC.celebro.CMFG" = ["*.json"]
+"LC.compatibility" = ["*.json"]
+"LC" = ["*.json"]
 
 [tool.ruff]
 line-length = 110
