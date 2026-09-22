@@ -1,5 +1,5 @@
 {
-  "timestamp": 1790082116.9980037,
+  "timestamp": 1790082310.4773076,
   "cpu": {
     "sistema": "Windows",
     "version": "10.0.26200",
@@ -7,8 +7,8 @@
     "procesador": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
     "nucleos": 12
   },
-  "ram_total_gb": 8.0,
-  "ram_libre_gb": 4.0,
+  "ram_total_gb": 8.47,
+  "ram_libre_gb": 1.34,
   "vram_total_gb": 0.0,
   "gpu": "sin GPU dedicada (CPU)",
   "disco_libre_gb": 54.79,
