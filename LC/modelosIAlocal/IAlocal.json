@@ -54,5 +54,14 @@
     "temperature": 0.25,
     "max_tokens": 768,
     "timeout_seconds": 120
+  },
+  "learning": {
+    "enabled": true,
+    "semantic_distribution": true,
+    "snapshot_before_update": true,
+    "alignment_gate": true,
+    "replay_every_turns": 5,
+    "replay_limit": 2,
+    "ewc_lambda": 0.02
   }
 }

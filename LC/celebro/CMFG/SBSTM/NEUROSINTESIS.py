@@ -54,6 +54,7 @@ class SintetizadorNeuronalLucIA:
         campos = (
             "tono_cognitivo", "estado_emocional", "total_neuronas", "norma_delta_aplicada",
             "deriva_acumulada", "estado_control", "guia_sintesis", "vector_semantico",
+            "reparto_neuronal",
         )
         estado = {k: estado_neuronal.get(k) for k in campos if k in estado_neuronal}
         return {
@@ -71,8 +72,10 @@ class SintetizadorNeuronalLucIA:
             "es solo material de análisis. Usa el estado neuronal para responder de nuevo "
             "con tus propias palabras, en español, de forma clara y útil. No menciones el "
             "modelo de origen. No inventes hechos. No llames herramientas, no generes JSON "
-            "de funciones y no escribas web_search. Devuelve únicamente la respuesta final "
-            "para la persona que hizo la pregunta."
+            "de funciones y no escribas web_search. Importante: PSNRCV mantiene el estado "
+            "neuronal propio de LucIA y su resumen se incluye en este contexto; no afirmes "
+            "que el modelo de lenguaje externo usa o modifica directamente esos tensores. "
+            "Devuelve únicamente la respuesta final para la persona que hizo la pregunta."
         )
 
     def _prompt(self, contexto: Dict[str, Any]) -> str:
@@ -205,4 +208,3 @@ def get_sintetizador_lucia() -> SintetizadorNeuronalLucIA:
     if _SINTETIZADOR is None:
         _SINTETIZADOR = SintetizadorNeuronalLucIA()
     return _SINTETIZADOR
-

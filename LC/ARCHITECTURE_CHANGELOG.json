@@ -50,6 +50,12 @@
       "status": "blocked",
       "summary": "HRCTRC omite modulos vivos sin prueba previa aprobada.",
       "limitations": ["BKSVCB, INTEGRACIONRF, SNSBSTNPRB, ipfs_manager y RFEN1_RN_4 no deben declararse refactorizados aun."]
+    },
+    {
+      "id": "learning.safe-response-ingestion",
+      "status": "partial",
+      "summary": "La respuesta de Ollama, LM Studio u OpenRouter se ingiere como fuente y se asimila en los pesos propios de PSNRCV mediante las 50 neuronas activas, con reparto semantico por especialidad. La síntesis final recibe un resumen de ese estado neuronal en su contexto.",
+      "limitations": ["No modifica los pesos del modelo externo ni los usa directamente durante la generación; el gate actual valida formato, tamaño y llamadas a herramientas, no una alineación semántica completa. Requiere ejecutar la suite completa para verificar rollback, replay y estabilidad prolongada."]
     }
   ],
   "changes": [
@@ -80,6 +86,10 @@
     {
       "id": "diagnostics.closure-status",
       "summary": "El resumen de cierre informa el estado real del refactor y la cantidad de modulos omitidos."
+    },
+    {
+      "id": "learning.safe-response-ingestion",
+      "summary": "Se añade aprendizaje seguro de respuestas externas sobre los pesos propios de LucIA, con snapshot, gate de alineacion, regularizacion ligera, replay y rollback."
     }
   ]
 }

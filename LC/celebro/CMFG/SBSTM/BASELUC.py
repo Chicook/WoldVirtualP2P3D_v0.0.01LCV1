@@ -131,6 +131,17 @@ except Exception:
     get_sintetizador_lucia = None  # type: ignore
     _NEUROSINTESIS_DISPONIBLE = False
 
+try:
+    from LC.celebro.CMFG.SBSTM.APRENDIZAJESEGURO import (
+        AprendizajeSeguroLucIA,
+        get_aprendizaje_seguro,
+    )
+    _APRENDIZAJE_SEGURO_DISPONIBLE = True
+except Exception:
+    AprendizajeSeguroLucIA = None  # type: ignore
+    get_aprendizaje_seguro = None  # type: ignore
+    _APRENDIZAJE_SEGURO_DISPONIBLE = False
+
 # ─── IMPORTACION MDSTM (descarga autonoma real en LC/modelosIAlocal) ──────
 try:
     from LC.modelosIAlocal.MDSTM import (

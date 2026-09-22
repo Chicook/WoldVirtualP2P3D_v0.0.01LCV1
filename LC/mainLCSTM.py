@@ -255,6 +255,7 @@ class LucIACicloVida:
                 "modelo_activo": mod, "ia_local_lista": self.ia_local_lista,
                 "rotacion_ia": self.rotador_ia.estado() if self.rotador_ia else {},
                 "sintesis_neuronal": bool(self.sintetizador_lucia),
+                "aprendizaje_seguro": bool(self.aprendizaje_seguro),
                 "constructor_activo": bool(self.gestor_hrctrc and self.gestor_hrctrc.esta_activa())}
 
 # CLASE 11: STMRFMNMixin — expone STMRFMNFacade como métodos de instancia y añade los comandos interactivos hrctnr.

@@ -148,11 +148,24 @@ class TRNLUCMixin:
         elif self.conversor_psn is not None:
             # Fase 3: respuesta externa -> pesos -> propagación por las 50 neuronas.
             try:
-                sintesis = self.conversor_psn.asimilar_respuestas_y_calcular_sintesis(
-                    prompt=prompt,
-                    respuesta_modelo=respuesta,
-                    modelo_nombre=modelo_usado,
-                )
+                if self.aprendizaje_seguro is not None:
+                    sintesis = self.aprendizaje_seguro.asimilar(
+                        conversor=self.conversor_psn,
+                        pregunta=prompt,
+                        respuesta_fuente=respuesta,
+                        modelo_origen=modelo_usado,
+                    )
+                    if not sintesis.get("aceptado", False):
+                        raise ValueError(str(sintesis.get("motivo", "gate neuronal rechazado")))
+                    if self.turno_actual % 5 == 0:
+                        sintesis["replay"] = self.aprendizaje_seguro.replayar(
+                            self.conversor_psn, limite=2)
+                else:
+                    sintesis = self.conversor_psn.asimilar_respuestas_y_calcular_sintesis(
+                        prompt=prompt,
+                        respuesta_modelo=respuesta,
+                        modelo_nombre=modelo_usado,
+                    )
                 contexto_sintesis = {**estado_previo, **sintesis}
                 # Fase 4: segunda pasada lingüística. LucIA vuelve a generar
                 # la respuesta usando el estado neuronal ya distribuido.

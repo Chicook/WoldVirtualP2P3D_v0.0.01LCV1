@@ -15,6 +15,7 @@ from LC.celebro.CMFG.SBSTM.BASELUC import (
     get_gestor_mdstm, get_integrador, refactorizar_overlay,
     _ROTACIONIA_DISPONIBLE, get_rotador_ia,
     _NEUROSINTESIS_DISPONIBLE, get_sintetizador_lucia,
+    _APRENDIZAJE_SEGURO_DISPONIBLE, get_aprendizaje_seguro,
 )
 
 
@@ -29,6 +30,7 @@ class PRTLUCMixin:
         self.cliente_iafree: Optional[Any] = None
         self.rotador_ia: Optional[Any] = None
         self.sintetizador_lucia: Optional[Any] = None
+        self.aprendizaje_seguro: Optional[Any] = None
         self.activa = False
         self.turno_actual = 0
         self.puerto_bks = int(os.getenv("LUCIA_BKS_PORT", "8545"))
@@ -46,6 +48,11 @@ class PRTLUCMixin:
                 self.sintetizador_lucia = get_sintetizador_lucia()
             except Exception:
                 self.sintetizador_lucia = None
+        if _APRENDIZAJE_SEGURO_DISPONIBLE and get_aprendizaje_seguro is not None:
+            try:
+                self.aprendizaje_seguro = get_aprendizaje_seguro()
+            except Exception:
+                self.aprendizaje_seguro = None
         # MDSTM: gestor de descarga autonoma (clase real, no promesa)
         self.gestor_mdstm: Optional[Any] = None
         if _MDSTM_DISPONIBLE and get_gestor_mdstm is not None:
