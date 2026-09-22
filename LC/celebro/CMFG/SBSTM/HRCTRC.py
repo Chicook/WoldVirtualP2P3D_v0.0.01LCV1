@@ -232,7 +232,6 @@ class GestorConstructorSesion:
                                    c, len(lote_pkg))
                     descartar.add(cn)
                     descartar.update(lote_pkg)
-                    descartar.add((str(Path(cn).parent / (stem + ".py.bak_sesion"))).replace("\\", "/"))
             cambios = [c for c, cn in zip(cambios, norm) if cn not in descartar]
             aplicados, errores = 0, 0
             if aplicar:

@@ -273,6 +273,7 @@ class IntegradorRefactor:
         reporte: Dict[str, Any] = {"sesion": self.sesion_id}
         reporte["refactor"] = self.aplicar_refactor()
         reporte["distribucion"] = self.verificar_distribucion()
+        reporte["respaldos"] = self.documentar_respaldos_chg()
         reporte["md"] = self.generar_md()
         reporte["pesos"] = self.convertir_a_pesos()
         npz = reporte["pesos"].get("npz", "") if reporte["pesos"].get("exito") else ""
@@ -308,10 +309,8 @@ class IntegradorRefactor:
 
     def informe_para_lucia(self) -> str:
         n = len(listar_rutas_originales())
-        return (f"Soy LucIA y SI integro el refactor yo misma (INTEGRACIONRF v{__version__}): "
-                f"veo {n} archivos en LC, sobreescribo cada uno con el codigo nuevo al cerrar, "
-                f"transcribo a .md, lo convierto en pesos neuronales, lo subo a IPFS "
-                f"y actualizo la rama {RAMA_OBJETIVO}.")
+        return (f"Integro el refactor yo misma (INTEGRACIONRF v{__version__}): veo {n} archivos, "
+                f"sobreescribo al cerrar, .md en CHG -> pesos -> IPFS -> {RAMA_OBJETIVO}.")
 
     # ── Snapshots, inventario e higiene ───────────────────────
     def snapshot_inicio(self) -> Dict[str, Any]:
@@ -358,30 +357,59 @@ class IntegradorRefactor:
         except Exception:
             return 0
 
+    # ── Respaldos CHG: .bak -> .md explicativo -> pesos ──────
+    def documentar_respaldos_chg(self) -> Dict[str, Any]:
+        """Cada .bak_sesion de CHG/ se explica en .md y ese .md va a pesos."""
+        import ast as _ast
+        baks = sorted(CHG_DIR.glob("*.bak_sesion"))
+        docs: List[Dict[str, Any]] = []
+        for bak in baks:
+            try:
+                src = bak.read_text(encoding="utf-8", errors="replace")
+                arbol = _ast.parse(src)
+                doc = (_ast.get_docstring(arbol) or "").splitlines()
+                desc = (doc[0].strip() if doc else "Sin descripcion.")[:160]
+                clases = [n.name for n in arbol.body if isinstance(n, _ast.ClassDef)]
+                funcs = [n.name for n in arbol.body if isinstance(n, _ast.FunctionDef)]
+                lin = src.count("\n") + 1
+                md = [f"# Codigo documentado: {bak.stem}", "",
+                      f"_Respaldo pre-refactor | {lin} lineas | sesion {self.sesion_id}_", "",
+                      "## Que hace", "", desc, "",
+                      "## Clases"] + [f"- `{c}`" for c in clases] + ["", "## Funciones"] + \
+                    [f"- `{f}()`" for f in funcs] + ["", "## Como funciona",
+                      "Version original del archivo antes de dividirse a regla 400/450. "
+                      "Su logica vive ahora en el paquete `_pkg` hermano; este texto preserva "
+                      "el conocimiento para la red neuronal.", ""]
+                md_path = CHG_DIR / f"DOC_{bak.stem}.md"
+                md_path.write_text("\n".join(md), encoding="utf-8")
+                rep = self.convertir_a_pesos(md_path)
+                docs.append({"bak": bak.name, "md": md_path.name,
+                             "pesos_ok": rep.get("exito", False)})
+                self.registrar("respaldo_documentado",
+                               f"{bak.name} -> {md_path.name} -> pesos={rep.get('exito')}.")
+            except Exception as exc:
+                docs.append({"bak": bak.name, "error": str(exc)[:120]})
+        return {"exito": True, "documentados": docs, "total": len(docs)}
+
     def ayuda(self) -> str:
-        return ("Integro el refactor al cerrar: 'integra el refactor', "
-                "'genera la bitacora', 'sube a ipfs', 'actualiza la rama devopencode', "
-                "'cierre completo'. Todo con pesos neuronales y push automaticos.")
+        return ("'integra el refactor', 'genera la bitacora', 'sube a ipfs', "
+                "'actualiza la rama devopencode', 'cierre completo'.")
 
     def estado(self) -> Dict[str, Any]:
         """Foto rapida: eventos, md, snapshot y rama objetivo."""
-        with self._lock:
-            n_ev = len(self._eventos)
         return {"version": __version__, "sesion": self.sesion_id,
-                "eventos": n_ev, "md_existe": self.md_path.exists(),
+                "eventos": len(self.eventos()), "md_existe": self.md_path.exists(),
                 "snapshot": len(getattr(self, "_snapshot", None) or []),
                 "rama": RAMA_OBJETIVO, "lc_archivos": len(listar_rutas_originales())}
 
     def resumen_cierre_txt(self, reporte: Dict[str, Any]) -> str:
         """Resumen de una linea del pipeline para consola y voz."""
-        partes = [
-            f"refactor {'OK' if reporte.get('refactor', {}).get('exito') else 'FALLO'}",
-            f"md {'OK' if reporte.get('md', {}).get('exito') else 'FALLO'}",
-            f"pesos {'OK' if reporte.get('pesos', {}).get('exito') else 'FALLO'}",
-            f"IPFS {reporte.get('ipfs', {}).get('cid', 'sin CID')}",
-            f"rama: {(reporte.get('rama', {}).get('mensaje', '') or '')[:80]}",
-        ]
-        return f"Cierre {self.sesion_id} en {reporte.get('segundos', 0)}s: " + " | ".join(partes) + "."
+        r = reporte
+        return (f"Cierre {self.sesion_id} en {r.get('segundos', 0)}s: "
+                f"refactor {'OK' if r.get('refactor', {}).get('exito') else 'FALLO'} | "
+                f"md {'OK' if r.get('md', {}).get('exito') else 'FALLO'} | "
+                f"pesos {'OK' if r.get('pesos', {}).get('exito') else 'FALLO'} | "
+                f"IPFS {r.get('ipfs', {}).get('cid', 'sin CID')}.")
 
 
 _INTEGRADOR: Optional[IntegradorRefactor] = None

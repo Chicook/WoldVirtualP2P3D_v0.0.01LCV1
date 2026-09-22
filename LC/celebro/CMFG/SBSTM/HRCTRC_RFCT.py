@@ -27,6 +27,7 @@ CMFG_DIR: Final[Path] = PACKAGE_ROOT.parent.resolve()
 CELEBRO_DIR: Final[Path] = CMFG_DIR.parent.resolve()
 LC_DIR: Final[Path] = CELEBRO_DIR.parent.resolve()
 CONSTRUCTOR_DIR: Final[Path] = LC_DIR / "Constructor"
+CHG_DIR: Final[Path] = CELEBRO_DIR.parent.parent / "CHG"
 
 MIN_LINEAS: Final[int] = 400
 MAX_LINEAS: Final[int] = 450
@@ -50,7 +51,6 @@ PERMITIR_CON_TEST: Final[Tuple[str, ...]] = ("PURGADOR.py",)
 _PAT_CLASE_DEF: Final[re.Pattern] = re.compile(r"^(class |def |[A-Z][A-Z0-9_]*\s*[:=])")
 
 _LOCK: Final[threading.Lock] = threading.Lock()
-
 
 def barra_progreso(actual: int, total: int, etiqueta: str = "", ancho: int = 34) -> str:
     """Renderiza una barra █/░ para la version de sesion en terminal."""
@@ -221,15 +221,16 @@ class RefactorizadorSesion:
         cabecera, bloques = _partir_bloques(fuente)
         cab = "".join(l for l in cabecera.splitlines(keepends=True)
                       if l.strip() != "from __future__ import annotations")
-        tope = max(100, MAX_LINEAS - (cab.count("\n") + 8))
+        tope = max(100, MAX_LINEAS - (cab.count("\n") + 8))  # cabecera + plantilla
         partes = _empaquetar(bloques, limite=tope)
         if len(partes) <= 1 and contar_lineas(origen) <= MAX_LINEAS:
             return {"exito": True, "archivo": rel, "mensaje": "En regla, sin cambios.", "partes": 1}
         pkg = origen.parent / f"{stem}_pkg"
         pkg.mkdir(parents=True, exist_ok=True)
-        # Respaldo del original para poder restaurar/desunificar si se pide.
+        # Respaldo en CHG/ (no viaja al sistema; INTEGRACIONRF lo documenta).
         try:
-            shutil.copy2(origen, origen.parent / f"{stem}.py.bak_sesion")
+            CHG_DIR.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(origen, CHG_DIR / f"{stem}.py.bak_sesion")
         except Exception:
             pass
         nombres: List[str] = []
@@ -334,10 +335,10 @@ class RefactorizadorSesion:
 
     # ── Restauracion y verificacion ───────────────────────────
     def restaurar_archivo(self, rel: str) -> Dict[str, Any]:
-        """Deshace el refactor: recupera el .bak_sesion y borra el paquete."""
+        """Deshace el refactor: recupera el .bak_sesion de CHG/ y borra el paquete."""
         origen = self.overlay / rel
         stem = origen.stem
-        bak = origen.parent / f"{stem}.py.bak_sesion"
+        bak = CHG_DIR / f"{stem}.py.bak_sesion"
         try:
             if not bak.is_file():
                 return {"exito": False, "archivo": rel, "mensaje": "Sin respaldo de sesion."}
@@ -425,9 +426,9 @@ class RefactorizadorSesion:
             return {"exito": False, "mensaje": f"No pude exportar: {exc}."}
 
     def limpiar_respaldos(self) -> int:
-        """Borra los .bak_sesion tras una unificacion exitosa (higiene)."""
+        """Borra los .bak_sesion de CHG/ tras una unificacion exitosa."""
         try:
-            baks = list(self.overlay.glob("*.bak_sesion"))
+            baks = list(CHG_DIR.glob("*.bak_sesion"))
             for bak in baks:
                 bak.unlink(missing_ok=True)
             return len(baks)
