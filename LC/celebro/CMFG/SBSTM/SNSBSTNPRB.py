@@ -63,19 +63,34 @@ def _importar_nucleo():
 
 
 # ─── CLIENTE OLLAMA ──────────────────────────────────────────────────────────
-OLLAMA_URL  = "http://localhost:11434"
+OLLAMA_URL  = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
 IA_CFG_PATH = ROOT_DIR / "LC" / "modelosIAlocal" / "IAlocal.json"
 
 
 def _cargar_config_ia() -> Dict[str, Any]:
-    """Lee IAlocal.json o retorna defaults seguros."""
+    """Lee IAlocal.json y normaliza el esquema nuevo al contrato legacy."""
+    defaults: Dict[str, Any] = {
+        "schema_version": 1,
+        "default_model": "qwen2.5:0.5b",
+        "temperature": 0.7,
+        "max_tokens": 2048,
+        "models_available": [],
+    }
     if IA_CFG_PATH.exists():
         try:
             with open(IA_CFG_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
+                config = json.load(f)
+            if not isinstance(config, dict):
+                return defaults
+            normalized = {**defaults, **config}
+            backends = config.get("backends", [])
+            ollama = next((item for item in backends if item.get("type") == "ollama"), None)
+            if isinstance(ollama, dict) and ollama.get("base_url"):
+                normalized["ollama_url"] = str(ollama["base_url"]).rstrip("/")
+            return normalized
         except Exception:
             pass
-    return {"default_model": "cogito:3b", "temperature": 0.7, "max_tokens": 2048}
+    return defaults
 
 
 def _ollama_disponible() -> bool:
@@ -159,6 +174,8 @@ class SesionNeuronalP2P:
     def __init__(self, modelo_inicial: Optional[str] = None, puerto_bksvcb: int = 8545) -> None:
         self._nucleo    = _importar_nucleo()
         self.cfg_ia     = _cargar_config_ia()
+        global OLLAMA_URL
+        OLLAMA_URL      = str(self.cfg_ia.get("ollama_url", OLLAMA_URL)).rstrip("/")
         self.modelo     = modelo_inicial or self.cfg_ia.get("default_model", "cogito:3b")
         self.puerto_bks = int(puerto_bksvcb)
         self.temp       = float(self.cfg_ia.get("temperature", 0.7))

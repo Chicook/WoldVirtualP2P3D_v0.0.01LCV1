@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "default_model": "qwen2.5:0.5b",
+  "temperature": 0.7,
+  "max_tokens": 2048,
+  "models_available": ["qwen2.5:0.5b", "tinyllama"],
+  "backends": [
+    {
+      "id": "ollama-local",
+      "type": "ollama",
+      "base_url": "http://127.0.0.1:11434",
+      "enabled": true,
+      "priority": 10
+    },
+    {
+      "id": "lmstudio-local",
+      "type": "lmstudio",
+      "base_url": "http://127.0.0.1:1234",
+      "enabled": true,
+      "priority": 20
+    }
+  ],
+  "fallback": {
+    "openrouter_free": true,
+    "offline": true
+  }
+}

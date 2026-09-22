@@ -212,16 +212,19 @@ class CelebroBlockchain:
                 "deriva_acumulada": round(self.conversor.deriva_acumulada, 6),
                 "pasos_sesion": self.conversor.pasos_sesion, "minero": minero_id,
             }
+            # El pool se confirma solo despues de minar y persistir el bloque.
+            # Si el PoW falla, las transacciones permanecen reintentables.
             txs = list(self.transacciones_pendientes)
-            self.transacciones_pendientes.clear()
             nuevo_bloque = BloqueNeuronal(
                 indice=ultimo.indice + 1, hash_previo=ultimo.hash_bloque,
                 transacciones=txs, estado_neuronal=resumen_neuronas, dificultad=self.dificultad,
             )
             if nuevo_bloque.minar_bloque():
                 self.cadena.append(nuevo_bloque)
-                self.guardar_ledger()
-                return nuevo_bloque
+                if self.guardar_ledger():
+                    del self.transacciones_pendientes[:len(txs)]
+                    return nuevo_bloque
+                self.cadena.pop()
             return None
 
     def transformar_ledger_a_pesos_neuronales(self) -> Dict[str, Any]:

@@ -16,6 +16,8 @@ from typing import Any, Dict, Final, List, Optional
 if str(Path(__file__).resolve().parent.parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from LC.compatibility import import_legacy
+
 from LC.celebro.CMFG.SBSTM.BASELUC import (
     EstiloTerminalLucIA,
     get_cliente_iafree,
@@ -36,7 +38,6 @@ class OrquestadorSistemaLucIA(PRTLUCMixin, TRNLUCMixin, CMDLUCMixin):
 # ─── RE-EXPORT OFICIAL DE SUBSISTEMAS ─────────────────────────────────────
 def _reexportar(nombre: str) -> Any:
     """Importa perezosamente un simbolo de SBSTM sin romper el arranque."""
-    import importlib
     mapa = {
         "IAFREE": "LC.celebro.CMFG.SBSTM.IAFREE",
         "STYLOS": "LC.celebro.CMFG.SBSTM.STYLOS",
@@ -49,7 +50,7 @@ def _reexportar(nombre: str) -> Any:
         "INTEGRACIONRF": "LC.celebro.CMFG.SBSTM.INTEGRACIONRF",
         "MIXINS": "LC.celebro.CMFG.SBSTM",
     }
-    return importlib.import_module(mapa[nombre])
+    return import_legacy(mapa[nombre])
 
 
 def subsistema(nombre: str) -> Any:
