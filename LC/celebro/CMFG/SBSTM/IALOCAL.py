@@ -114,15 +114,16 @@ def _leer_vram_gb() -> Tuple[float, str]:
             return round(torch.cuda.get_device_properties(0).total_memory / 1e9, 2), str(torch.cuda.get_device_name(0))
     except Exception: pass
     try:
-        out = subprocess.run(["wmic", "path", "Win32_VideoController", "get", "AdapterRAM,Name"],
-                             capture_output=True, text=True, timeout=5)
+        out = subprocess.run(["powershell", "-Command",
+            "(Get-CimInstance Win32_VideoController | Measure-Object -Property AdapterRAM -Sum | Select-Object -ExpandProperty Sum)"
+        ], capture_output=True, text=True, timeout=5)
         if out.returncode == 0 and out.stdout.strip():
-            lines = [l for l in out.stdout.splitlines() if l.strip() and "Name" not in l and "AdapterRAM" not in l]
-            if lines:
-                nums = "".join(c for c in lines[0] if c.isdigit())
-                if nums:
-                    return round(int(nums) / 1e9, 2), "GPU integrada"
+            val = out.stdout.strip().splitlines()
+            if val and val[0].strip().isdigit():
+                return round(int(val[0].strip()) / 1e9, 2), "GPU integrada"
     except Exception: pass
+    ram_sys = _leer_ram_gb()[0]
+    if ram_sys >= 8.0: return 1.5, "GPU integrada (estimado)"
     return 0.0, "sin GPU dedicada (CPU)"
 
 
