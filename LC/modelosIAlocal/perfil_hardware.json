@@ -1,5 +1,5 @@
 {
-  "timestamp": 1790106289.2482417,
+  "timestamp": 1790107542.3820622,
   "cpu": {
     "sistema": "Windows",
     "version": "10.0.26200",
@@ -7,11 +7,11 @@
     "procesador": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
     "nucleos": 12
   },
-  "ram_total_gb": 8.0,
-  "ram_libre_gb": 4.0,
+  "ram_total_gb": 8.47,
+  "ram_libre_gb": 4.53,
   "vram_total_gb": 0.0,
   "gpu": "sin GPU dedicada (CPU)",
-  "disco_libre_gb": 57.37,
+  "disco_libre_gb": 57.15,
   "ollama_host": "http://127.0.0.1:11434",
   "dsialclgrg_version": "2026.3.1"
 }

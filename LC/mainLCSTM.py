@@ -19,6 +19,11 @@ from LC.celebro.CMFG.SBSTM.CMDLUC import CMDLUCMixin
 from LC.celebro.CMFG.SBSTM.PRTLUC import PRTLUCMixin
 from LC.celebro.CMFG.SBSTM.TRNLUC import TRNLUCMixin
 from LC.celebro.CMFG.SBSTM.STMRFMN.STMRFMN_1 import GestorSTMRFMN, get_gestor_stmrfmn
+from LC.celebro.CMFG.SBSTM.STMRFMN.STMRFMN_2 import (
+    ConfiguracionLucia, ServidorBKS, ConversorPSN, GestorHRCTRC,
+    ClienteIAFree, ClienteIPFS, TelemetriaLucia, GestorMemoria, DemoLucia,
+    iniciar_lucia, detener_lucia, turno, estado,
+)
 
 __version__: Final[str] = "2026.4.0"
 
