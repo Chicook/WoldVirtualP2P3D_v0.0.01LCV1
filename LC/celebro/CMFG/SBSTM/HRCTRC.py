@@ -200,6 +200,35 @@ class GestorConstructorSesion:
                 self._activa = False
                 return {"exito": True, "aplicados": 0, "mensaje": "Sin overlay; nada que unificar."}
             cambios = self.listar_overlay()
+            # Prefiltro anti-shim huerfano (separadores normalizados): si un .py con
+            # marcador SHIM viaja sin su paquete _pkg, se descarta el shim, el
+            # paquete y el .bak para no tocar los archivos reales del sistema.
+            norm = [c.replace("\\", "/") for c in cambios]
+            descartar = set()
+            for c, cn in zip(cambios, norm):
+                if not c.endswith(".py"):
+                    continue
+                try:
+                    if "SHIM de sesion" not in (self.overlay / c).read_text(
+                            encoding="utf-8", errors="replace"):
+                        continue
+                except Exception:
+                    continue
+                stem = Path(cn).stem
+                pkg_pref = str(Path(cn).parent / (stem + "_pkg")).replace("\\", "/") + "/"
+                if stem == "__init__":
+                    pkg_pref = str(Path(cn).parent / "__init___pkg").replace("\\", "/") + "/"
+                lote_pkg = [x for x in norm if x.startswith(pkg_pref)]
+                if not lote_pkg:
+                    descartar.add(cn)
+                    logger.warning("HRCTRC omite shim huerfano: %s", c)
+                else:
+                    logger.warning("HRCTRC omite refactor de sistema vivo: %s (+%d partes)",
+                                   c, len(lote_pkg))
+                    descartar.add(cn)
+                    descartar.update(lote_pkg)
+                    descartar.add((str(Path(cn).parent / (stem + ".py.bak_sesion"))).replace("\\", "/"))
+            cambios = [c for c, cn in zip(cambios, norm) if cn not in descartar]
             aplicados, errores = 0, 0
             if aplicar:
                 for rel in cambios:

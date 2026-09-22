@@ -41,6 +41,17 @@ MAX_LINEAS: Final[int] = 450
 MAX_RESUMENES_MODELO: Final[int] = 3
 TIMEOUT_MODELO: Final[float] = 25.0
 
+# Archivos que JAMAS se dividen: punto de entrada en ejecucion, paquetes,
+# el propio herrero y gestores vivos (un shim aqui rompe el arranque).
+EXCLUIR_SIEMPRE: Final[Tuple[str, ...]] = (
+    "mainLCSTM.py",
+    "__init__.py",
+    "HRCTRC.py",
+    "HRCTRC_RFCT.py",
+    "DSIALCLGRG.py",
+    "IAFREE.py",
+)
+
 _PAT_CLASE_DEF: Final[re.Pattern] = re.compile(r"^(class |def |[A-Z][A-Z0-9_]*\s*[:=])")
 
 _LOCK: Final[threading.Lock] = threading.Lock()
@@ -78,6 +89,8 @@ def escanear_oversized(overlay: Path) -> List[Dict[str, Any]]:
         return hallados
     for f in sorted(overlay.rglob("*.py")):
         if "__pycache__" in f.parts or "_pkg" in f.name:
+            continue
+        if f.name in EXCLUIR_SIEMPRE:
             continue
         n = contar_lineas(f)
         if n > MAX_LINEAS:
@@ -176,6 +189,9 @@ class RefactorizadorSesion:
     def refactorizar_archivo(self, rel: str) -> Dict[str, Any]:
         """ARCH.py -> ARCH_pkg/ (partes <=450) + shim loader compatible."""
         origen = self.overlay / rel
+        if origen.name in EXCLUIR_SIEMPRE:
+            return {"exito": True, "archivo": rel,
+                    "mensaje": "Excluido por seguridad (entry-point/sistema vivo).", "partes": 1}
         stem = origen.stem
         try:
             fuente = origen.read_text(encoding="utf-8", errors="replace")
@@ -185,11 +201,11 @@ class RefactorizadorSesion:
         partes = _empaquetar(bloques)
         if len(partes) <= 1 and contar_lineas(origen) <= MAX_LINEAS:
             return {"exito": True, "archivo": rel, "mensaje": "En regla, sin cambios.", "partes": 1}
-        pkg = self.overlay / f"{stem}_pkg"
+        pkg = origen.parent / f"{stem}_pkg"
         pkg.mkdir(parents=True, exist_ok=True)
         # Respaldo del original para poder restaurar/desunificar si se pide.
         try:
-            shutil.copy2(origen, self.overlay / f"{stem}.py.bak_sesion")
+            shutil.copy2(origen, origen.parent / f"{stem}.py.bak_sesion")
         except Exception:
             pass
         nombres: List[str] = []
@@ -281,12 +297,12 @@ class RefactorizadorSesion:
         """Deshace el refactor: recupera el .bak_sesion y borra el paquete."""
         origen = self.overlay / rel
         stem = origen.stem
-        bak = self.overlay / f"{stem}.py.bak_sesion"
+        bak = origen.parent / f"{stem}.py.bak_sesion"
         try:
             if not bak.is_file():
                 return {"exito": False, "archivo": rel, "mensaje": "Sin respaldo de sesion."}
             shutil.copy2(bak, origen)
-            shutil.rmtree(self.overlay / f"{stem}_pkg", ignore_errors=True)
+            shutil.rmtree(origen.parent / f"{stem}_pkg", ignore_errors=True)
             bak.unlink(missing_ok=True)
             with self._lock:
                 try:
