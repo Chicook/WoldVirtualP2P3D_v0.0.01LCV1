@@ -219,7 +219,10 @@ class RefactorizadorSesion:
         except Exception as exc:
             return {"exito": False, "archivo": rel, "mensaje": str(exc)}
         cabecera, bloques = _partir_bloques(fuente)
-        partes = _empaquetar(bloques)
+        cab = "".join(l for l in cabecera.splitlines(keepends=True)
+                      if l.strip() != "from __future__ import annotations")
+        tope = max(100, MAX_LINEAS - (cab.count("\n") + 8))
+        partes = _empaquetar(bloques, limite=tope)
         if len(partes) <= 1 and contar_lineas(origen) <= MAX_LINEAS:
             return {"exito": True, "archivo": rel, "mensaje": "En regla, sin cambios.", "partes": 1}
         pkg = origen.parent / f"{stem}_pkg"
@@ -268,6 +271,8 @@ class RefactorizadorSesion:
                 f"    \"{stem}_pkg\", _pkgdir / \"__init__.py\",\n"
                 f"    submodule_search_locations=[str(_pkgdir)])\n"
                 f"_mod = _ilu.module_from_spec(_spec)\n"
+                f"import sys as _sys\n"
+                f"_sys.modules[\"{stem}_pkg\"] = _mod\n"
                 f"_spec.loader.exec_module(_mod)  # noqa\n"
                 f"globals().update({{k: v for k, v in vars(_mod).items() if not k.startswith('__')}})\n"
                 f"try:\n    __all__ = list(getattr(_mod, '__all__', []))\n"
@@ -356,7 +361,7 @@ class RefactorizadorSesion:
         reporte: List[Dict[str, Any]] = []
         if not self.overlay.exists():
             return reporte
-        for pkg in sorted(self.overlay.glob("*_pkg")):
+        for pkg in sorted(self.overlay.rglob("*_pkg")):
             if not pkg.is_dir():
                 continue
             for f in sorted(pkg.glob("*.py")):
@@ -441,10 +446,4 @@ def refactorizar_overlay(overlay: Path, mostrar_barra: bool = True) -> Dict[str,
 if __name__ == "__main__":
     print("=" * 70)
     print(f"  HRCTRC_RFCT v{__version__} - Version de sesion (regla 400/450)")
-    print("=" * 70)
-    ov = CONSTRUCTOR_DIR / "demo_rfct"
-    ov.mkdir(parents=True, exist_ok=True)
-    rf = RefactorizadorSesion(ov)
-    print(" ", rf.plan_version()["mensaje"])
-    print(" ", rf.informe_para_lucia())
     print("=" * 70)

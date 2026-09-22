@@ -11,6 +11,8 @@ _spec = _ilu.spec_from_file_location(
     "PURGADOR_pkg", _pkgdir / "__init__.py",
     submodule_search_locations=[str(_pkgdir)])
 _mod = _ilu.module_from_spec(_spec)
+import sys as _sys
+_sys.modules["PURGADOR_pkg"] = _mod
 _spec.loader.exec_module(_mod)  # noqa
 globals().update({k: v for k, v in vars(_mod).items() if not k.startswith('__')})
 try:

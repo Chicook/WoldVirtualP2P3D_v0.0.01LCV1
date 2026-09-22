@@ -1,6 +1,6 @@
 """
 PURGADOR - parte 2/2 (version de sesion LucIA).
-El código imprime un resumen de un informe Purgador utilizando ANSI para el color y formato en terminal.
+Este código muleva todo __pycache__ / *.pyc / *.pyo a CHG para ver la caché de la sesión y incrementa el contador de elementos.
 """
 from __future__ import annotations
 
@@ -34,6 +34,60 @@ CELEBRO_DIR: Final[Path] = CMFG_DIR.parent
 LC_DIR:      Final[Path] = CELEBRO_DIR.parent
 ROOT_DIR:    Final[Path] = LC_DIR.parent
 PSNRL_DIR:   Final[Path] = CELEBRO_DIR / "PSNRL"
+
+def recolectar_pycache_en_chg(raiz: Optional[Path] = None,
+                              chg_dir: Optional[Path] = None) -> int:
+    """Mueve todo __pycache__ / *.pyc / *.pyo a CHG para visiualizar la caché
+    de la sesión. Retorna nº de elementos depositados. CHG se vacía al cerrar
+    sesión vía solo_limpiar_pycache()."""
+    base = raiz or ROOT_DIR
+    dst_dir = chg_dir or CHG_DIR
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    n = 0
+    # 1) directorios __pycache__ completos → CHG/<relpath__con__guiones>
+    for d in sorted(base.rglob("__pycache__")):
+        if not d.is_dir():
+            continue
+        if any(e in d.parts for e in (".git", "node_modules", ".venv", "venv", "env")):
+            continue
+        if CHG_DIR in d.parents or d == CHG_DIR:
+            continue
+        try:
+            rel = d.parent.relative_to(base).as_posix().replace("/", "__") or "root"
+            destino = dst_dir / f"{int(time.time_ns())}_{rel}__pycache__"
+            shutil.move(str(d), str(destino))
+            n += 1
+            logger.info("Cache → CHG: %s", destino.name)
+        except Exception as exc:
+            logger.warning("recolectar(%s): %s", d, exc)
+    # 2) .pyc/.pyo sueltos fuera de __pycache__
+    for ext in (".pyc", ".pyo"):
+        for f in sorted(base.rglob(f"*{ext}")):
+            if not f.is_file() or "__pycache__" in f.parts:
+                continue
+            if CHG_DIR in f.parents:
+                continue
+            if depositar_en_chg(f, dst_dir) is not None:
+                n += 1
+    return n
+
+
+def solo_custodia_ipfs(forzar_borrado: bool = False) -> ResultadoCustodia:
+    """Solo sube pesos de PSNRL a IPFS sin limpiar el filesystem."""
+    return CustodiaIPFS().ejecutar(forzar_borrado=forzar_borrado)
+
+
+def estado_psnrl() -> Dict[str, Any]:
+    """Devuelve estado actual del directorio PSNRL."""
+    PSNRL_DIR.mkdir(parents=True, exist_ok=True)
+    archivos = sorted(f for f in PSNRL_DIR.iterdir() if f.is_file())
+    bytes_t  = sum(f.stat().st_size for f in archivos)
+    return {
+        "directorio": str(PSNRL_DIR), "existe": True,
+        "archivos": len(archivos), "tamaño_kb": round(bytes_t / 1024, 2),
+        "listado": [f.name for f in archivos],
+    }
+
 
 def imprimir_informe(inf: InformePurgador) -> None:
     """Imprime resumen visual con ANSI en terminal."""
