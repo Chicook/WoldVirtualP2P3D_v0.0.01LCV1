@@ -154,10 +154,26 @@ class TRNLUCMixin:
                     modelo_nombre=modelo_usado,
                 )
                 contexto_sintesis = {**estado_previo, **sintesis}
-                # Fase 4: voz propia de LucIA después de procesar los pesos.
-                if _RPLC_DISPONIBLE and reprocesar_con_metricas is not None:
-                    respuesta, metricas_rplc = reprocesar_con_metricas(respuesta, contexto_sintesis)
-                    modelo_usado = f"LucIA[{modelo_usado}]"
+                # Fase 4: segunda pasada lingüística. LucIA vuelve a generar
+                # la respuesta usando el estado neuronal ya distribuido.
+                respuesta_sintesis = ""
+                if self.sintetizador_lucia is not None:
+                    resultado_sintesis = self.sintetizador_lucia.sintetizar(
+                        pregunta=prompt,
+                        respuesta_fuente=respuesta,
+                        estado_neuronal=contexto_sintesis,
+                        modelo_origen=modelo_usado,
+                        cliente_openrouter=self.cliente_iafree,
+                    )
+                    respuesta_sintesis = str(resultado_sintesis.get("texto", ""))
+                    if respuesta_sintesis:
+                        respuesta = respuesta_sintesis
+                        modelo_usado = str(resultado_sintesis.get("modelo", "LucIA-sintesis"))
+                # Fase 5: respaldo estilístico si ningún backend puede
+                # realizar la segunda pasada.
+                if not respuesta_sintesis and _RPLC_DISPONIBLE and reprocesar_con_metricas is not None:
+                    respuesta, _ = reprocesar_con_metricas(respuesta, contexto_sintesis)
+                    modelo_usado = f"LucIA-reglas[{modelo_usado}]"
             except Exception:
                 if _RPLC_DISPONIBLE and reprocesar_con_metricas is not None:
                     try:

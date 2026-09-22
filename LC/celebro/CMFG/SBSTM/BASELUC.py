@@ -120,6 +120,17 @@ except Exception:
     get_rotador_ia = None  # type: ignore
     _ROTACIONIA_DISPONIBLE = False
 
+try:
+    from LC.celebro.CMFG.SBSTM.NEUROSINTESIS import (
+        SintetizadorNeuronalLucIA,
+        get_sintetizador_lucia,
+    )
+    _NEUROSINTESIS_DISPONIBLE = True
+except Exception:
+    SintetizadorNeuronalLucIA = None  # type: ignore
+    get_sintetizador_lucia = None  # type: ignore
+    _NEUROSINTESIS_DISPONIBLE = False
+
 # ─── IMPORTACION MDSTM (descarga autonoma real en LC/modelosIAlocal) ──────
 try:
     from LC.modelosIAlocal.MDSTM import (

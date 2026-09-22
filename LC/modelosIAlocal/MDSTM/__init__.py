@@ -68,7 +68,7 @@ CATALOGO: Final[List[Dict[str, Any]]] = [
 ]
 
 PATRON_DESCARGA: Final[re.Pattern] = re.compile(
-    r"(descarg\w*|baj\w*|instal\w*|trae\w*|pon\w*)\s+(el\s+)?(modelo\s+)?(.+)?",
+    r"\b(descarg\w*|baj\w*|instal\w*|trae\w*|pon\w*)\b\s+(el\s+)?(modelo\s+)?(.+)?",
     re.IGNORECASE,
 )
 PALABRAS_MODELO: Final[List[str]] = ["modelo", "modelos", "ia", "qwen", "llama",

@@ -45,5 +45,14 @@
     "timeout_seconds": 120,
     "response_pipeline": "external_response_to_weights_to_lucia_voice"
   },
-  "lmstudio_model": "qwen2.5-3b-instruct"
+  "lmstudio_model": "qwen2.5-3b-instruct",
+  "synthesis": {
+    "enabled": true,
+    "order": ["ollama-local", "lmstudio-local", "openrouter-free"],
+    "model": "qwen2.5:3b",
+    "lmstudio_model": "qwen2.5-3b-instruct",
+    "temperature": 0.25,
+    "max_tokens": 768,
+    "timeout_seconds": 120
+  }
 }
