@@ -320,22 +320,30 @@ def validar_integridad_bloque(bloque: Dict[str, Any]) -> bool:
     """
     Verifica de forma estricta el hash doble SHA-256 de un bloque individual
     garantizando su inmutabilidad frente a manipulaciones.
+    Formula canonica (igual que BloqueNeuronal.calcular_hash):
+      cabecera = {indice, hash_previo, merkle_root, dificultad, nonce}
     """
     try:
         idx = bloque.get("indice", 0)
         h_prev = bloque.get("hash_previo", "")
-        txs = bloque.get("transacciones", [])
         mr = bloque.get("merkle_root", "")
         diff = bloque.get("dificultad", 2)
         nonce = bloque.get("nonce", 0)
         h_decl = bloque.get("hash_bloque", "")
 
-        tx_str = json.dumps(txs, sort_keys=True)
-        raw = f"{idx}:{h_prev}:{mr}:{tx_str}:{diff}:{nonce}".encode("utf-8")
+        cabecera = {
+            "indice": idx,
+            "hash_previo": h_prev,
+            "merkle_root": mr,
+            "dificultad": diff,
+            "nonce": nonce,
+        }
+        raw = json.dumps(cabecera, sort_keys=True).encode("utf-8")
         h1 = hashlib.sha256(raw).digest()
         h2 = hashlib.sha256(h1).hexdigest()
         return h2 == h_decl
-    except Exception:
+    except Exception as exc:
+        logger.debug("validar_integridad_bloque fallo: %s", exc)
         return False
 
 

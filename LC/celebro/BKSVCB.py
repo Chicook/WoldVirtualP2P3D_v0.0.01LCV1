@@ -16,9 +16,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 
-logging.basicConfig(level=logging.CRITICAL)
+LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
+logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.WARNING))
 for _lg in ("", "WoldVirtualP2P3D", "RFENRN1", "LC", "urllib3", "ENRN", "SLRN", "RNP"):
-    logging.getLogger(_lg).setLevel(logging.CRITICAL)
+    logging.getLogger(_lg).setLevel(getattr(logging, LOG_LEVEL, logging.WARNING))
+logger = logging.getLogger(__name__)
 
 __version__ = "2026.3.1"
 __server_name__ = "CelebroBlockchainServer-BKSVCB"
@@ -136,7 +138,8 @@ class CelebroBlockchain:
                 if bloques_cargados:
                     self.cadena = bloques_cargados
                     return
-            except Exception: pass
+            except Exception as exc:
+                logger.warning("Ledger corrupto o ilegible, se forja genesis: %s", exc)
         self._crear_bloque_genesis()
 
     def _crear_bloque_genesis(self) -> None:
@@ -419,6 +422,10 @@ def iniciar_servidor_blockchain(puerto: int = 8545) -> BlockchainServerDaemon:
         _daemon_http_instancia = BlockchainServerDaemon(puerto=puerto)
         _daemon_http_instancia.iniciar()
     return _daemon_http_instancia
+
+
+# Alias de compatibilidad con la suite de tests (Fase 0)
+ServidorBlockchainNeuronal = CelebroBlockchain
 
 
 def _hook_salida_sistema() -> None:

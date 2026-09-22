@@ -75,9 +75,11 @@ except Exception:
     _cancelar_voz = None  # type: ignore
     _prosodia_voz = None  # type: ignore
 
-logging.basicConfig(level=logging.CRITICAL)
+LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
+logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.WARNING))
 for _log_name in ("", "WoldVirtualP2P3D", "LC", "urllib3", "ENRN", "SLRN", "RNP", "httpx"):
-    logging.getLogger(_log_name).setLevel(logging.CRITICAL)
+    logging.getLogger(_log_name).setLevel(getattr(logging, LOG_LEVEL, logging.WARNING))
+logger = logging.getLogger(__name__)
 
 
 # ─── GESTOR SEGURO DE VARIABLES DE ENTORNO (.ENV) ───────────────────────────

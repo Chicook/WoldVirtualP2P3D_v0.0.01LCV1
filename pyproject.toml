@@ -46,9 +46,16 @@ select = ["E9", "F63", "F7", "F82", "E501", "W291", "W293"]
 ignore = []
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["LC/celebro/test"]
 pythonpath = ["."]
 timeout = 60
+markers = [
+    "slow: test que tarda mas de 2 segundos",
+    "net: requiere conexion de red real",
+    "voice: requiere edge-tts / winmm instalado",
+    "gpu: requiere GPU/CUDA disponible",
+    "ipfs: requiere daemon IPFS Kubo corriendo",
+]
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]

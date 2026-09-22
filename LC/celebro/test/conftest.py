@@ -107,12 +107,19 @@ def ledger_genesis_path(tmp_path: Path) -> Path:
 def ledger_con_bloques(tmp_path: Path) -> Path:
     """
     Ledger con 3 bloques encadenados para tests de validación de cadena.
-    Los hashes son ficticios pero la estructura está completa.
+    Hashes calculados con la formula canonica de BloqueNeuronal.calcular_hash.
     """
     bloques = []
     hash_prev = "0" * 64
     for i in range(3):
-        raw = f"{i}:{hash_prev}:merkle{i}:2:{i * 7}".encode()
+        cabecera = {
+            "indice": i,
+            "hash_previo": hash_prev,
+            "merkle_root": f"merkle{i}",
+            "dificultad": 2,
+            "nonce": i * 7,
+        }
+        raw = json.dumps(cabecera, sort_keys=True).encode("utf-8")
         h1 = hashlib.sha256(raw).digest()
         h2 = hashlib.sha256(h1).hexdigest()
         bloque = {
