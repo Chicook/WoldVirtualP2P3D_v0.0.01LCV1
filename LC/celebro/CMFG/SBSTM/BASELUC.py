@@ -121,7 +121,12 @@ try:
         descargar_modelo_hf as _descargar_modelo_hf,
         verificar_capacidades as _verificar_capacidades_hf,
         listar_modelos_hf as _listar_hf,
-        info_completa as _info_completa_hf,
+        descargar_ia_temporal as _descargar_ia_temporal,
+        limpiar_ia_temporal as _limpiar_ia_temporal,
+        listar_py_constructor as _listar_py_constructor,
+        refactorizar_constructor as _refactorizar_constructor,
+        orquestar_pre_sesion as _orquestar_pre_sesion,
+        cerrar_sesion_ialocal as _cerrar_sesion_ialocal,
     )
     _IALOCAL_HF_DISPONIBLE = True
 except Exception:
@@ -132,7 +137,12 @@ except Exception:
     _descargar_modelo_hf = None  # type: ignore
     _verificar_capacidades_hf = None  # type: ignore
     _listar_hf = None  # type: ignore
-    _info_completa_hf = None  # type: ignore
+    _descargar_ia_temporal = None  # type: ignore
+    _limpiar_ia_temporal = None  # type: ignore
+    _listar_py_constructor = None  # type: ignore
+    _refactorizar_constructor = None  # type: ignore
+    _orquestar_pre_sesion = None  # type: ignore
+    _cerrar_sesion_ialocal = None  # type: ignore
 
 try:
     from LC.celebro.CMFG.SBSTM.ROTACIONIA import RotadorIA, get_rotador_ia
@@ -241,6 +251,47 @@ logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.WARNING))
 for _log_name in ("", "WoldVirtualP2P3D", "LC", "urllib3", "ENRN", "SLRN", "RNP", "httpx"):
     logging.getLogger(_log_name).setLevel(getattr(logging, LOG_LEVEL, logging.WARNING))
 logger = logging.getLogger(__name__)
+
+# ─── DESCARGA AUTOMATICA DE IA LOCAL PRE-SESION ──
+# Se ejecuta al importar BASELUC: descarga modelos IAs locales
+# antes de que inicie la version de sesion en mainLCSTM.
+
+def _descarga_ia_pre_sesion() -> Dict[str, Any]:
+    """Descarga automatica de IAs locales antes de version de sesion."""
+    res = {"exito": False, "modelos_descargados": [], "errores": []}
+    try:
+        if _IALOCAL_HF_DISPONIBLE and _descargar_ia_temporal is not None:
+            print("\n[PRE-SESION] Descargando IA local para sesion...")
+            dl = _descargar_ia_temporal(modelo_id="qwen2.5:0.5b")
+            if dl.get("exito"):
+                res["modelos_descargados"].append(dl.get("modelo", ""))
+                res["exito"] = True
+            else:
+                res["errores"].append(dl.get("mensaje", "desconocido"))
+            try:
+                dl2 = _descargar_ia_temporal(modelo_id="qwen2.5:1.5b")
+                if dl2.get("exito"):
+                    res["modelos_descargados"].append(dl2.get("modelo", ""))
+            except Exception as e2:
+                res["errores"].append(f"qwen2.5:1.5b: {e2}")
+        if _IALOCAL_DISPONIBLE and _descargar_recomendados is not None:
+            try:
+                recs = _descargar_recomendados(limite=2)
+                for r in recs:
+                    if r.get("exito") and r.get("modelo") not in res["modelos_descargados"]:
+                        res["modelos_descargados"].append(r.get("modelo", ""))
+            except Exception as e3:
+                res["errores"].append(f"recomendados: {e3}")
+    except Exception as e:
+        res["errores"].append(str(e))
+    return res
+
+_DESCARGA_PRE_SESION: Dict[str, Any] = _descarga_ia_pre_sesion()
+if _DESCARGA_PRE_SESION.get("exito") or _DESCARGA_PRE_SESION.get("modelos_descargados"):
+    print(f"[PRE-SESION] IAs descargadas: {_DESCARGA_PRE_SESION['modelos_descargados']}")
+if _DESCARGA_PRE_SESION.get("errores"):
+    print(f"[PRE-SESION] Errores: {_DESCARGA_PRE_SESION['errores']}")
+
 
 # ─── GESTOR SEGURO DE VARIABLES DE ENTORNO (.ENV) ───────────────────────────
 class GestorEntornoSeguro:

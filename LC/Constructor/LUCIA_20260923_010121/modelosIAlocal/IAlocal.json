@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "default_model": "qwen2.5:3b",
+  "temperature": 0.2,
+  "max_tokens": 1024,
+  "models_available": [
+    "qwen2.5:3b",
+    "qwen3:1.7b",
+    "cogito:3b",
+    "qwen2.5-coder:3b",
+    "gemma2:2b",
+    "llama3.2:1b",
+    "qwen2-math:1.5b"
+  ],
+  "backends": [
+    {
+      "id": "ollama-local",
+      "type": "ollama",
+      "base_url": "http://127.0.0.1:11434",
+      "enabled": true,
+      "priority": 10
+    },
+    {
+      "id": "lmstudio-local",
+      "type": "lmstudio",
+      "base_url": "http://127.0.0.1:1234",
+      "enabled": true,
+      "priority": 20
+    },
+    {
+      "id": "openrouter-free",
+      "type": "openrouter",
+      "base_url": "https://openrouter.ai/api/v1",
+      "enabled": true,
+      "priority": 30
+    }
+  ],
+  "fallback": {
+    "openrouter_free": true,
+    "offline": true
+  },
+  "rotation": {
+    "enabled": true,
+    "order": ["ollama-local", "lmstudio-local", "openrouter-free"],
+    "timeout_seconds": 120,
+    "response_pipeline": "external_response_to_weights_to_lucia_voice"
+  },
+  "lmstudio_model": "qwen2.5-3b-instruct",
+  "synthesis": {
+    "enabled": true,
+    "order": ["ollama-local", "lmstudio-local", "openrouter-free"],
+    "model": "qwen2.5:3b",
+    "lmstudio_model": "qwen2.5-3b-instruct",
+    "temperature": 0.25,
+    "max_tokens": 768,
+    "timeout_seconds": 120
+  },
+  "learning": {
+    "enabled": true,
+    "semantic_distribution": true,
+    "snapshot_before_update": true,
+    "alignment_gate": true,
+    "replay_every_turns": 5,
+    "replay_limit": 2,
+    "ewc_lambda": 0.02
+  }
+}

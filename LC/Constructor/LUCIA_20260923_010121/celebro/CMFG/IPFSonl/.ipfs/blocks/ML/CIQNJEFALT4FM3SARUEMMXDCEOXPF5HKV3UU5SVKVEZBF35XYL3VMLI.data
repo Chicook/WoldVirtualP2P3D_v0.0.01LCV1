@@ -1,0 +1,70 @@
+{
+  "version": "2026.3.1",
+  "servidor": "CelebroBlockchainServer-BKSVCB",
+  "total_bloques": 2,
+  "dificultad": 2,
+  "cadena": [
+    {
+      "indice": 0,
+      "hash_bloque": "085561caa8af289000bd9331d66d4fd5a1e7b5e3115079595fb85410a2ef8634",
+      "hash_previo": "0000000000000000000000000000000000000000000000000000000000000000",
+      "merkle_root": "0dccdfce214923de382ee80b635c36c2b4ab8400918e25f7a498bfa89108eed0",
+      "dificultad": 1,
+      "nonce": 5,
+      "total_transacciones": 1,
+      "transacciones": [
+        {
+          "tipo": "GENESIS_COGNITIVO",
+          "emisor": "SYSTEM_CELEBRO",
+          "receptor": "CLUSTER_P2P",
+          "descripcion": "Arranque formal de la blockchain neuronal WoldVirtualP2P3D",
+          "hash_semilla": "3b218672129981a04a1db4804536c640f281449eb882a8949b0ea226595de840"
+        }
+      ],
+      "estado_neuronal": {
+        "total_neuronas": 50,
+        "capas": [
+          "ENRN",
+          "RF_SL",
+          "RF_EN",
+          "RNP",
+          "SLRN"
+        ],
+        "version_cluster": "2026.3.1",
+        "consenso": "Proof-of-Neural-Learning (PoNL)"
+      }
+    },
+    {
+      "indice": 1,
+      "hash_bloque": "00ecc828966acdd2f005932880fcf02fa3e837b9304127453fa79a731212454a",
+      "hash_previo": "085561caa8af289000bd9331d66d4fd5a1e7b5e3115079595fb85410a2ef8634",
+      "merkle_root": "e3778f56e8ce6d6de4db62ea723227d7674efebd9490b0b6407b6a04837045f7",
+      "dificultad": 2,
+      "nonce": 88,
+      "total_transacciones": 1,
+      "transacciones": [
+        {
+          "id_tx": "87a6a191f9eba771",
+          "tipo": "ACTUALIZACION_SINAPTICA",
+          "emisor": "CONVERSOR_PSNRCV",
+          "receptor": "CELEBRO_P2P",
+          "cid_ipfs": "bafkreihwy57abrfthcyntu37dssatx64y7qyt6nd3j47ty57jpadqzpuxi",
+          "datos": {
+            "modelo": "LucIA-openrouter/free",
+            "prompt_resumen": "puedes hacer un diagnostico en profundidad de todo tu sistema., chequear  que es",
+            "norma_delta": 53.59952,
+            "estado_emocional": -0.746,
+            "tono": "sereno y analítico",
+            "duracion_ms": 4722.8
+          }
+        }
+      ],
+      "estado_neuronal": {
+        "activas": 50,
+        "deriva_acumulada": 2422.178162,
+        "pasos_sesion": 56,
+        "minero": "CelebroLocalNode"
+      }
+    }
+  ]
+}

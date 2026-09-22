@@ -69,7 +69,7 @@ class GestorDescargasIA:
         texto, mid, lat = consultar_lucia_local(prompt, None)
         return {"texto": texto, "modelo": mid, "latencia_ms": lat}
 
-# CLASE 2.5: GestorIALocal — descarga inteligente de modelos HuggingFace según hardware.
+# CLASE 2.5: GestorIALocal — descarga temporal de IA, refactorizador Constructor, limpieza.
 class GestorIALocal:
     @staticmethod
     def perfilar_hardware() -> Dict[str, Any]:
@@ -100,6 +100,23 @@ class GestorIALocal:
     def info_completa() -> Dict[str, Any]:
         from LC.celebro.CMFG.SBSTM.IALOCAL import info_completa
         return info_completa()
+    @staticmethod
+    def pre_sesion(modelo_id: str = None) -> Dict[str, Any]:
+        from LC.celebro.CMFG.SBSTM.IALOCAL import orquestar_pre_sesion
+        return orquestar_pre_sesion(modelo_id=modelo_id)
+    @staticmethod
+    def limpiar_sesion() -> Dict[str, Any]:
+        from LC.celebro.CMFG.SBSTM.IALOCAL import limpiar_ia_temporal
+        return limpiar_ia_temporal()
+    @staticmethod
+    def listar_py_constructor() -> List[Any]:
+        from LC.celebro.CMFG.SBSTM.IALOCAL import listar_py_constructor
+        return listar_py_constructor()
+    @staticmethod
+    def refactorizar_constructor(modelo_hf: str = "google/gemma-2-2b-it:free",
+                                     usar_local: bool = True) -> Dict[str, Any]:
+        from LC.celebro.CMFG.SBSTM.IALOCAL import refactorizar_constructor
+        return refactorizar_constructor(modelo_hf=modelo_hf, usar_local=usar_local)
 
 
 # CLASE 3: GestorConstructor — sesiones del constructor HRCTRC: carpetas, versionado y refactor de sesión (HRCTRC + HRCTRC_RFCT).
@@ -122,6 +139,17 @@ class GestorConstructor:
         return get_gestor_hrctrc().crear_carpeta(ruta_rel, tambien_en_lc=tambien_en_lc)
     @staticmethod
     def version_sesion(overlay: str = "") -> Dict[str, Any]:
+        from LC.celebro.CMFG.SBSTM.HRCTRC import get_gestor_hrctrc
+        from LC.celebro.CMFG.SBSTM.HRCTRC_RFCT import RefactorizadorSesion
+        ruta = Path(overlay) if overlay else get_gestor_hrctrc().overlay
+        return RefactorizadorSesion(ruta).ejecutar(mostrar_barra=True)
+    @staticmethod
+    def version_sesion_con_ia(overlay: str = "") -> Dict[str, Any]:
+        from LC.celebro.CMFG.SBSTM.BASELUC import _DESCARGA_PRE_SESION
+        if not _DESCARGA_PRE_SESION.get("exito", False):
+            from LC.celebro.CMFG.SBSTM.IALOCAL import descargar_ia_temporal
+            try: descargar_ia_temporal(modelo_id="qwen2.5:0.5b")
+            except Exception: pass
         from LC.celebro.CMFG.SBSTM.HRCTRC import get_gestor_hrctrc
         from LC.celebro.CMFG.SBSTM.HRCTRC_RFCT import RefactorizadorSesion
         ruta = Path(overlay) if overlay else get_gestor_hrctrc().overlay
@@ -222,6 +250,8 @@ class GestorSistema:
         "descargas_ia": "MDSTM descarga modelos ligeros reales en LC/modelosIAlocal.",
         "ia_local": "DSIALCLGRG responde offline con Ollama/GGUF si OpenRouter falla.",
         "ia_hf": "IALOCAL descarga modelos HuggingFace segun hardware (RAM/VRAM/disco).",
+        "ia_temporal": "IALOCAL descarga IA local temporal pre-sesion (se borra al cerrar).",
+        "refactor_constructor": "IALOCAL refactoriza archivos Python en LC/Constructor (400/450).",
         "constructor": "HRCTRC crea carpetas y versiona el sistema en LC/Constructor.",
         "refactor": "HRCTRC_RFCT divide oversized a 400/450 con modelo local.",
         "hrctnr": "HRCNTR monitorea, refactoriza y actualiza todo el sistema.",
@@ -237,9 +267,10 @@ class GestorSistema:
     def ayuda_api() -> str:
         return ("LucIA API: iniciar_lucia/detener_lucia/turno/estado | "
                 "consulta_gratis/listar_catalogo_gratis/seleccionar_modelo_gratis/benchmark_gratis | "
-                "perfilar_pc/listar_ia_local/descargar_modelo_local/preguntar_ia_local | "
-        "descargar_ia_local_hf/info_ia_local_hf | "
-                "abrir_constructor/estado_constructor/unificar_constructor/crear_carpeta_lc | "
+        "perfilar_pc/listar_ia_local/descargar_modelo_local/preguntar_ia_local | "
+        "descargar_ia_local_hf/pre_sesion_ia_local/limpiar_sesion_ia_local | "
+        "listar_py_constructor/refactorizar_constructor | "
+        "abrir_constructor/estado_constructor/unificar_constructor/crear_carpeta_lc | "
                 "version_sesion/estado_version_sesion | "
                 "refactorizar_sistema/actualizar_sistema_hrctnr/ciclo_cierre_hrctnr/gestor_hrctnr/estado_hrctnr | "
                 "bitacora/documentar_respaldos/cierre_integracion/informe_cierre | "
@@ -391,7 +422,19 @@ def listar_ia_local() -> List[Dict[str, Any]]: return GestorDescargasIA.listar_m
 def descargar_modelo_local(modelo_id: str) -> Dict[str, Any]: return GestorDescargasIA.descargar(modelo_id)
 def preguntar_ia_local(prompt: str) -> Dict[str, Any]: return GestorDescargasIA.preguntar(prompt)
 def descargar_ia_local_hf(limite: int = 2) -> List[Dict[str, Any]]: return GestorIALocal.recomendar_y_descargar(limite=limite)
-def info_ia_local_hf() -> Dict[str, Any]: return GestorIALocal.info_completa()
+def pre_sesion_ia_local(modelo_id: str = None) -> Dict[str, Any]: return GestorIALocal.pre_sesion(modelo_id=modelo_id)
+def limpiar_sesion_ia_local() -> Dict[str, Any]: return GestorIALocal.limpiar_sesion()
+def listar_py_constructor() -> List[Any]: return GestorIALocal.listar_py_constructor()
+def refactorizar_constructor(modelo_hf: str = "google/gemma-2-2b-it:free",
+                                   usar_local: bool = True) -> Dict[str, Any]:
+    return GestorIALocal.refactorizar_constructor(modelo_hf=modelo_hf, usar_local=usar_local)
+def version_sesion_con_ia(overlay: str = "") -> Dict[str, Any]:
+    """Version de sesion con descarga previa de IA local."""
+    from LC.celebro.CMFG.SBSTM.BASELUC import _DESCARGA_PRE_SESION
+    if not _DESCARGA_PRE_SESION.get("exito", False):
+        try: pre_sesion_ia_local(modelo_id="qwen2.5:0.5b")
+        except Exception: pass
+    return GestorConstructor.version_sesion(overlay)
 
 # Constructor HRCTRC -> GestorConstructor
 def abrir_constructor(sesion_id: str = "") -> Dict[str, Any]: return GestorConstructor.abrir(sesion_id)
@@ -468,7 +511,9 @@ __all__: Final[List[str]] = [
     "OrquestadorSistemaLucIA", "STMRFMNFacade", "STMRFMNMixin", "ContextoOrquestadorLucIA", "GestorDescargasIA",
     "GestorConstructor", "GestorIntegracion", "GestorBlockchain", "GestorVoz", "GestorIAFree", "GestorPesos",
     "GestorSistema", "GestorIALocal", "subsistema", "iniciar_lucia", "detener_lucia", "turno", "estado", "perfilar_pc",
-    "listar_ia_local", "descargar_modelo_local", "preguntar_ia_local", "descargar_ia_local_hf", "info_ia_local_hf", "abrir_constructor", "estado_constructor",
+    "listar_ia_local", "descargar_modelo_local", "preguntar_ia_local", "descargar_ia_local_hf",
+    "pre_sesion_ia_local", "limpiar_sesion_ia_local", "listar_py_constructor", "refactorizar_constructor",
+    "abrir_constructor", "estado_constructor",
     "unificar_constructor", "crear_carpeta_lc", "version_sesion", "estado_version_sesion", "refactorizar_sistema",
     "actualizar_sistema_hrctnr", "ciclo_cierre_hrctnr", "gestor_hrctnr", "estado_hrctnr",
     "confirmar_actualizacion_hrctnr", "monitor_sistema", "listar_modulos", "listar_neuronas", "seleccionar_clases",
