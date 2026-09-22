@@ -31,6 +31,13 @@ SBSTM_DIR: Final[Path] = CMFG_DIR / "SBSTM"
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+for _s in (sys.stdout, sys.stderr):
+    if hasattr(_s, "reconfigure"):
+        try:
+            _s.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
 # ─── IMPORTACION DEL SUBSISTEMA DE INFERENCIA GRATUITA Y ESTILOS ─────────────
 try:
     from LC.celebro.CMFG.SBSTM.IAFREE import ClienteIAFree, get_cliente_iafree
@@ -143,10 +150,13 @@ class OrquestadorSistemaLucIA:
             modelo_ini = "openrouter/free"
 
         # Banner visual futurista estilo OpenCode
-        if EstiloTerminalLucIA:
-            banner_bienvenida(self.sesion_id, modelo_ini)
-        else:
-            print(f"\n[+] WoldVirtualP2P3D -- LucIA Console 2026 | Mod: {modelo_ini}")
+        try:
+            if EstiloTerminalLucIA:
+                banner_bienvenida(self.sesion_id, modelo_ini)
+            else:
+                print(f"\n[+] WoldVirtualP2P3D -- LucIA Console 2026 | Mod: {modelo_ini}")
+        except UnicodeEncodeError:
+            print(f"\n[+] WoldVirtualP2P3D -- LucIA Console 2026 | Mod: {modelo_ini} | sesion={self.sesion_id}")
 
         # 2. Cargar Blockchain BKSVCB
         try:
