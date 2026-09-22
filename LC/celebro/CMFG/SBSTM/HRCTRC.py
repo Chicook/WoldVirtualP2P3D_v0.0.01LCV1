@@ -186,8 +186,10 @@ class GestorConstructorSesion:
         return previo
 
     def _refactor_con_test_ok(self, rel: str) -> bool:
-        """True si el manifiesto registra test_ok para este refactor allowlist."""
         try:
+            from LC.celebro.CMFG.SBSTM.HRCTRC_RFCT import PERMITIR_CON_TEST
+            if Path(rel).name not in PERMITIR_CON_TEST:
+                return False
             man = json.loads((self.overlay / "manifiesto_sesion.json").read_text(encoding="utf-8"))
             return bool(man.get("refactors", {}).get(rel, {}).get("test_ok", False))
         except Exception:

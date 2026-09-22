@@ -1,5 +1,5 @@
 """
-RFEN1_RN_4_pkg - paquete de sesion (regla 400/450). Re-exporta todo.
+PURGADOR_pkg - paquete de sesion (regla 400/450). Re-exporta todo.
 """
 from __future__ import annotations
 

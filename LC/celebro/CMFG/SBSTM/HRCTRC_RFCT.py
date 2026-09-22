@@ -1,16 +1,8 @@
 """
 HRCTRC_RFCT.py - Refactorizador de Version de Sesion para LucIA (2026)
 =======================================================================
-Al iniciar sesion, toma la copia de trabajo en LC/Constructor, detecta los
-.py que violan la regla de oro (400/450 lineas), los divide en paquetes con
-partes <=450 lineas usando el MODELO LOCAL descargado (Ollama/MDSTM) para
-generar los encabezados, y muestra barra de progreso "version de sesion".
-
-Estrategia por archivo oversized ARCH.py:
-  ARCH.py            -> shim loader (docstring + import * del paquete)
-  ARCH_pkg/__init__.py -> re-exporta todo (compatibilidad total)
-  ARCH_pkg/_p1.py, _p2.py ... -> partes de <=450 lineas con cabecera local
-El manifiesto del overlay registra cada refactor para la unificacion.
+Divide .py oversized del overlay en paquetes <=450 (shim + _pkg) con test
+previo obligatorio para la allowlist. Barra de progreso "version de sesion".
 """
 from __future__ import annotations
 
@@ -128,7 +120,13 @@ def _partir_bloques(fuente: str) -> Tuple[str, List[str]]:
             actual.append(ln)
     if actual:
         bloques.append("".join(actual))
-    return cabecera, [b for b in bloques if b.strip()]
+    bloques = [b for b in bloques if b.strip()]
+    # Constantes de modulo (MAYUS = ...) pegadas a la cabecera: si se dividen,
+    # las funciones de otras partes fallan con NameError en el test previo.
+    _pat_const = re.compile(r"^(?:import |from |[A-Z_][A-Z0-9_]*\s*[:=]|#|\s*$)")
+    while bloques and all(_pat_const.match(l) for l in bloques[0].splitlines()):
+        cabecera += bloques.pop(0)
+    return cabecera, bloques
 
 
 def _empaquetar(bloques: List[str], limite: int = MAX_LINEAS) -> List[List[str]]:
@@ -175,15 +173,20 @@ def _resumen_con_modelo_local(codigo: str) -> str:
 
 def test_previo_paquete(pkg_init: Path, sonda: str = "") -> bool:
     """Test previo: carga el _pkg aislado (importlib) y corre la sonda."""
+    import sys as _sys
     try:
         import importlib.util
         esp = importlib.util.spec_from_file_location(
             "rfct_test_pkg", pkg_init, submodule_search_locations=[str(pkg_init.parent)])
         mod = importlib.util.module_from_spec(esp)
-        esp.loader.exec_module(mod)  # type: ignore
-        if sonda:
-            getattr(mod, sonda)()
-        return True
+        _sys.modules["rfct_test_pkg"] = mod  # relativo `from ._pX` lo exige
+        try:
+            esp.loader.exec_module(mod)  # type: ignore
+            if sonda:
+                getattr(mod, sonda)()
+            return True
+        finally:
+            _sys.modules.pop("rfct_test_pkg", None)
     except Exception as exc:
         logger.warning("RFCT test previo fallo: %s", exc)
         return False
@@ -200,8 +203,7 @@ class RefactorizadorSesion:
     def _resumen(self, codigo: str) -> str:
         with self._lock:
             if self._resumenes_usados >= MAX_RESUMENES_MODELO:
-                m = re.search(r"^(?:class|def)\s+(\w+)", codigo, re.MULTILINE)
-                return f"Parte del subsistema LucIA ({m.group(1) if m else 'bloque'})."
+                return "Parte del subsistema LucIA."
             self._resumenes_usados += 1
         return _resumen_con_modelo_local(codigo)
 
@@ -228,12 +230,14 @@ class RefactorizadorSesion:
         except Exception:
             pass
         nombres: List[str] = []
+        cab = "".join(l for l in cabecera.splitlines(keepends=True)
+                      if l.strip() != "from __future__ import annotations")
         for i, grupo in enumerate(partes, 1):
             cuerpo = "".join(grupo) if isinstance(grupo, list) else "".join(grupo)
             resumen = self._resumen(cuerpo)
             contenido = (f'"""\n{stem} - parte {i}/{len(partes)} (version de sesion LucIA).\n'
                          f"{resumen}\n\"\"\"\nfrom __future__ import annotations\n\n"
-                         f"{cabecera}\n{cuerpo}")
+                         f"{cab}\n{cuerpo}")
             nombre = f"_p{i}.py"
             (pkg / nombre).write_text(contenido, encoding="utf-8")
             nombres.append(nombre)
@@ -276,7 +280,7 @@ class RefactorizadorSesion:
                 man.setdefault("refactors", {})[rel] = {
                     "paquete": f"{stem}_pkg/", "partes": nombres,
                     "lineas_antes": fuente.count("\n") + 1,
-                    "test_ok": test_ok if test_ok is not None else True,
+                    "test_ok": bool(test_ok),
                     "ts": time.time()}
                 man_path.write_text(json.dumps(man, indent=2, ensure_ascii=False), encoding="utf-8")
             except Exception:
@@ -365,8 +369,7 @@ class RefactorizadorSesion:
         """Foto completa: oversized restantes, paquetes y cumplimiento."""
         overs = escanear_oversized(self.overlay)
         paqs = self.verificar_paquetes()
-        return {"overlay": str(self.overlay), "oversized_restantes": overs,
-                "paquetes": paqs,
+        return {"overlay": str(self.overlay), "oversized_restantes": overs, "paquetes": paqs,
                 "todo_en_regla": not overs and all(p["cumple"] for p in paqs),
                 "resumenes_modelo_usados": self._resumenes_usados}
 
@@ -383,8 +386,7 @@ class RefactorizadorSesion:
         return base + "Todo el codigo cumple la regla de oro 400/450."
 
     def ayuda(self) -> str:
-        return ("Puedo refactorizar tu codigo yo misma con mi modelo local. Prueba: "
-                "'refactoriza la version de sesion', 'dame la version de sesion', "
+        return ("Refactorizo con modelo local: 'refactoriza la version de sesion', "
                 "'verifica la regla 400/450', 'restaura el archivo X'.")
 
     # ── Planificacion y reportes ──────────────────────────────
@@ -419,14 +421,13 @@ class RefactorizadorSesion:
 
     def limpiar_respaldos(self) -> int:
         """Borra los .bak_sesion tras una unificacion exitosa (higiene)."""
-        n = 0
         try:
-            for bak in self.overlay.glob("*.bak_sesion"):
+            baks = list(self.overlay.glob("*.bak_sesion"))
+            for bak in baks:
                 bak.unlink(missing_ok=True)
-                n += 1
+            return len(baks)
         except Exception:
-            pass
-        return n
+            return 0
 
 
 def get_refactorizador(overlay: Path) -> RefactorizadorSesion:
