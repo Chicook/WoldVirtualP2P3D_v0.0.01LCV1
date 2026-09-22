@@ -202,7 +202,12 @@ class ReproductorMCIWindows:
             time.sleep(0.09)
             with self._lock:
                 res = mci(f"status {self.alias} mode", buf, 128, None)
-                if res != 0 or buf.value not in ("playing", ""):
+                estado = (buf.value or "").strip().lower()
+                if res != 0:
+                    break
+                if estado == "playing":
+                    continue  # sigue sonando
+                if estado in ("stopped", "paused", "not ready", ""):
                     break
 
         self.detener_inmediato()
@@ -256,20 +261,28 @@ class VoiceEngine:
     def _sintetizar_y_reproducir_chunk(self, chunk: str) -> bool:
         if self._cancelar_actual.is_set():
             return False
-
-        import edge_tts
+        if not self._edge_tts_disponible:
+            return False
         temp_fd, temp_path = tempfile.mkstemp(suffix=".mp3")
         os.close(temp_fd)
 
         rate_str, pitch_str = self.modulador.calcular_prosodia(chunk, self._nivel_emocion)
 
         async def _gen() -> None:
+            import edge_tts  # import diferido: nunca rompe el worker si falta
             comm = edge_tts.Communicate(chunk, self.voz, rate=rate_str, pitch=pitch_str)
             await comm.save(temp_path)
 
         try:
-            asyncio.run(asyncio.wait_for(_gen(), timeout=18.0))
-            if os.path.exists(temp_path) and os.path.getsize(temp_path) > 0:
+            try:
+                asyncio.run(asyncio.wait_for(_gen(), timeout=18.0))
+            except RuntimeError:  # ya hay un loop corriendo en este hilo
+                loop = asyncio.new_event_loop()
+                try:
+                    loop.run_until_complete(asyncio.wait_for(_gen(), timeout=18.0))
+                finally:
+                    loop.close()
+            if os.path.exists(temp_path) and os.path.getsize(temp_path) > 1024:
                 if not self._cancelar_actual.is_set():
                     self.mci.reproducir_mp3(temp_path, self._cancelar_actual, self._detener_evento)
                     return True
@@ -284,21 +297,25 @@ class VoiceEngine:
         return False
 
     def _sintetizar_fallback_windows(self, texto_limpio: str) -> None:
+        """Fallback offline con voz espanola (Sabina/Helena), nunca robotica inglesa."""
         if self._cancelar_actual.is_set():
             return
-        t_esc = texto_limpio.replace("'", "''").replace('"', '`"')
-        cmd = (
-            f"Add-Type -AssemblyName System.Speech; "
-            f"$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
-            f"$s.Rate = 1; "
+        t_esc = texto_limpio.replace("'", " ").replace('"', " ").replace("`", " ")[:900]
+        ps = (
+            "Add-Type -AssemblyName System.Speech; "
+            "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+            "$voz = $s.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -like 'es*' } "
+            "| Select-Object -First 1; "
+            "if ($voz) { $s.SelectVoice($voz.VoiceInfo.Name) }; "
+            "$s.Rate = 0; $s.Volume = 100; "
             f"$s.Speak('{t_esc}')"
         )
         try:
             subprocess.run(
-                ["powershell", "-NoProfile", "-NonInteractive", "-Command", cmd],
+                ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps],
                 capture_output=True,
                 text=True,
-                timeout=25,
+                timeout=40,
             )
         except Exception as err:
             logger.warning(f"Error fallback System.Speech: {err}")
@@ -328,20 +345,26 @@ class VoiceEngine:
             except queue.Empty:
                 continue
 
-            if mensaje:
-                self._cancelar_actual.clear()
-                self._procesar_mensaje(mensaje)
-            self._cola_voz.task_done()
+            try:
+                if mensaje:
+                    self._cancelar_actual.clear()
+                    try:
+                        self._procesar_mensaje(mensaje)
+                    except Exception as err:
+                        logger.warning(f"Error en worker de voz (recuperado): {err}")
+            finally:
+                self._cola_voz.task_done()
 
     def cancel_tts(self) -> None:
-        """Detiene inmediatamente el audio en curso y purga la cola."""
+        """Detiene inmediatamente el audio en curso y purga la cola sin bloquearla."""
         self._cancelar_actual.set()
         self.mci.detener_inmediato()
         while not self._cola_voz.empty():
             try:
                 self._cola_voz.get_nowait()
+                self._cola_voz.task_done()
             except Exception:
-                pass
+                break
 
     def speak(self, texto: str, esperar: bool = False, emocion: Optional[float] = None) -> None:
         """Emite un enunciado en la voz natural juvenil de LucIA."""

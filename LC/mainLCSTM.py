@@ -90,6 +90,40 @@ except Exception:
     _cancelar_voz = None  # type: ignore
     _prosodia_voz = None  # type: ignore
 
+# ─── IMPORTACION DSIALCLGRG (IA local ligera autonoma / fallback OpenRouter) ──
+try:
+    from LC.celebro.CMFG.SBSTM.DSIALCLGRG import (
+        consultar_lucia_local,
+        descargar_modelo as _descargar_ia_local,
+        descargar_todos_recomendados as _descargar_recomendados,
+        estado_dsialclgrg as _estado_ia_local,
+        perfilar_hardware as _perfilar_hw_local,
+        recomendar_modelos as _recomendar_ia_local,
+    )
+    _IALOCAL_DISPONIBLE = True
+except Exception:
+    _IALOCAL_DISPONIBLE = False
+    consultar_lucia_local = None  # type: ignore
+    _descargar_ia_local = None  # type: ignore
+    _descargar_recomendados = None  # type: ignore
+    _estado_ia_local = None  # type: ignore
+    _perfilar_hw_local = None  # type: ignore
+    _recomendar_ia_local = None  # type: ignore
+
+# ─── IMPORTACION MDSTM (descarga autonoma real en LC/modelosIAlocal) ──────
+try:
+    from LC.modelosIAlocal.MDSTM import (
+        GestorDescargaModelos,
+        get_gestor_mdstm,
+        ordenar_descarga_lucia,
+    )
+    _MDSTM_DISPONIBLE = True
+except Exception:
+    _MDSTM_DISPONIBLE = False
+    GestorDescargaModelos = None  # type: ignore
+    get_gestor_mdstm = None  # type: ignore
+    ordenar_descarga_lucia = None  # type: ignore
+
 LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.WARNING))
 for _log_name in ("", "WoldVirtualP2P3D", "LC", "urllib3", "ENRN", "SLRN", "RNP", "httpx"):
@@ -145,6 +179,16 @@ class OrquestadorSistemaLucIA:
         self.turno_actual = 0
         self.puerto_bks = int(os.getenv("LUCIA_BKS_PORT", "8545"))
         self.sesion_id = f"LUCIA_{time.strftime('%Y%m%d_%H%M%S')}"
+        # DSIALCLGRG: perfil HW + estado IA local (autonomo, sin bloquear arranque)
+        self.perfil_hw_local: Optional[Dict[str, Any]] = None
+        self.ia_local_lista: bool = False
+        # MDSTM: gestor de descarga autonoma (clase real, no promesa)
+        self.gestor_mdstm: Optional[Any] = None
+        if _MDSTM_DISPONIBLE and get_gestor_mdstm is not None:
+            try:
+                self.gestor_mdstm = get_gestor_mdstm()
+            except Exception:
+                self.gestor_mdstm = None
         atexit.register(self.cerrar_sistema)
 
     def inicializar_subsistemas(self) -> bool:
@@ -220,8 +264,48 @@ class OrquestadorSistemaLucIA:
         except Exception as e_sbs:
             print(f"  [4/4] Sesion SNSBSTNPRB    : \033[38;5;214mAVISO ({e_sbs})\033[0m\n")
 
+        # 6. DSIALCLGRG: registra VRAM/RAM y deja IA local lista (autonomo)
+        self._inicializar_ia_local()
+
         self.activa = True
         return True
+
+    def _inicializar_ia_local(self) -> None:
+        """Perfila el hardware y marca la IA local como disponible para LucIA."""
+        if not _IALOCAL_DISPONIBLE or _perfilar_hw_local is None:
+            print("  [5/5] IA local DSIALCLGRG   : \033[38;5;214mNO DISPONIBLE\033[0m")
+            return
+        try:
+            self.perfil_hw_local = _perfilar_hw_local(guardar=True)
+            recs = _recomendar_ia_local(self.perfil_hw_local) if _recomendar_ia_local else []
+            self.ia_local_lista = True
+            print(f"  [5/5] IA local DSIALCLGRG   : \033[38;5;48mLISTA\033[0m | "
+                  f"RAM: \033[38;5;220m{self.perfil_hw_local.get('ram_total_gb')}GB\033[0m | "
+                  f"VRAM: \033[38;5;220m{self.perfil_hw_local.get('vram_total_gb')}GB\033[0m | "
+                  f"Sugerido: \033[38;5;51m{recs[0]['id'] if recs else 'ninguno'}\033[0m")
+        except Exception as exc:
+            print(f"  [5/5] IA local DSIALCLGRG   : \033[38;5;214mAVISO ({exc})\033[0m")
+
+    def descargar_ia_local_autonomo(self, limite: int = 2) -> List[Dict[str, Any]]:
+        """Descarga autonoma de modelos ligeros segun el perfil HW (hilo o turno)."""
+        if not _IALOCAL_DISPONIBLE or _descargar_recomendados is None:
+            return [{"exito": False, "mensaje": "DSIALCLGRG no disponible"}]
+        try:
+            return list(_descargar_recomendados(limite=limite))
+        except Exception as exc:
+            return [{"exito": False, "mensaje": str(exc)}]
+
+    def _responder_ia_local(self, prompt: str, estado_previo: Dict[str, Any]) -> Tuple[str, str, float]:
+        """Fallback autonomo: consulta Ollama/GGUF local cuando OpenRouter falla."""
+        if not _IALOCAL_DISPONIBLE or consultar_lucia_local is None:
+            return "", "sin-ia-local", 0.0
+        try:
+            texto, mid, lat = consultar_lucia_local(prompt, estado_previo)
+            if texto and mid != "local:reflejo":
+                return texto, mid, lat
+            return "", "local:reflejo", 0.0
+        except Exception:
+            return "", "local:error", 0.0
 
     def procesar_turno_dialogo(self, prompt: str) -> None:
         """
@@ -241,6 +325,28 @@ class OrquestadorSistemaLucIA:
         # Fase 1: Pre-activacion neuronal
         estado_previo = self.conversor_psn.procesar_consulta_a_pesos(prompt)
 
+        # Fase 1b: MDSTM — orden de descarga/consulta local se EJECUTA aqui,
+        # sin preguntar al modelo remoto (asi LucIA nunca dice "no puedo").
+        if self.gestor_mdstm is not None:
+            try:
+                if self.gestor_mdstm.es_orden_descarga(prompt):
+                    respuesta_md = self.gestor_mdstm.ejecutar_orden(prompt)
+                    if respuesta_md:
+                        respuesta, modelo_usado = respuesta_md, "LucIA-MDSTM-local"
+                        latencia_llm = 0.0
+                        return self._cerrar_turno(respuesta, modelo_usado, latencia_llm,
+                                                  prompt, estado_previo, t_inicio)
+                low = prompt.lower()
+                if any(k in low for k in ("que modelos tienes", "modelos descargados",
+                                          "cuanta ram", "cuánta ram", "cuanta vram",
+                                          "que hardware", "qué hardware", "qué puedes descargar",
+                                          "que puedes descargar")):
+                    respuesta = self.gestor_mdstm.informe_para_lucia()
+                    return self._cerrar_turno(respuesta, "LucIA-MDSTM-local", 0.0,
+                                              prompt, estado_previo, t_inicio)
+            except Exception:
+                pass
+
         # Fase 2: Inferencia gratuita con rotacion automatica via IAFREE
         respuesta = ""
         modelo_usado = "Reflejo-Interno"
@@ -257,6 +363,14 @@ class OrquestadorSistemaLucIA:
                 modelo_usado = mod_id
                 latencia_llm = lat
 
+        # Fase 2b: Fallback autonomo a IA local (DSIALCLGRG) si OpenRouter fallo
+        if not respuesta and self.ia_local_lista:
+            txt_local, mid_local, lat_local = self._responder_ia_local(prompt, estado_previo)
+            if txt_local:
+                respuesta = txt_local
+                modelo_usado = mid_local
+                latencia_llm = lat_local
+
         if not respuesta:
             respuesta = self._generar_reflejo_interno(prompt, estado_previo)
         elif _RPLC_DISPONIBLE and reprocesar_con_metricas is not None:
@@ -265,7 +379,11 @@ class OrquestadorSistemaLucIA:
             except Exception:
                 pass
 
-        # Fase 3: Renderizado visual de la respuesta con STYLOS y locucion de voz
+        self._cerrar_turno(respuesta, modelo_usado, latencia_llm, prompt, estado_previo, t_inicio)
+
+    def _cerrar_turno(self, respuesta: str, modelo_usado: str, latencia_llm: float,
+                      prompt: str, estado_previo: Dict[str, Any], t_inicio: float) -> None:
+        """Fases 3-5 del turno: render STYLOS + voz, registro BKSVCB, minado y telemetria."""
         if EstiloTerminalLucIA:
             formatear_respuesta_lucia(respuesta, modelo=modelo_usado)
         else:
@@ -417,6 +535,14 @@ class OrquestadorSistemaLucIA:
             if entrada.lower() in ("exportar-pesos", "exportar_pesos"):
                 self._cmd_exportar_pesos()
                 continue
+            if entrada.lower() in ("ia-local", "modelos-locales", "estado-local"):
+                self._cmd_estado_ia_local()
+                continue
+            if entrada.lower().startswith("descargar-local"):
+                partes = entrada.split()
+                lim = int(partes[1]) if len(partes) > 1 and partes[1].isdigit() else 2
+                self._cmd_descargar_ia_local(limite=lim)
+                continue
 
             self.procesar_turno_dialogo(entrada)
 
@@ -457,6 +583,33 @@ class OrquestadorSistemaLucIA:
             return
         npz, js = self.conversor_psn.persistir_pesos_en_psnrl(etiqueta=f"export_{self.sesion_id}")
         print(f"  Exportado: {npz.name} + {js.name}")
+
+    def _cmd_estado_ia_local(self) -> None:
+        """Muestra perfil HW + modelos en LC/modelosIAlocal + recomendados."""
+        if not _IALOCAL_DISPONIBLE or _estado_ia_local is None:
+            print("  DSIALCLGRG no disponible.")
+            return
+        try:
+            est = _estado_ia_local()
+            perf = est.get("perfil", {})
+            print("\n\033[38;5;51m" + "=" * 68 + "\033[0m")
+            print("  \033[1;37mIA LOCAL DSIALCLGRG (LC/modelosIAlocal):\033[0m")
+            print(f"  RAM: {perf.get('ram_total_gb')}GB | VRAM: {perf.get('vram_total_gb')}GB "
+                  f"({perf.get('gpu')}) | Ollama: {est.get('ollama_online')}")
+            print(f"  Recomendados: {', '.join(est.get('recomendados', []))}")
+            for m in est.get("locales", []):
+                marca = "\033[38;5;48mOK\033[0m" if m.get("descargado") else "\033[38;5;214m--\033[0m"
+                print(f"  [{marca}] {m['id']} ({m.get('tamano_gb')}GB, {m.get('origen')})")
+            print("\033[38;5;51m" + "-" * 68 + "\033[0m\n")
+        except Exception as exc:
+            print(f"  [ia-local] {exc}")
+
+    def _cmd_descargar_ia_local(self, limite: int = 2) -> None:
+        """Descarga autonoma de modelos ligeros (uso: descargar-local [N])."""
+        print(f"  Descargando {limite} modelo(s) ligero(s) segun tu RAM/VRAM...")
+        for rep in self.descargar_ia_local_autonomo(limite=limite):
+            marca = "\033[38;5;48mOK\033[0m" if rep.get("exito") else "\033[38;5;203mFALLO\033[0m"
+            print(f"  [{marca}] {rep.get('modelo', '?')}: {rep.get('mensaje')}")
 
     def cerrar_sistema(self) -> None:
         """Cierre ordenado: minado final, persistencia IPFS y purga de residuos (CHG/__pycache__)."""
