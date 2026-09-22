@@ -138,6 +138,18 @@ except Exception:
     get_gestor_hrctrc = None  # type: ignore
     ordenar_constructor_lucia = None  # type: ignore
 
+# ─── IMPORTACION HRCTRC_RFCT (version de sesion 400/450 + modelo local) ──
+try:
+    from LC.celebro.CMFG.SBSTM.HRCTRC_RFCT import (
+        RefactorizadorSesion,
+        refactorizar_overlay,
+    )
+    _HRCTRC_RFCT_DISPONIBLE = True
+except Exception:
+    _HRCTRC_RFCT_DISPONIBLE = False
+    RefactorizadorSesion = None  # type: ignore
+    refactorizar_overlay = None  # type: ignore
+
 LOG_LEVEL = os.getenv("LOG_LEVEL", "WARNING").upper()
 logging.basicConfig(level=getattr(logging, LOG_LEVEL, logging.WARNING))
 for _log_name in ("", "WoldVirtualP2P3D", "LC", "urllib3", "ENRN", "SLRN", "RNP", "httpx"):
@@ -210,6 +222,8 @@ class OrquestadorSistemaLucIA:
                 self.gestor_hrctrc = get_gestor_hrctrc(sesion_id=self.sesion_id)
             except Exception:
                 self.gestor_hrctrc = None
+        # HRCTRC_RFCT: refactorizador de version de sesion (regla 400/450)
+        self.refactorizador: Optional[Any] = None
         atexit.register(self.cerrar_sistema)
 
     def inicializar_subsistemas(self) -> bool:
@@ -297,8 +311,25 @@ class OrquestadorSistemaLucIA:
             except Exception as exc:
                 print(f"  [6/6] Constructor HRCTRC    : \033[38;5;214mAVISO ({exc})\033[0m")
 
+        # 8. HRCTRC_RFCT: version de sesion con barra de progreso (modelo local)
+        self._version_sesion_inicial()
+
         self.activa = True
         return True
+
+    def _version_sesion_inicial(self) -> None:
+        """Barra de progreso al arrancar: divide oversized a 400/450 con IA local."""
+        if (not _HRCTRC_RFCT_DISPONIBLE or refactorizar_overlay is None
+                or self.gestor_hrctrc is None):
+            return
+        try:
+            overlay = self.gestor_hrctrc.overlay
+            self.refactorizador = RefactorizadorSesion(overlay)
+            print("  [7/7] Version de sesion 400/450 (modelo local):")
+            rep = self.refactorizador.ejecutar(mostrar_barra=True)
+            print(f"        \033[38;5;48m{rep.get('mensaje')}\033[0m")
+        except Exception as exc:
+            print(f"  [7/7] Version de sesion      : \033[38;5;214mAVISO ({exc})\033[0m")
 
     def _inicializar_ia_local(self) -> None:
         """Perfila el hardware y marca la IA local como disponible para LucIA."""
@@ -392,6 +423,18 @@ class OrquestadorSistemaLucIA:
                     respuesta = self.gestor_hrctrc.informe_para_lucia()
                     return self._cerrar_turno(respuesta, "LucIA-HRCTRC-local", 0.0,
                                               prompt, estado_previo, t_inicio)
+            except Exception:
+                pass
+
+        # Fase 1d: HRCTRC_RFCT — refactor/version se EJECUTA con modelo local,
+        # sin pasar por el remoto (nunca dice "no puedo leer esa ruta").
+        if self.refactorizador is not None:
+            try:
+                if self.refactorizador.es_orden_refactor(prompt):
+                    respuesta_r = self.refactorizador.ejecutar_orden(prompt)
+                    if respuesta_r:
+                        return self._cerrar_turno(respuesta_r, "LucIA-RFCT-local", 0.0,
+                                                  prompt, estado_previo, t_inicio)
             except Exception:
                 pass
 
@@ -597,6 +640,9 @@ class OrquestadorSistemaLucIA:
             if entrada.lower() in ("unificar", "unificar-constructor"):
                 self._cmd_unificar_constructor()
                 continue
+            if entrada.lower() in ("refactorizar", "version-sesion", "version_sesion"):
+                self._cmd_version_sesion()
+                continue
 
             self.procesar_turno_dialogo(entrada)
 
@@ -688,6 +734,14 @@ class OrquestadorSistemaLucIA:
             print("  HRCTRC no disponible.")
             return
         rep = self.gestor_hrctrc.finalizar_sesion(aplicar=True)
+        print(f"  {rep.get('mensaje')}")
+
+    def _cmd_version_sesion(self) -> None:
+        """Re-ejecuta la version de sesion 400/450 con barra de progreso."""
+        if self.refactorizador is None:
+            print("  Refactorizador no disponible.")
+            return
+        rep = self.refactorizador.ejecutar(mostrar_barra=True)
         print(f"  {rep.get('mensaje')}")
 
     def cerrar_sistema(self) -> None:
