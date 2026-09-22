@@ -71,7 +71,11 @@ class GestorModelosGratuitos:
     """Administra la lista de modelos gratuitos, pruebas de liveness y conmutacion por error."""
 
     def __init__(self, api_key: Optional[str] = None) -> None:
-        self.api_key = api_key or self._leer_api_key()
+        # None significa "leer del entorno"; "" significa "sin clave explícita"
+        if api_key is None:
+            self.api_key = self._leer_api_key()
+        else:
+            self.api_key = api_key
         self._modelos: List[Dict[str, Any]] = list(CATALOGO_MODELOS_GRATUITOS)
         self._indice_activo = 0
         self._fallos_consecutivos: Dict[str, int] = {}
