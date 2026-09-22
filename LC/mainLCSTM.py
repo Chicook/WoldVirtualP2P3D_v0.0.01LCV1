@@ -349,6 +349,7 @@ class ContextoOrquestadorLucIA:
 def obtener_diagnostico_orquestador() -> Dict[str, Any]:
     """Genera un reporte estructural para validar la salud de todo el stack."""
     from LC.celebro.CMFG.SBSTM.IAFREE import get_cliente_iafree
+    from LC.compatibility.architecture import architecture_snapshot
     cliente_free = get_cliente_iafree()
     return {
         "orquestador_version": "2026.3.1",
@@ -356,6 +357,7 @@ def obtener_diagnostico_orquestador() -> Dict[str, Any]:
         "modelos_gratuitos_total": len(cliente_free.gestor.listar_modelos()),
         "modelo_predeterminado": cliente_free.gestor.obtener_modelo_activo()["id"],
         "costo_acumulado": cliente_free.obtener_metricas_consumo()["costo_acumulado_usd"],
+        "arquitectura": architecture_snapshot(),
         "timestamp": time.time(),
     }
 

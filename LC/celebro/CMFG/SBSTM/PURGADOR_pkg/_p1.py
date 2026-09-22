@@ -28,7 +28,8 @@ from typing import Any, Dict, Final, List, Optional, Tuple
 
 # ─── RUTAS CANÓNICAS ─────────────────────────────────────────────────────────
 _HERE:       Final[Path] = Path(__file__).resolve()
-SBSTM_DIR:   Final[Path] = _HERE.parent
+# Esta parte vive un nivel por debajo de SBSTM al estar dentro de PURGADOR_pkg.
+SBSTM_DIR:   Final[Path] = _HERE.parent.parent
 CMFG_DIR:    Final[Path] = SBSTM_DIR.parent
 CELEBRO_DIR: Final[Path] = CMFG_DIR.parent
 LC_DIR:      Final[Path] = CELEBRO_DIR.parent

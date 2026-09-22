@@ -33,6 +33,21 @@ class TRNLUCMixin:
         # Fase 1: Pre-activacion neuronal
         estado_previo = self.conversor_psn.procesar_consulta_a_pesos(prompt)
 
+        # Las preguntas sobre el estado del sistema se responden desde datos
+        # locales verificables, no desde una conjetura del modelo remoto.
+        low_diag = prompt.lower()
+        if any(k in low_diag for k in (
+                "que cambios", "qué cambios", "que hiciste", "qué hiciste",
+                "changelog", "actualizaciones", "refactorizacion", "refactorización",
+                "diagnostico de lucia", "diagnóstico de lucia", "estado de la arquitectura")):
+            try:
+                from LC.compatibility.architecture import architecture_answer
+                respuesta_diag = architecture_answer()
+                return self._cerrar_turno(respuesta_diag, "LucIA-Diagnostico-Local", 0.0,
+                                          prompt, estado_previo, t_inicio)
+            except Exception:
+                pass
+
         # Fase 1b: MDSTM — orden de descarga/consulta local se EJECUTA aqui,
         # sin preguntar al modelo remoto (asi LucIA nunca dice "no puedo").
         if self.gestor_mdstm is not None:

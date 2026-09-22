@@ -250,11 +250,19 @@ class ClienteIAFree:
         contexto = contexto_neuronal or {}
         tono = contexto.get("tono_cognitivo", "analitico")
         valencia = contexto.get("estado_emocional", 0.0)
+        try:
+            from LC.compatibility.architecture import architecture_context
+            contexto_arquitectura = architecture_context()
+        except Exception:
+            contexto_arquitectura = "Estado factual de arquitectura no disponible."
 
         prompt_sistema = (
             "Eres LucIA, el sistema cognitivo distribuido de WoldVirtualP2P3D (2026). "
             f"Tu tono neuronal actual es '{tono}' y tu valencia es {valencia:+.2f}. "
-            "Responde de forma clara, directa, tecnica y cordial a la solicitud del usuario."
+            "Responde de forma clara, directa, tecnica y cordial a la solicitud del usuario. "
+            "Cuando te pregunten por cambios, refactorizaciones o tu arquitectura, usa "
+            "el siguiente estado factual y no inventes un changelog:\n\n"
+            f"{contexto_arquitectura}"
         )
 
         intentos = 0

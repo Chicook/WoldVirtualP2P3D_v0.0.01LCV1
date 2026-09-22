@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "project": "WoldVirtualP2P3D / LucIA",
+  "architecture_version": "2026.3.1-refactor-1",
+  "changes": [
+    {
+      "id": "imports.compatibility",
+      "summary": "Capa LC.compatibility para resolver aliases heredados sin importar respaldos de CHG."
+    },
+    {
+      "id": "runtime.local-ai-config",
+      "summary": "IAlocal.json versionado con backends Ollama y LM Studio y fallback offline."
+    },
+    {
+      "id": "blockchain.transaction-safety",
+      "summary": "Las transacciones pendientes solo se confirman despues de minar y persistir el bloque."
+    },
+    {
+      "id": "session.ollama-config",
+      "summary": "SNSBSTNPRB normaliza la configuracion nueva y usa el endpoint Ollama declarado."
+    },
+    {
+      "id": "diagnostics.factual-context",
+      "summary": "LucIA recibe este manifiesto y puede responder sobre cambios reales sin inventar un changelog."
+    },
+    {
+      "id": "purger.path-safety",
+      "summary": "PURGADOR define CHG_DIR tambien en su parte 2 para evitar errores durante el cierre."
+    }
+  ]
+}
