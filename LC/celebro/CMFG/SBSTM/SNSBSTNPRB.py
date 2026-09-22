@@ -156,10 +156,11 @@ class SesionNeuronalP2P:
     Gestiona el ciclo completo: arranque -> conversacion -> cierre IPFS.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, modelo_inicial: Optional[str] = None, puerto_bksvcb: int = 8545) -> None:
         self._nucleo    = _importar_nucleo()
         self.cfg_ia     = _cargar_config_ia()
-        self.modelo     = self.cfg_ia.get("default_model", "cogito:3b")
+        self.modelo     = modelo_inicial or self.cfg_ia.get("default_model", "cogito:3b")
+        self.puerto_bks = int(puerto_bksvcb)
         self.temp       = float(self.cfg_ia.get("temperature", 0.7))
         self.max_tok    = int(self.cfg_ia.get("max_tokens", 2048))
         self.bks        = None
@@ -169,6 +170,7 @@ class SesionNeuronalP2P:
         self.activa     = False
         self._turno     = 0
         self._sesion_id = time.strftime("%Y%m%d_%H%M%S")
+        self._cerrado   = False
         atexit.register(self._cerrar)
 
     # ── ARRANQUE ──────────────────────────────────────────────────────────────
@@ -208,9 +210,9 @@ class SesionNeuronalP2P:
         print(f"  [4/5] Actualizador: {C.c(C.GR,'ACTIVO')} {C.c(C.DIM,'(latido cada 12s)')}")
 
         # 5. Servidor HTTP REST
-        print(C.c(C.DIM, "  [5/5] Levantando servidor HTTP :8545..."), end="\r")
-        self.daemon = iniciar_daemon(puerto=8545)
-        print(f"  [5/5] REST API: {C.c(C.GR,'http://127.0.0.1:8545')} "
+        print(C.c(C.DIM, f"  [5/5] Levantando servidor HTTP :{self.puerto_bks}..."), end="\r")
+        self.daemon = iniciar_daemon(puerto=self.puerto_bks)
+        print(f"  [5/5] REST API: {C.c(C.GR,f'http://127.0.0.1:{self.puerto_bks}')} "
               f"{C.c(C.DIM,'(/status /blocks /mine /transform)')}")
 
         self.gestor_pv = get_gpv()
@@ -310,6 +312,13 @@ class SesionNeuronalP2P:
 
         self.activa = False
 
+    def iniciar_consola_interactiva(self) -> None:
+        """API publica: arranca la sesion y entra al bucle de conversacion."""
+        if not self.activa:
+            self.arrancar()
+        self.bucle_conversacion()
+        self.cerrar()
+
     # ── REFLEJO NEURONAL (SIN OLLAMA) ─────────────────────────────────────────
     def _reflejo_neuronal(self, prompt: str) -> str:
         """Respuesta interna de la red neuronal cuando Ollama no esta disponible."""
@@ -352,8 +361,12 @@ class SesionNeuronalP2P:
             print(C.c(C.YL, f"  '{nombre}' no disponible. Modelos: {disponibles}"))
 
     # ── CIERRE Y PERSISTENCIA ─────────────────────────────────────────────────
-    def _cerrar(self) -> None:
-        """Hook atexit: mina pendientes finales, checkpoint PSNRL, sube a IPFS."""
+    def cerrar(self) -> None:
+        """Cierre publico idempotente: mina pendientes, checkpoint PSNRL, sube a IPFS."""
+        if self._cerrado:
+            return
+        self._cerrado = True
+        self.activa = False
         if not self.bks:
             return
         print(C.c(C.CY, "\n" + "=" * 74))
@@ -389,6 +402,10 @@ class SesionNeuronalP2P:
         print(f"  Sesion: {C.c(C.WH, self._sesion_id)} | "
               f"Turnos: {C.c(C.CY, str(self._turno))}")
         print(C.c(C.CY, "=" * 74 + "\n"))
+
+    def _cerrar(self) -> None:
+        """Hook atexit compat: delega en el cierre publico idempotente."""
+        self.cerrar()
 
 
 # ─── MANEJADOR DE SEÑAL (Ctrl+C limpio) ─────────────────────────────────────

@@ -111,8 +111,6 @@ def verificar_integridad_sbstm() -> Dict[str, Any]:
       - Acceso a la capa de persistencia IPFSManager.
     """
     script_prb = PACKAGE_ROOT / "SNSBSTNPRB.py"
-    if not script_prb.exists():
-        script_prb = PACKAGE_ROOT / "SNSBSTNPRB.PY"
     psnrcv_py = CMFG_DIR / "PSNRCV.py"
     bksvcb_py = CELEBRO_DIR / "BKSVCB.py"
     ipfs_py = CMFG_DIR / "ipfs_manager.py"
@@ -138,29 +136,10 @@ def verificar_integridad_sbstm() -> Dict[str, Any]:
 # ─── IMPORTACION CONTROLADA DE LA CLASE DE SESION PRINCIPAL ──────────────────
 def obtener_clase_sesion() -> Any:
     """
-    Carga de forma diferida la clase SesionNeuronalP2P desde SNSBSTNPRB.
-    Garantiza aislamiento ante inicializaciones circulares del paquete Celebro.
+    Carga diferida de la clase SesionNeuronalP2P desde el modulo SNSBSTNPRB.
     """
-    try:
-        from LC.celebro.CMFG.SBSTM.SNSBSTNPRB import SesionNeuronalP2P
-        return SesionNeuronalP2P
-    except Exception:
-        pass
-
-    try:
-        import importlib.util
-        ruta = PACKAGE_ROOT / "SNSBSTNPRB.py"
-        if not ruta.exists():
-            ruta = PACKAGE_ROOT / "SNSBSTNPRB.PY"
-        spec = importlib.util.spec_from_file_location("LC.celebro.CMFG.SBSTM.SNSBSTNPRB", str(ruta))
-        if spec and spec.loader:
-            mod = importlib.util.module_from_spec(spec)
-            sys.modules["LC.celebro.CMFG.SBSTM.SNSBSTNPRB"] = mod
-            spec.loader.exec_module(mod)
-            return getattr(mod, "SesionNeuronalP2P")
-    except Exception as exc:
-        logger.error("No fue posible cargar SesionNeuronalP2P desde SNSBSTNPRB: %s", exc)
-        raise ImportError(f"Fallo cargando SesionNeuronalP2P: {exc}") from exc
+    from LC.celebro.CMFG.SBSTM.SNSBSTNPRB import SesionNeuronalP2P
+    return SesionNeuronalP2P
 
 
 
