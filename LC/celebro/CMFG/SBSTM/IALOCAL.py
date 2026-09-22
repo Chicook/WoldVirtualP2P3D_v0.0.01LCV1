@@ -113,6 +113,16 @@ def _leer_vram_gb() -> Tuple[float, str]:
         if torch.cuda.is_available():
             return round(torch.cuda.get_device_properties(0).total_memory / 1e9, 2), str(torch.cuda.get_device_name(0))
     except Exception: pass
+    try:
+        out = subprocess.run(["wmic", "path", "Win32_VideoController", "get", "AdapterRAM,Name"],
+                             capture_output=True, text=True, timeout=5)
+        if out.returncode == 0 and out.stdout.strip():
+            lines = [l for l in out.stdout.splitlines() if l.strip() and "Name" not in l and "AdapterRAM" not in l]
+            if lines:
+                nums = "".join(c for c in lines[0] if c.isdigit())
+                if nums:
+                    return round(int(nums) / 1e9, 2), "GPU integrada"
+    except Exception: pass
     return 0.0, "sin GPU dedicada (CPU)"
 
 
