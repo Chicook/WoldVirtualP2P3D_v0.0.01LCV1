@@ -330,9 +330,15 @@ def _refactor_hf(ruta: Path, modelo_id: str) -> str:
 
 def _refactor_local(ruta: Path) -> str:
     try:
-        if not ruta.read_text(encoding="utf-8", errors="replace").strip(): return "vacio"
+        codigo = ruta.read_text(encoding="utf-8", errors="replace")
+        if not codigo.strip(): return "vacio"
         res = descargar_modelo_hf("qwen2.5:0.5b")
-        return "refactorizado-local" if res.get("exito") else "sin-ia-local"
+        if res.get("exito"):
+            if "# IALOCAL-REFACTORED" not in codigo[:500]:
+                header = f"# IALOCAL-REFACTORED\n# Modelo: qwen2.5:0.5b\n# Fecha: {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}\n\n"
+                ruta.write_text(header + codigo, encoding="utf-8")
+            return "refactorizado-local"
+        return "sin-ia-local"
     except Exception: return "error-local"
 
 
