@@ -104,7 +104,7 @@ class TestIPFSManagerManifiesto:
         assert mgr.manifest.get("weights") == {}
         assert mgr.manifest.get("total_stored") == 0
 
-    def test_persistencia_manifiesto_en_disco(self, tmp_path: Path) -> None:
+    def test_persistencia_manifiesto_en_disco(self, tmp_path: Path, mock_ipfs_inactivo: None) -> None:
         """Verifica que almacenar pesos guarde el manifiesto en formato JSON válido."""
         ruta_manifiesto = tmp_path / "manifiesto_disco.json"
         mgr = IPFSManager(manifest_file=str(ruta_manifiesto))
@@ -136,7 +136,7 @@ class TestIPFSManagerManifiesto:
 class TestIPFSManagerRotacionTTL:
     """Verifica las políticas de rotación: máx 50 entradas y 10 payloads en memoria."""
 
-    def test_rotacion_mas_de_50_entradas(self, tmp_path: Path) -> None:
+    def test_rotacion_mas_de_50_entradas(self, tmp_path: Path, mock_ipfs_inactivo: None) -> None:
         """Valida que el manifiesto se pode a 50 elementos al exceder la capacidad."""
         ruta_manifiesto = tmp_path / "manifiesto_rotacion.json"
         mgr = IPFSManager(manifest_file=str(ruta_manifiesto))
@@ -152,7 +152,7 @@ class TestIPFSManagerRotacionTTL:
         assert len(mgr.manifest["weights"]) <= 50
         assert mgr.manifest["total_stored"] <= 50
 
-    def test_purga_payload_base64_solo_10_recientes(self, tmp_path: Path) -> None:
+    def test_purga_payload_base64_solo_10_recientes(self, tmp_path: Path, mock_ipfs_inactivo: None) -> None:
         """Comprueba que solo los 10 registros más recientes conserven payload_b64."""
         ruta_manifiesto = tmp_path / "manifiesto_payloads.json"
         mgr = IPFSManager(manifest_file=str(ruta_manifiesto))
@@ -361,7 +361,7 @@ class TestIPFSManagerBatchPSNRL:
 class TestIPFSManagerConsultas:
     """Pruebas sobre listar_pesos, ultimo_cid y descargar_bytes."""
 
-    def test_listar_pesos_orden_temporal(self, tmp_path: Path) -> None:
+    def test_listar_pesos_orden_temporal(self, tmp_path: Path, mock_ipfs_inactivo: None) -> None:
         """Verifica que listar_pesos ordene los registros en orden temporal descendente."""
         mgr = IPFSManager(manifest_file=str(tmp_path / "manifest_consulta.json"))
         mgr.almacenar_pesos(b"payload_uno", nombre_modelo="modelo_alfa", eliminar_local=False)
@@ -373,7 +373,7 @@ class TestIPFSManagerConsultas:
         assert lista[0]["nombre_modelo"] == "modelo_beta"
         assert lista[1]["nombre_modelo"] == "modelo_alfa"
 
-    def test_ultimo_cid_con_filtro_patron(self, tmp_path: Path) -> None:
+    def test_ultimo_cid_con_filtro_patron(self, tmp_path: Path, mock_ipfs_inactivo: None) -> None:
         """Comprueba la búsqueda del último CID filtrando por nombre de modelo."""
         mgr = IPFSManager(manifest_file=str(tmp_path / "manifest_patron.json"))
         mgr.almacenar_pesos(b"p1", nombre_modelo="neurona_enrn_01", eliminar_local=False)
@@ -383,7 +383,7 @@ class TestIPFSManagerConsultas:
         assert item is not None
         assert "slrn" in item["nombre_modelo"]
 
-    def test_descargar_bytes_exitoso(self, tmp_path: Path) -> None:
+    def test_descargar_bytes_exitoso(self, tmp_path: Path, mock_ipfs_inactivo: None) -> None:
         """Valida que descargar_bytes retorne la carga binaria correctamente."""
         mgr = IPFSManager(manifest_file=str(tmp_path / "manifest_descarga.json"))
         data_raw = b"datos_bytes_crudos_2026"
