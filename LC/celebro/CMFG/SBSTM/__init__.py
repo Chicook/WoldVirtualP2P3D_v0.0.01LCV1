@@ -452,6 +452,10 @@ __all__: Final[List[str]] = [
     "obtener_motor_voz",
     "reproducir_voz_lucia",
     "cancelar_voz_lucia",
+    # DSIALCLGRG (IA local ligera / fallback OpenRouter)
+    "obtener_gestor_ia_local",
+    "consultar_ia_local",
+    "consultar_con_fallback",
 ]
 
 
@@ -480,3 +484,32 @@ def cancelar_voz_lucia() -> None:
         cancel_speech()
     except Exception:
         pass
+
+
+# ─── INTEGRACIÓN DSIALCLGRG (IA local ligera / fallback OpenRouter) ──────────
+def obtener_gestor_ia_local() -> Any:
+    """Retorna el gestor singleton de IA local (perfil HW + recomendados)."""
+    try:
+        from LC.celebro.CMFG.SBSTM.DSIALCLGRG import get_gestor_local
+        return get_gestor_local()
+    except Exception:
+        return None
+
+
+def consultar_ia_local(prompt: str, contexto_neuronal: Optional[Dict[str, Any]] = None) -> str:
+    """Consulta el modelo local ligero (Ollama/GGUF) cuando OpenRouter falla."""
+    try:
+        from LC.celebro.CMFG.SBSTM.DSIALCLGRG import consultar_lucia_local
+        texto, _, _ = consultar_lucia_local(prompt, contexto_neuronal)
+        return texto
+    except Exception:
+        return "[DSIALCLGRG] IA local no disponible."
+
+
+def consultar_con_fallback(prompt: str, contexto_neuronal: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """OpenRouter primero; si falla, IA local en LC/modelosIAlocal."""
+    try:
+        from LC.celebro.CMFG.SBSTM.DSIALCLGRG import consultar_con_fallback as _fb
+        return _fb(prompt, contexto_neuronal)
+    except Exception:
+        return {"texto": "[DSIALCLGRG] Sin backends disponibles.", "modelo": "none", "latencia_ms": 0.0, "fuente": "none"}
