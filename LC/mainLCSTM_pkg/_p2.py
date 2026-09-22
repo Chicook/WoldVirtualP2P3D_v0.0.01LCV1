@@ -1,14 +1,14 @@
 """
-RFEN1_RN_4.py - SHIM de sesion (regla 400/450). Codigo en RFEN1_RN_4_pkg/.
+_p2.py - SHIM de sesion (regla 400/450). Codigo en _p2_pkg/.
 Generado por HRCTRC_RFCT v2026.3.1; compatible 100%.
 """
 from __future__ import annotations
 
 import importlib.util as _ilu
 from pathlib import Path as _Path
-_pkgdir = _Path(__file__).resolve().parent / "RFEN1_RN_4_pkg"
+_pkgdir = _Path(__file__).resolve().parent / "_p2_pkg"
 _spec = _ilu.spec_from_file_location(
-    "RFEN1_RN_4_pkg", _pkgdir / "__init__.py",
+    "_p2_pkg", _pkgdir / "__init__.py",
     submodule_search_locations=[str(_pkgdir)])
 _mod = _ilu.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)  # noqa
