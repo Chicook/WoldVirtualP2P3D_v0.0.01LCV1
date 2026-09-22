@@ -35,6 +35,34 @@ class OrquestadorSistemaLucIA(PRTLUCMixin, TRNLUCMixin, CMDLUCMixin):
     """
 
 
+# ─── IMPORTACION DIRECTA HRCTNR ──────────────────────────
+def _importar_hrctnr():
+    """Importacion directa del subsistema HRCNTR."""
+    from LC.celebro.CMFG.SBSTM.HRCNTR import (
+        GestorHRCNTR, get_gestor_hrctnr, ejecutar_hrctnr,
+        estado_hrctnr, actualizar_sistema_hrctnr, ciclo_cierre_hrctnr,
+        confirmar_actualizacion_hrctnr,
+    )
+    return {
+        "GestorHRCNTR": GestorHRCNTR,
+        "get_gestor_hrctnr": get_gestor_hrctnr,
+        "ejecutar_hrctnr": ejecutar_hrctnr,
+        "estado_hrctnr": estado_hrctnr,
+        "actualizar_sistema_hrctnr": actualizar_sistema_hrctnr,
+        "ciclo_cierre_hrctnr": ciclo_cierre_hrctnr,
+        "confirmar_actualizacion_hrctnr": confirmar_actualizacion_hrctnr,
+    }
+
+_HRCNTR_API: Optional[Dict[str, Any]] = None
+
+
+def _get_hrctnr_api() -> Dict[str, Any]:
+    global _HRCNTR_API
+    if _HRCNTR_API is None:
+        _HRCNTR_API = _importar_hrctnr()
+    return _HRCNTR_API
+
+
 # ─── RE-EXPORT OFICIAL DE SUBSISTEMAS ─────────────────────────────────────
 def _reexportar(nombre: str) -> Any:
     """Importa perezosamente un simbolo de SBSTM sin romper el arranque."""
@@ -173,20 +201,38 @@ def estado_version_sesion(overlay: str = "") -> Dict[str, Any]:
 # ─── HRCTNR (Monitor y Refactorizador Neural) ──────────────────
 def refactorizar_sistema(overlay: str = "") -> Dict[str, Any]:
     """Ejecuta HRCNTR refactor completo con barra de progreso."""
-    from LC.celebro.CMFG.SBSTM.HRCNTR import ejecutar_hrctnr
-    return ejecutar_hrctnr(overlay)
+    api = _get_hrctnr_api()
+    return api["ejecutar_hrctnr"](overlay)
 
 
 def actualizar_sistema_hrctnr(confirmar: bool = False) -> Dict[str, Any]:
     """Actualiza la raiz del sistema. confirmar=True aplica todo."""
-    from LC.celebro.CMFG.SBSTM.HRCNTR import actualizar_sistema_hrctnr as _a
-    return _a(confirmar=confirmar)
+    api = _get_hrctnr_api()
+    return api["actualizar_sistema_hrctnr"](confirmar=confirmar)
 
 
 def ciclo_cierre_hrctnr() -> Dict[str, Any]:
     """Ciclo completo: refactor -> confirmar -> actualizar."""
-    from LC.celebro.CMFG.SBSTM.HRCNTR import ciclo_cierre_hrctnr as _c
-    return _c()
+    api = _get_hrctnr_api()
+    return api["ciclo_cierre_hrctnr"]()
+
+
+def gestor_hrctnr():
+    """Singleton del monitor y refactorizador neural."""
+    api = _get_hrctnr_api()
+    return api["get_gestor_hrctnr"]()
+
+
+def estado_hrctnr() -> Dict[str, Any]:
+    """Estado del subsistema HRCNTR."""
+    api = _get_hrctnr_api()
+    return api["estado_hrctnr"]()
+
+
+def confirmar_actualizacion_hrctnr() -> str:
+    """Mensaje de confirmacion de actualizacion."""
+    api = _get_hrctnr_api()
+    return api["confirmar_actualizacion_hrctnr"]()
 
 
 # ─── INTEGRACION Y CIERRE (INTEGRACIONRF) ────────────────────────────────
@@ -322,13 +368,21 @@ def version_sistema() -> Dict[str, str]:
 
 def ayuda_api() -> str:
     """Lista las funciones publicas de esta fachada y que hace cada una."""
-    return ("LucIA API: iniciar_lucia/detener_lucia/turno/estado | consulta_gratis/"
-            "listar_catalogo_gratis/seleccionar_modelo_gratis/benchmark_gratis | "
+    return ("LucIA API: iniciar_lucia/detener_lucia/turno/estado | "
+            "consulta_gratis/listar_catalogo_gratis/seleccionar_modelo_gratis/"
+            "benchmark_gratis | "
             "perfilar_pc/listar_ia_local/descargar_modelo_local/preguntar_ia_local | "
-            "abrir_constructor/estado_constructor/unificar_constructor/crear_carpeta_lc | "
-            "version_sesion/estado_version_sesion | bitacora/documentar_respaldos/"
-            "cierre_integracion/informe_cierre | minar/validar_cadena | decir/silenciar | "
+            "abrir_constructor/estado_constructor/unificar_constructor/"
+            "crear_carpeta_lc | "
+            "version_sesion/estado_version_sesion | "
+            "refactorizar_sistema/actualizar_sistema_hrctnr/"
+            "ciclo_cierre_hrctnr/gestor_hrctnr/estado_hrctnr | "
+            "bitacora/documentar_respaldos/cierre_integracion/informe_cierre | "
+            "minar/validar_cadena | decir/silenciar | "
             "exportar_pesos/pin_ipfs/restaurar_pesos | texto_capacidades.")
+
+
+# ─── CAPACIDADES FACTUALES DE LUCIA ──────────────────────────────
 
 
 # ─── CAPACIDADES FACTUALES DE LUCIA ──────────────────────────────────────
@@ -336,7 +390,9 @@ CAPACIDADES: Final[Dict[str, str]] = {
     "descargas_ia": "MDSTM descarga modelos ligeros reales en LC/modelosIAlocal.",
     "ia_local": "DSIALCLGRG responde offline con Ollama/GGUF si OpenRouter falla.",
     "constructor": "HRCTRC crea carpetas y versiona el sistema en LC/Constructor.",
+    "constructor": "HRCTRC crea carpetas y versiona el sistema en LC/Constructor.",
     "refactor": "HRCTRC_RFCT divide oversized a 400/450 con modelo local.",
+    "hrctnr": "HRCNTR monitorea, refactoriza y actualiza todo el sistema.",
     "integracion": "INTEGRACIONRF: .md en CHG -> pesos -> IPFS -> devopencode.",
     "voz": "voice_engine habla con voz neuronal es-ES y cancela al instante.",
     "blockchain": "BKSVCB registra cada turno y mina cada 3 turnos.",
@@ -402,6 +458,9 @@ __all__: Final[List[str]] = [
     "refactorizar_sistema",
     "actualizar_sistema_hrctnr",
     "ciclo_cierre_hrctnr",
+    "gestor_hrctnr",
+    "estado_hrctnr",
+    "confirmar_actualizacion_hrctnr",
     "bitacora",
     "documentar_respaldos",
     "cierre_integracion",
