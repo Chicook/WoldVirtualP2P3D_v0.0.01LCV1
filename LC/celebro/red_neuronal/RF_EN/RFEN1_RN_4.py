@@ -4,14 +4,8 @@ Modelo free OpenRouter. Subsistema HRCNTR.
 """
 from __future__ import annotations
 
-import importlib
-import sys as _sys
-_mod_orig = importlib.import_module('celebro\red_neuronal\RF_EN\RFEN1_RN_4.py')
-NeuronaRefuerzoDQN = getattr(_mod_orig, 'NeuronaRefuerzoDQN', None)
 
-```python
 """RFEN1_RN_4.py - Neurona de Refuerzo con DQN (refactor ampliado y documentado).
-
 Este módulo implementa una neurona de aprendizaje por refuerzo basada en
 Deep Q‑Network (DQN) totalmente en NumPy.  La clase :class:`NeuronaRefuerzoDQN`
 extiende la base mínima :class:`NeuronaRefuerzoBase` y añade:
@@ -112,3 +106,8 @@ class InicializadoresRL:
 
     @classmethod
     def lecun(cls, shape, fan_in=1, seed=42):
+        """Inicializacion LeCun (recomendada para SELU)."""
+        lim = math.sqrt(3.0 / max(1, fan_in))
+        return cls._rng(seed).uniform(-lim, lim, shape).astype(
+            LUCIA_RL_CONFIG['precision']
+        )
