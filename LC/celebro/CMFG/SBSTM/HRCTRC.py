@@ -1,17 +1,9 @@
 """
 HRCTRC.py - Herrero Constructor de Sesion para LucIA (WoldVirtualP2P3D 2026)
 ==============================================================================
-Subsistema con permisos via codigo para operar sobre el directorio del sistema
-LC: crea carpetas, despliega una COPIA DE TRABAJO del sistema en
-LC/Constructor durante la sesion, y al finalizar UNIFICA los cambios en la
-ruta real de cada archivo, dejando Constructor vacia hasta la proxima sesion.
-
-Ciclo de vida:
-  1. iniciar_sesion()   -> crea LC/Constructor/sesion_<id>/ + manifiesto.
-  2. crear_carpeta()    -> crea carpetas dentro del overlay (y en LC si se pide).
-  3. escribir_overlay() -> LucIA modifica la copia, nunca el sistema vivo.
-  4. leer()             -> lee overlay primero, sistema despues (sombra).
-  5. finalizar_sesion() -> copia cambios a rutas reales + purga Constructor.
+Permisos via codigo sobre LC: copia de trabajo en LC/Constructor durante la
+sesion; al finalizar UNIFICA cambios en rutas reales y deja Constructor vacia.
+Ciclo: iniciar -> crear/escribir/leer overlay -> finalizar (unifica + purga).
 """
 from __future__ import annotations
 
@@ -193,6 +185,14 @@ class GestorConstructorSesion:
                            "estado": "nuevo" if not real.exists() else "modificado"})
         return previo
 
+    def _refactor_con_test_ok(self, rel: str) -> bool:
+        """True si el manifiesto registra test_ok para este refactor allowlist."""
+        try:
+            man = json.loads((self.overlay / "manifiesto_sesion.json").read_text(encoding="utf-8"))
+            return bool(man.get("refactors", {}).get(rel, {}).get("test_ok", False))
+        except Exception:
+            return False
+
     def finalizar_sesion(self, aplicar: bool = True) -> Dict[str, Any]:
         """Unifica cambios en rutas reales y deja Constructor VACIA."""
         with self._lock:
@@ -222,6 +222,9 @@ class GestorConstructorSesion:
                 if not lote_pkg:
                     descartar.add(cn)
                     logger.warning("HRCTRC omite shim huerfano: %s", c)
+                elif self._refactor_con_test_ok(c):
+                    logger.warning("HRCTRC acepta refactor con test_ok: %s (+%d partes)",
+                                   c, len(lote_pkg))
                 else:
                     logger.warning("HRCTRC omite refactor de sistema vivo: %s (+%d partes)",
                                    c, len(lote_pkg))

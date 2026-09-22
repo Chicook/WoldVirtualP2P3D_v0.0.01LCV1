@@ -167,6 +167,18 @@ class IntegradorRefactor:
         for e in evs:
             hora = time.strftime("%H:%M:%S", time.localtime(e["ts"]))
             lineas.append(f"- `{hora}` **{e['tipo']}**: {e['detalle']}")
+        lineas += ["", "## Monitoreo del sistema", ""]
+        turnos = [e for e in evs if e["tipo"] == "turno"]
+        lineas.append(f"- Turnos de sesion: {len(turnos)}")
+        for t in turnos[-20:]:
+            hora = time.strftime("%H:%M:%S", time.localtime(t["ts"]))
+            lineas.append(f"  - `{hora}` {t['detalle']}")
+        try:
+            dif = self.snapshot_fin_dif()
+            lineas.append(f"- Refactor: +{len(dif['nuevos'])}/-{len(dif['eliminados'])}/"
+                          f"~{len(dif['modificados'])} (nuevos/eliminados/modificados)")
+        except Exception:
+            pass
         lineas += ["", "## Distribucion de subsistemas tras refactor", ""]
         for item in listar_rutas_originales():
             n = contar_lineas_rapido(LC_DIR / item["ruta"])
@@ -204,9 +216,9 @@ class IntegradorRefactor:
             self.registrar("pesos_error", str(exc))
             return {"exito": False, "mensaje": f"PSNRCV fallo: {exc}"}
 
-    # ── Paso 4: subir pesos a IPFS ────────────────────────────
+    # ── Paso 4: subir pesos a IPFS y borrar el .md ─────────────
     def subir_a_ipfs(self, npz_path: str = "") -> Dict[str, Any]:
-        """Sube el npz de la bitacora a IPFS antes del cierre."""
+        """Sube el npz a IPFS; con CID confirmado borra el .md de CHG/."""
         try:
             from LC.celebro.CMFG.ipfs_manager import get_ipfs_manager
             if not npz_path:
@@ -215,7 +227,14 @@ class IntegradorRefactor:
                 npz_path, nombre_modelo=f"integrar_rf_{self.sesion_id}",
                 eliminar_local=False,
                 metadatos={"sesion": self.sesion_id, "tipo": "bitacora_refactor"})
-            self.registrar("ipfs_subido", f"CID {rep.get('cid', '?')} via {rep.get('nodo', '?')}.")
+            cid = rep.get("cid", "")
+            self.registrar("ipfs_subido", f"CID {cid or '?'} via {rep.get('nodo', '?')}.")
+            if cid:  # solo con CID se borra el .md; si falla, se conserva
+                try:
+                    self.md_path.unlink(missing_ok=True)
+                    self.registrar("md_borrado", f"{self.md_path.name} tras CID {cid[:16]}.")
+                except Exception:
+                    pass
             return {"exito": True, **rep}
         except Exception as exc:
             self.registrar("ipfs_error", str(exc))
@@ -249,7 +268,7 @@ class IntegradorRefactor:
 
     # ── Pipeline completo de cierre ───────────────────────────
     def cierre_completo(self) -> Dict[str, Any]:
-        """Refactor -> .md -> pesos -> IPFS -> devopencode. Una llamada."""
+        """Unificar -> verificar -> .md -> pesos -> IPFS (borra .md) -> devopencode."""
         t0 = time.perf_counter()
         reporte: Dict[str, Any] = {"sesion": self.sesion_id}
         reporte["refactor"] = self.aplicar_refactor()
@@ -258,6 +277,7 @@ class IntegradorRefactor:
         reporte["pesos"] = self.convertir_a_pesos()
         npz = reporte["pesos"].get("npz", "") if reporte["pesos"].get("exito") else ""
         reporte["ipfs"] = self.subir_a_ipfs(npz)
+        reporte["md_borrado"] = not self.md_path.exists()
         reporte["rama"] = self.actualizar_rama()
         reporte["segundos"] = round(time.perf_counter() - t0, 1)
         reporte["exito"] = all(reporte[k].get("exito") for k in ("md", "pesos"))

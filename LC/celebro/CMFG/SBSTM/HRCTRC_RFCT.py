@@ -52,6 +52,9 @@ EXCLUIR_SIEMPRE: Final[Tuple[str, ...]] = (
     "IAFREE.py",
 )
 
+# Allowlist: solo se unifican si el test previo del paquete pasa en el overlay.
+PERMITIR_CON_TEST: Final[Tuple[str, ...]] = ("PURGADOR.py",)
+
 _PAT_CLASE_DEF: Final[re.Pattern] = re.compile(r"^(class |def |[A-Z][A-Z0-9_]*\s*[:=])")
 
 _LOCK: Final[threading.Lock] = threading.Lock()
@@ -90,7 +93,7 @@ def escanear_oversized(overlay: Path) -> List[Dict[str, Any]]:
     for f in sorted(overlay.rglob("*.py")):
         if "__pycache__" in f.parts or "_pkg" in f.name:
             continue
-        if f.name in EXCLUIR_SIEMPRE:
+        if f.name in EXCLUIR_SIEMPRE and f.name not in PERMITIR_CON_TEST:
             continue
         n = contar_lineas(f)
         if n > MAX_LINEAS:
@@ -170,6 +173,22 @@ def _resumen_con_modelo_local(codigo: str) -> str:
     return f"Parte del subsistema LucIA ({m.group(1) if m else 'bloque'})."
 
 
+def test_previo_paquete(pkg_init: Path, sonda: str = "") -> bool:
+    """Test previo: carga el _pkg aislado (importlib) y corre la sonda."""
+    try:
+        import importlib.util
+        esp = importlib.util.spec_from_file_location(
+            "rfct_test_pkg", pkg_init, submodule_search_locations=[str(pkg_init.parent)])
+        mod = importlib.util.module_from_spec(esp)
+        esp.loader.exec_module(mod)  # type: ignore
+        if sonda:
+            getattr(mod, sonda)()
+        return True
+    except Exception as exc:
+        logger.warning("RFCT test previo fallo: %s", exc)
+        return False
+
+
 class RefactorizadorSesion:
     """Version de sesion: divide oversized en paquetes <=450 con modelo local."""
 
@@ -189,7 +208,7 @@ class RefactorizadorSesion:
     def refactorizar_archivo(self, rel: str) -> Dict[str, Any]:
         """ARCH.py -> ARCH_pkg/ (partes <=450) + shim loader compatible."""
         origen = self.overlay / rel
-        if origen.name in EXCLUIR_SIEMPRE:
+        if origen.name in EXCLUIR_SIEMPRE and origen.name not in PERMITIR_CON_TEST:
             return {"exito": True, "archivo": rel,
                     "mensaje": "Excluido por seguridad (entry-point/sistema vivo).", "partes": 1}
         stem = origen.stem
@@ -209,7 +228,6 @@ class RefactorizadorSesion:
         except Exception:
             pass
         nombres: List[str] = []
-        total_nuevo = 0
         for i, grupo in enumerate(partes, 1):
             cuerpo = "".join(grupo) if isinstance(grupo, list) else "".join(grupo)
             resumen = self._resumen(cuerpo)
@@ -219,12 +237,23 @@ class RefactorizadorSesion:
             nombre = f"_p{i}.py"
             (pkg / nombre).write_text(contenido, encoding="utf-8")
             nombres.append(nombre)
-            total_nuevo += contenido.count("\n") + 1
         inits = "".join(f"from .{n[:-3]} import *  # noqa\n" for n in nombres)
         (pkg / "__init__.py").write_text(
             f'"""\n{stem}_pkg - paquete de sesion (regla 400/450). Re-exporta todo.\n"""\n'
             f"from __future__ import annotations\n\n{inits}\n__all__ = []\n",
             encoding="utf-8")
+        test_ok: Optional[bool] = None
+        if f"{stem}.py" in PERMITIR_CON_TEST:
+            sonda = "estado_psnrl" if stem == "PURGADOR" else ""
+            test_ok = test_previo_paquete(pkg / "__init__.py", sonda)
+            if not test_ok:  # revierte: el lote no viaja a la arquitectura
+                try:
+                    origen.write_text(fuente, encoding="utf-8")
+                    shutil.rmtree(pkg, ignore_errors=True)
+                except Exception:
+                    pass
+                return {"exito": False, "archivo": rel, "test_ok": False,
+                        "mensaje": "Test previo fallo; lote revertido, original intacto."}
         shim = (f'"""\n{stem}.py - SHIM de sesion (regla 400/450). Codigo en {stem}_pkg/.\n'
                 f"Generado por HRCTRC_RFCT v{__version__}; compatible 100%.\n\"\"\"\n"
                 f"from __future__ import annotations\n\n"
@@ -246,7 +275,9 @@ class RefactorizadorSesion:
                 man = json.loads(man_path.read_text(encoding="utf-8")) if man_path.exists() else {}
                 man.setdefault("refactors", {})[rel] = {
                     "paquete": f"{stem}_pkg/", "partes": nombres,
-                    "lineas_antes": fuente.count("\n") + 1, "ts": time.time()}
+                    "lineas_antes": fuente.count("\n") + 1,
+                    "test_ok": test_ok if test_ok is not None else True,
+                    "ts": time.time()}
                 man_path.write_text(json.dumps(man, indent=2, ensure_ascii=False), encoding="utf-8")
             except Exception:
                 pass
@@ -404,16 +435,6 @@ def get_refactorizador(overlay: Path) -> RefactorizadorSesion:
 
 def refactorizar_overlay(overlay: Path, mostrar_barra: bool = True) -> Dict[str, Any]:
     return RefactorizadorSesion(overlay).ejecutar(mostrar_barra=mostrar_barra)
-
-
-def ordenar_refactor_lucia(overlay: Path, texto_usuario: str) -> Optional[str]:
-    """Atajo: interpreta ordenes de refactor sobre el overlay. None si no aplica."""
-    return RefactorizadorSesion(overlay).ejecutar_orden(texto_usuario)
-
-
-def informe_version_lucia(overlay: Path) -> str:
-    """Atajo: informe factual de la version de sesion para LucIA."""
-    return RefactorizadorSesion(overlay).informe_para_lucia()
 
 
 if __name__ == "__main__":
