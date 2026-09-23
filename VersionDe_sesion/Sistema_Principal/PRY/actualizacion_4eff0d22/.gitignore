@@ -1,0 +1,134 @@
+# ==============================================================================
+# .gitignore - WoldVirtualP2P3D / Sistema Cognitivo LucIA (2026)
+# ==============================================================================
+
+# Entorno y Secretos Sensibles
+# ------------------------------------------------------------------------------
+.env
+.env.*
+*.env.example
+*.key
+*.pem
+*.cert
+*.token
+credentials.json
+
+# Caches y compilados de Python
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Entornos Virtuales
+# ------------------------------------------------------------------------------
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Caches de pruebas y linters
+# ------------------------------------------------------------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.pyre/
+.pytype/
+.ruff_cache/
+
+# Pesos locales dinámicos, checkpoints sinápticos y estado de sesión
+# ------------------------------------------------------------------------------
+# Persistencia local de pesos generados dinámicamente en tiempo real
+LC/celebro/PSNRL/*.npz
+LC/celebro/PSNRL/*.npy
+LC/celebro/PSNRL/*.bin
+LC/celebro/PSNRL/*.pt
+LC/celebro/PSNRL/*.pth
+LC/celebro/PSNRL/*.ckpt
+
+# Cache temporal de modelos de OpenRouter
+LC/celebro/CMFG/SBSTM/openrouter_free_cache.json
+
+# Archivos de audio temporales generados por el motor de voz (TTS)
+*.wav
+*.mp3
+*.ogg
+temp_speech_*.wav
+temp_speech_*.mp3
+
+# Modelos locales pesados descargados (GGUF, binarios)
+LC/modelosIAlocal/*.gguf
+LC/modelosIAlocal/*.bin
+LC/modelosIAlocal/*.safetensors
+*.gguf
+*.safetensors
+
+# Logs del sistema y ejecución
+# ------------------------------------------------------------------------------
+*.log
+logs/
+*.out
+
+# Repositorio local IPFS Kubo (blobs, datastore, keystore) y binarios del daemon
+# ------------------------------------------------------------------------------
+LC/celebro/CMFG/IPFSonl/.ipfs/
+LC/celebro/CMFG/IPFSonl/ipfs.exe
+LC/celebro/CMFG/IPFSonl/ipfs
+
+# Ledger blockchain generado en runtime
+LC/celebro/blockchain_ledger.json
+blockchain_ledger.json
+
+# Historiales y resúmenes de sesión locales
+downloads/
+download_history*.json
+session_summary*.json
+
+# Artefactos de build de este proyecto (pyproject/hatch)
+# ------------------------------------------------------------------------------
+*.egg-info/
+
+# Caches de editores e IDEs
+# ------------------------------------------------------------------------------
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
+.settings/
+
+# Archivos del Sistema Operativo
+# ------------------------------------------------------------------------------
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
