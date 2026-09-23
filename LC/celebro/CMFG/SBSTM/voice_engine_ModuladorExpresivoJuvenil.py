@@ -1,7 +1,11 @@
-from typing import Final
+import random
+import re
+import threading
+from typing import Final, List, Tuple
+
 
 class ModuladorExpresivoJuvenil:
-    """
+    """Modula la cadencia, tono emocional y muletillas orales para lograr una expresion fresca, viva y espontanea caracteristica de una joven de 18 anos."""
 
     MULETILLAS_APERTURA: Final[List[str]] = [
         "Oye, ",
