@@ -307,6 +307,13 @@ class CMDLUCMixin:
                 print(f"  \033[38;5;214mCierre IPFS: {e_close}\033[0m")
 
             try:
+                from LC.celebro.CMFG.SBSTM.IALOCAL import limpiar_ia_temporal
+                li = limpiar_ia_temporal()
+                print(f"  \033[38;5;48mIA temporal: {li.get('eliminados',0)} archivo(s) borrado(s), {li.get('bytes_liberados',0)} bytes liberados\033[0m")
+            except Exception as e_ia:
+                print(f"  \033[38;5;214mLimpieza IA: {e_ia}\033[0m")
+
+            try:
                 from LC.celebro.CMFG.SBSTM.PURGADOR import (
                     recolectar_pycache_en_chg,
                     solo_limpiar_pycache,
