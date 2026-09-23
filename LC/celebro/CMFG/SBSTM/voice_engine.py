@@ -256,6 +256,6 @@ if __name__ == "__main__":
     print(f"  Prosodia       : Rate={r} | Pitch={p}")
     print("\033[38;5;48m  [OK] Subsistema de voz listo para integracion en mainLCSTM\033[0m")
     print("\033[38;5;51m" + "=" * 72 + "\033[0m")
-from voice_engine_ModuladorExpresivoJuvenil import ModuladorExpresivoJuvenil  # CLASSPACK
-from voice_engine_LimpiadorFoneticoLucIA import LimpiadorFoneticoLucIA  # CLASSPACK
-from voice_engine_ReproductorMCIWindows import ReproductorMCIWindows  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.voice_engine_ModuladorExpresivoJuvenil import ModuladorExpresivoJuvenil  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.voice_engine_LimpiadorFoneticoLucIA import LimpiadorFoneticoLucIA  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.voice_engine_ReproductorMCIWindows import ReproductorMCIWindows  # CLASSPACK

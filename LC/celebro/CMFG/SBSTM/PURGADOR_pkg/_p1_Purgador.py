@@ -1,4 +1,5 @@
 class Purgador:
+from typing import Final
     """
     Orquesta las dos fases:
       1. CustodiaIPFS  → sube PSNRL a IPFS

@@ -126,6 +126,6 @@ if __name__ == "__main__":
         cid="bafkreihq53...",
         txs=1,
     )
-from STYLOS_ColoresLucIA import ColoresLucIA  # CLASSPACK
-from STYLOS_RenderizadorMarkdown import RenderizadorMarkdown  # CLASSPACK
-from STYLOS_EstiloTerminalLucIA import EstiloTerminalLucIA  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.STYLOS_ColoresLucIA import ColoresLucIA  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.STYLOS_RenderizadorMarkdown import RenderizadorMarkdown  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.STYLOS_EstiloTerminalLucIA import EstiloTerminalLucIA  # CLASSPACK

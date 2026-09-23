@@ -10,4 +10,4 @@ from LC.celebro.CMFG.SBSTM.BASELUC import (
     _VOZ_DISPONIBLE, _hablar_voz, badge_turno, formatear_respuesta_lucia,
     reprocesar_con_metricas,
 )
-from TRNLUC_TRNLUCMixin import TRNLUCMixin  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.TRNLUC_TRNLUCMixin import TRNLUCMixin  # CLASSPACK

@@ -1,4 +1,5 @@
 class PurgaFilesystem:
+from typing import Final
     """Elimina __pycache__, .pyc/.pyo/.pyd, temporales IPFS y contenido de CHG."""
 
     _PYC_EXT:    Final[Tuple[str, ...]] = (".pyc", ".pyo", ".pyd")

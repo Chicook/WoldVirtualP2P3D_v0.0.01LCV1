@@ -263,6 +263,6 @@ if __name__ == "__main__":
         print("  " + str(k).ljust(28) + ": " + str(v))
     print("\n\033[38;5;48m  [OK] RPLC - 3 capas operativas\033[0m")
     print("\033[38;5;51m" + "=" * 72 + "\033[0m\n")
-from RPLC_ReformuladorLinguisticoLucia import ReformuladorLinguisticoLucia  # CLASSPACK
-from RPLC_ProcesadorRPLC import ProcesadorRPLC  # CLASSPACK
-from RPLC_AnalizadorEstructuraParrafos import AnalizadorEstructuraParrafos  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.RPLC_ReformuladorLinguisticoLucia import ReformuladorLinguisticoLucia  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.RPLC_ProcesadorRPLC import ProcesadorRPLC  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.RPLC_AnalizadorEstructuraParrafos import AnalizadorEstructuraParrafos  # CLASSPACK

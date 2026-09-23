@@ -1,9 +1,6 @@
+from typing import Final
+
 class ColoresLucIA:
-    """
-    Paleta de colores distintiva estilo OpenCode Cyber-Bioluminiscente.
-    Tonos frios de fondo con acentos en violeta cuantico, cian electrico y oro solar.
-    """
-    RESET: Final[str] = "\033[0m"
     BOLD: Final[str] = "\033[1m"
     DIM: Final[str] = "\033[2m"
     ITALIC: Final[str] = "\033[3m"
