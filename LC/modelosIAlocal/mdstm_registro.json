@@ -6,7 +6,11 @@
       "tamano_gb": 0.4,
       "exito": true,
       "origen_hf": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+<<<<<<< HEAD
       "fecha": 1790123956.1537106,
+=======
+      "fecha": 1790123585.2962546,
+>>>>>>> 57351982d1f85e4283876a715a7696f710a3bcf0
       "modulo": "LC.celebro.CMFG.SBSTM.IALOCAL"
     },
     "qwen3:1.7b": {
@@ -33,7 +37,11 @@
       "tamano_gb": 1.0,
       "exito": true,
       "origen_hf": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+<<<<<<< HEAD
       "fecha": 1790123956.161314,
+=======
+      "fecha": 1790123585.3067172,
+>>>>>>> 57351982d1f85e4283876a715a7696f710a3bcf0
       "modulo": "LC.celebro.CMFG.SBSTM.IALOCAL"
     }
   }
