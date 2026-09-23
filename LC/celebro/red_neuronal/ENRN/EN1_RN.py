@@ -384,4 +384,4 @@ __all__ = [
 
 if __name__ == "__main__":
     demo_entrenamiento()
-from EN1_RN_InicializadoresRL import InicializadoresRL  # CLASSPACK
+from LC.celebro.red_neuronal.ENRN.EN1_RN_InicializadoresRL import InicializadoresRL  # CLASSPACK

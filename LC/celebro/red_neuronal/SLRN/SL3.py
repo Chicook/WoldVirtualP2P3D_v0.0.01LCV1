@@ -309,5 +309,5 @@ def export_rmsprop_results(result: SupervisedLearningNeuralResult,
         _json.dump(payload, fh, indent=2)
 
 logger.info("SL3.py - RMSprop Avanzado 2026 cargado exitosamente")
-from SL3_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
-from SL3_RMSpropOptimizerInternal import RMSpropOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL3_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL3_RMSpropOptimizerInternal import RMSpropOptimizerInternal  # CLASSPACK

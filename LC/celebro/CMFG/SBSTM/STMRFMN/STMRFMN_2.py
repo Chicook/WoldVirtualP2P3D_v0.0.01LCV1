@@ -2,6 +2,8 @@
 # Ciclo de vida: iniciar / turno / estado / detener
 # Subsistemas: BKS (cadena), IA Free, PSN (neuronas), HRCTRC (constructor)
 
+from __future__ import annotations
+
 import time
 import json
 import random
@@ -143,10 +145,10 @@ if __name__ == "__main__":
     demo = DemoLucia()
     demo.ejecutar()
     demo.cerrar()
-from STMRFMN_2_ConfiguracionLucia import ConfiguracionLucia  # CLASSPACK
-from STMRFMN_2_ServidorBKS import ServidorBKS  # CLASSPACK
-from STMRFMN_2_ConversorPSN import ConversorPSN  # CLASSPACK
-from STMRFMN_2_GestorHRCTRC import GestorHRCTRC  # CLASSPACK
-from STMRFMN_2_ClienteIAFree import ClienteIAFree  # CLASSPACK
-from STMRFMN_2_GestorMemoria import GestorMemoria  # CLASSPACK
-from STMRFMN_2_OrquestadorSistemaLucIA import OrquestadorSistemaLucIA  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.STMRFMN.STMRFMN_2_ConfiguracionLucia import ConfiguracionLucia  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.STMRFMN.STMRFMN_2_ServidorBKS import ServidorBKS  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.STMRFMN.STMRFMN_2_ConversorPSN import ConversorPSN  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.STMRFMN.STMRFMN_2_GestorHRCTRC import GestorHRCTRC  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.STMRFMN.STMRFMN_2_ClienteIAFree import ClienteIAFree  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.STMRFMN.STMRFMN_2_GestorMemoria import GestorMemoria  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.STMRFMN.STMRFMN_2_OrquestadorSistemaLucIA import OrquestadorSistemaLucIA  # CLASSPACK

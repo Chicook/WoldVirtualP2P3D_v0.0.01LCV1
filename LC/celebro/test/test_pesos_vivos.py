@@ -143,8 +143,8 @@ class TestMetricasDinamicasPesos:
 # 3. VISUALIZADOR DE PESOS EN TERMINAL
 # ============================================================================
 
-from test_pesos_vivos_TestVisualizadorTerminalPesos import TestVisualizadorTerminalPesos  # CLASSPACK
-from test_pesos_vivos_TestGestorPesosVivos import TestGestorPesosVivos  # CLASSPACK
-from test_pesos_vivos_TestIntegracionFamiliasPesosVivos import TestIntegracionFamiliasPesosVivos  # CLASSPACK
-from test_pesos_vivos_TestInterfazGlobalPesosVivos import TestInterfazGlobalPesosVivos  # CLASSPACK
-from test_pesos_vivos_TestRobustezPesosVivos import TestRobustezPesosVivos  # CLASSPACK
+from LC.celebro.test.test_pesos_vivos_TestVisualizadorTerminalPesos import TestVisualizadorTerminalPesos  # CLASSPACK
+from LC.celebro.test.test_pesos_vivos_TestGestorPesosVivos import TestGestorPesosVivos  # CLASSPACK
+from LC.celebro.test.test_pesos_vivos_TestIntegracionFamiliasPesosVivos import TestIntegracionFamiliasPesosVivos  # CLASSPACK
+from LC.celebro.test.test_pesos_vivos_TestInterfazGlobalPesosVivos import TestInterfazGlobalPesosVivos  # CLASSPACK
+from LC.celebro.test.test_pesos_vivos_TestRobustezPesosVivos import TestRobustezPesosVivos  # CLASSPACK

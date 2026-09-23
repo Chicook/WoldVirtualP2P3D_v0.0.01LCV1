@@ -335,5 +335,5 @@ def export_integrated_results(
         _json.dump(payload, fh, indent=2)
         
 logger.info("SL10.py - Sistema Integrado de Supervised Learning Neural Networks 2026 cargado exitosamente")
-from SL10_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
-from SL10_IntegratedSupervisedLearningOptimizerInternal import IntegratedSupervisedLearningOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL10_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL10_IntegratedSupervisedLearningOptimizerInternal import IntegratedSupervisedLearningOptimizerInternal  # CLASSPACK

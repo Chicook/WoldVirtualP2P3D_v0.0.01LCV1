@@ -172,4 +172,4 @@ class TestPersistenciaPSNRL:
         """El directorio PSNRL debe existir tras la inicialización."""
         assert psnrl_tmp.exists(), "PSNRL debe existir como directorio"
         assert psnrl_tmp.is_dir(), "PSNRL debe ser un directorio"
-from test_psnrcv_TestNeuralMathPrecision2026 import TestNeuralMathPrecision2026  # CLASSPACK
+from LC.celebro.test.test_psnrcv_TestNeuralMathPrecision2026 import TestNeuralMathPrecision2026  # CLASSPACK

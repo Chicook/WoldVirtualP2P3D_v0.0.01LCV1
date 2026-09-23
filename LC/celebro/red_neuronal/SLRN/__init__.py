@@ -335,5 +335,5 @@ logger.info(
     __version__,
     list(OPTIMIZER_REGISTRY.keys()),
 )
-from __init___SupervisedLearningNeuralConfig import SupervisedLearningNeuralConfig  # CLASSPACK
-from __init___SupervisedLearningNeuralMetrics import SupervisedLearningNeuralMetrics  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.__init___SupervisedLearningNeuralConfig import SupervisedLearningNeuralConfig  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.__init___SupervisedLearningNeuralMetrics import SupervisedLearningNeuralMetrics  # CLASSPACK

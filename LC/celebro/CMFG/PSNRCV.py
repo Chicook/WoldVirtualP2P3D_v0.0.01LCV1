@@ -76,4 +76,4 @@ if __name__ == "__main__":
     print("Respuesta asimilada. Deriva acumulada:", res2["deriva_acumulada"])
     archivos = list(PSNRL_DIR.glob("*.*"))
     print(f"Archivos verificados en PSNRL ({len(archivos)}): {[f.name for f in archivos]}")
-from PSNRCV_ConversorRespuestaPesos import ConversorRespuestaPesos  # CLASSPACK
+from LC.celebro.CMFG.PSNRCV_ConversorRespuestaPesos import ConversorRespuestaPesos  # CLASSPACK

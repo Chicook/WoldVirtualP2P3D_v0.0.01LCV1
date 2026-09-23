@@ -367,4 +367,4 @@ def create_integrated_supervised_learning_optimizer(input_size: int = 4, output_
 
 if __name__ == "__main__":
     logger.info("RF_SL1_10.py cargado exitosamente")
-from RF_SL1_10_DataSplitter import DataSplitter  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_10_DataSplitter import DataSplitter  # CLASSPACK

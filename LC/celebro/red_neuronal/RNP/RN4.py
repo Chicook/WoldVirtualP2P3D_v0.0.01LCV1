@@ -366,5 +366,5 @@ def export_nadam_results(result: NeuralWeightOptimizationResult,
         _json.dump(data, f, indent=2)
 
 logger.info("RN4.py - Nadam (Nesterov Adam) Avanzado cargado exitosamente")
-from RN4_NeuralWeightOptimizationMetrics import NeuralWeightOptimizationMetrics  # CLASSPACK
-from RN4_NadamOptimizerInternal import NadamOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN4_NeuralWeightOptimizationMetrics import NeuralWeightOptimizationMetrics  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN4_NadamOptimizerInternal import NadamOptimizerInternal  # CLASSPACK

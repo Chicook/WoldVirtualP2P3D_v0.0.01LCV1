@@ -359,5 +359,5 @@ __all__ = [
 ]
 
 logger.info("RFSL1 cargado correctamente")
-from __init___NeuronaMemoriaBase import NeuronaMemoriaBase  # CLASSPACK
-from __init___HyperparameterSearch import HyperparameterSearch  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.__init___NeuronaMemoriaBase import NeuronaMemoriaBase  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.__init___HyperparameterSearch import HyperparameterSearch  # CLASSPACK

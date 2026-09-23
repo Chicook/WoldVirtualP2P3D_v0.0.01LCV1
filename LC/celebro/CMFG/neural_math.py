@@ -52,4 +52,4 @@ class SemanticEncoder4D(SemanticEncoderSHA):
     def encode_pair(self, prompt: str, response: str):  # type: ignore[override]
         comb = 0.4 * self.encode(prompt) + 0.6 * self.encode(response)
         return comb / (np.linalg.norm(comb) + 1e-8)
-from neural_math_NeuralMathPrecision2026 import NeuralMathPrecision2026  # CLASSPACK
+from LC.celebro.CMFG.neural_math_NeuralMathPrecision2026 import NeuralMathPrecision2026  # CLASSPACK

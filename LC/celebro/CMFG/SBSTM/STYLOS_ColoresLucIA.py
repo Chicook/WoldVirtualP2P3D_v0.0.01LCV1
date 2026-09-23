@@ -1,6 +1,8 @@
 from typing import Final
 
 class ColoresLucIA:
+    """Paleta de colores distintiva estilo OpenCode Cyber-Bioluminiscente."""
+    RESET: Final[str] = "\033[0m"
     BOLD: Final[str] = "\033[1m"
     DIM: Final[str] = "\033[2m"
     ITALIC: Final[str] = "\033[3m"

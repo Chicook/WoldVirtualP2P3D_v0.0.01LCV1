@@ -379,4 +379,4 @@ def create_decision_tree_optimizer(input_size: int = 4, output_size: int = 8) ->
 
 if __name__ == "__main__":
     logger.info("RF_SL1_5.py cargado exitosamente")
-from RF_SL1_5_TreeSplitter import TreeSplitter  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_5_TreeSplitter import TreeSplitter  # CLASSPACK

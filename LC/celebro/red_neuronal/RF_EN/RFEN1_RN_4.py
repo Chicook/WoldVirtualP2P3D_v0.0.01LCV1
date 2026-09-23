@@ -360,4 +360,4 @@ __all__ = [
 
 if __name__ == "__main__":
     demo_entrenamiento()
-from RFEN1_RN_4_InicializadoresRL import InicializadoresRL  # CLASSPACK
+from LC.celebro.red_neuronal.RF_EN.RFEN1_RN_4_InicializadoresRL import InicializadoresRL  # CLASSPACK

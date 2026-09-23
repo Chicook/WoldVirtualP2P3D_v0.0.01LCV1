@@ -311,5 +311,5 @@ def export_adadelta_results(result: SupervisedLearningNeuralResult,
         _json.dump(payload, fh, indent=2)
 
 logger.info("SL5.py - AdaDelta Avanzado 2026 cargado exitosamente")
-from SL5_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
-from SL5_AdaDeltaOptimizerInternal import AdaDeltaOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL5_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL5_AdaDeltaOptimizerInternal import AdaDeltaOptimizerInternal  # CLASSPACK

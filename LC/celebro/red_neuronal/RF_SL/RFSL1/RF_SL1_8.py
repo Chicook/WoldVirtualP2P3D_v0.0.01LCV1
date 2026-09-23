@@ -344,5 +344,5 @@ def create_logistic_regression_optimizer(input_size: int = 4, output_size: int =
 
 if __name__ == "__main__":
     logger.info("RF_SL1_8.py cargado exitosamente")
-from RF_SL1_8_FeatureScaler import FeatureScaler  # CLASSPACK
-from RF_SL1_8_ModelEvaluator import ModelEvaluator  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_8_FeatureScaler import FeatureScaler  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_8_ModelEvaluator import ModelEvaluator  # CLASSPACK

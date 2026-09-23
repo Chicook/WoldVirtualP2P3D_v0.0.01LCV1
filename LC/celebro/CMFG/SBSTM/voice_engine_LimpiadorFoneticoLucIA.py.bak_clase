@@ -1,0 +1,63 @@
+import re
+from typing import List
+
+
+class LimpiadorFoneticoLucIA:
+    """Sanitiza y normaliza textos para una fonetica fluida y sin tropiezos."""
+
+    @staticmethod
+    def sanitizar(texto: str) -> str:
+        if not texto:
+            return ""
+        t = texto.strip()
+        t = re.sub(r"<think>.*?</think>", "", t, flags=re.DOTALL)
+        t = re.sub(r"```.*?```", " codigo omitido ", t, flags=re.DOTALL)
+        t = re.sub(r"`[^`]*`", "", t)
+        t = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", t)
+        t = re.sub(r"^\s*#+\s*", "", t, flags=re.MULTILINE)
+        t = re.sub(r"^\s*\d+\.\s*", "", t, flags=re.MULTILINE)
+        t = re.sub(r"^\s*[-*+•◆]\s*", "", t, flags=re.MULTILINE)
+        t = re.sub(r"\*+", "", t)
+        t = re.sub(r"[_~>|\\(){}\[\]]", " ", t)
+        t = "".join(c for c in t if ord(c) < 0x10000)
+        t = re.sub(r"[\u2600-\u27BF]", "", t)
+        t = re.sub(r"[ \t]+", " ", t)
+        t = re.sub(r"\n\s*\n+", ". ", t)
+        t = re.sub(r"\n", ". ", t)
+        t = re.sub(r"\.{2,}", ".", t)
+        t = t.strip()
+        if t and t[-1] not in ".!?":
+            t += "."
+        return t
+
+    @staticmethod
+    def segmentar_frases(texto: str, max_chars: int = 420) -> List[str]:
+        if len(texto) <= max_chars:
+            return [texto]
+        bloques: List[str] = []
+        inicio = 0
+        while inicio < len(texto):
+            resto = len(texto) - inicio
+            if resto <= max_chars:
+                bloques.append(texto[inicio:].strip())
+                break
+            fin = inicio + max_chars
+            corte = -1
+            for sep in (". ", "! ", "? ", "; "):
+                pos = texto.rfind(sep, inicio, fin)
+                if pos > corte:
+                    corte = pos + len(sep)
+            if corte > inicio:
+                bloques.append(texto[inicio:corte].strip())
+                inicio = corte
+            else:
+                espacio = texto.rfind(" ", inicio, fin)
+                if espacio > inicio:
+                    bloques.append(texto[inicio:espacio].strip())
+                    inicio = espacio + 1
+                else:
+                    bloques.append(texto[inicio:fin].strip())
+                    inicio = fin
+        return [b for b in bloques if b]
+
+

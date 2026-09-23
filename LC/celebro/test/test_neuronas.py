@@ -391,4 +391,4 @@ class TestFamiliaSLRN:
 # ============================================================================
 # 7. INTEGRACIÓN INTER-FAMILIAS Y CONSISTENCIA NUMÉRICA
 # ============================================================================
-from test_neuronas_TestIntegracionInterFamilias import TestIntegracionInterFamilias  # CLASSPACK
+from LC.celebro.test.test_neuronas_TestIntegracionInterFamilias import TestIntegracionInterFamilias  # CLASSPACK

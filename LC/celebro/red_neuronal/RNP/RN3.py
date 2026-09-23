@@ -379,4 +379,4 @@ def export_lookahead_results(result: NeuralWeightOptimizationResult,
 
 
 logger.info("RN3.py - Lookahead Optimizer Avanzado cargado exitosamente")
-from RN3_NeuralWeightOptimizationMetrics import NeuralWeightOptimizationMetrics  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN3_NeuralWeightOptimizationMetrics import NeuralWeightOptimizationMetrics  # CLASSPACK

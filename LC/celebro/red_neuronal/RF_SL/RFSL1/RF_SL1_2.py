@@ -311,5 +311,5 @@ def evaluate_svm(clf: SVMClassifier, X: np.ndarray, y: np.ndarray) -> Dict[str, 
 
 if __name__ == "__main__":
     logger.info("RF_SL1_2.py cargado exitosamente")
-from RF_SL1_2_SMOTrainer import SMOTrainer  # CLASSPACK
-from RF_SL1_2_SVMClassifier import SVMClassifier  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_2_SMOTrainer import SMOTrainer  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_2_SVMClassifier import SVMClassifier  # CLASSPACK

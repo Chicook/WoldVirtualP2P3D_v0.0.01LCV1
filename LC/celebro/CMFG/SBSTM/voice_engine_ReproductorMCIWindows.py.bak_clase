@@ -1,0 +1,58 @@
+import ctypes
+import logging
+import os
+import threading
+import time
+
+logger = logging.getLogger(__name__)
+
+
+class ReproductorMCIWindows:
+    """Controlador directo de audio nativo mediante winmm.dll de Windows."""
+
+    def __init__(self, alias: str = "lucia_audio_active") -> None:
+        self.alias: str = alias
+        self._lock = threading.Lock()
+
+    def detener_inmediato(self) -> None:
+        with self._lock:
+            try:
+                mci = ctypes.windll.winmm.mciSendStringW
+                mci(f"stop {self.alias}", None, 0, None)
+                mci(f"close {self.alias}", None, 0, None)
+            except Exception:
+                pass
+
+    def reproducir_mp3(self, ruta_mp3: str, cancel_ev: threading.Event, stop_ev: threading.Event) -> bool:
+        if cancel_ev.is_set():
+            return False
+        with self._lock:
+            try:
+                mci = ctypes.windll.winmm.mciSendStringW
+                mci(f"close {self.alias}", None, 0, None)
+                ruta_norm = os.path.abspath(ruta_mp3).replace("\\", "/")
+                if mci(f'open "{ruta_norm}" type mpegvideo alias {self.alias}', None, 0, None) != 0:
+                    return False
+                mci(f"play {self.alias}", None, 0, None)
+            except Exception as ex:
+                logger.warning(f"Error al abrir audio MCI: {ex}")
+                return False
+
+        buf = ctypes.create_unicode_buffer(128)
+        time.sleep(0.08)
+        while not cancel_ev.is_set() and not stop_ev.is_set():
+            time.sleep(0.09)
+            with self._lock:
+                res = mci(f"status {self.alias} mode", buf, 128, None)
+                estado = (buf.value or "").strip().lower()
+                if res != 0:
+                    break
+                if estado == "playing":
+                    continue  # sigue sonando
+                if estado in ("stopped", "paused", "not ready", ""):
+                    break
+
+        self.detener_inmediato()
+        return True
+
+

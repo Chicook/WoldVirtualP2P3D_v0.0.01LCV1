@@ -309,5 +309,5 @@ def export_amsgrad_results(result: SupervisedLearningNeuralResult,
         _json.dump(payload, fh, indent=2)
 
 logger.info("SL8.py - AMSGrad Avanzado 2026 cargado exitosamente")
-from SL8_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
-from SL8_AMSGradOptimizerInternal import AMSGradOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL8_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL8_AMSGradOptimizerInternal import AMSGradOptimizerInternal  # CLASSPACK

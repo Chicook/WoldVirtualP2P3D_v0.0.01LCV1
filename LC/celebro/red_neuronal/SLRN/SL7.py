@@ -310,5 +310,5 @@ def export_adamax_results(result: SupervisedLearningNeuralResult,
         _json.dump(payload, fh, indent=2)
 
 logger.info("SL7.py - Adamax Avanzado 2026 cargado exitosamente")
-from SL7_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
-from SL7_AdamaxOptimizerInternal import AdamaxOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL7_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL7_AdamaxOptimizerInternal import AdamaxOptimizerInternal  # CLASSPACK

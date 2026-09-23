@@ -402,4 +402,4 @@ def export_lamb_results(result: NeuralWeightOptimizationResult,
 
 
 logger.info("RN5.py - LAMB (Layer-wise Adaptive Moments) Avanzado cargado exitosamente")
-from RN5_LAMBOptimizerInternal import LAMBOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN5_LAMBOptimizerInternal import LAMBOptimizerInternal  # CLASSPACK

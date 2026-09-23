@@ -234,5 +234,5 @@ logger.info(
     "RNP v%s cargado - %d neuronas disponibles (API %d)",
     __version__, len(_MODULE_MAP), __api_level__,
 )
-from __init___RNPRegistry import RNPRegistry  # CLASSPACK
-from __init___RNPBenchmark import RNPBenchmark  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.__init___RNPRegistry import RNPRegistry  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.__init___RNPBenchmark import RNPBenchmark  # CLASSPACK

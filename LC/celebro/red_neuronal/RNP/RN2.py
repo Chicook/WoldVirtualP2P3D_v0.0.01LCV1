@@ -376,4 +376,4 @@ def export_radam_results(result: NeuralWeightOptimizationResult,
 
 
 logger.info("RN2.py - RAdam (Rectified Adam) Avanzado cargado exitosamente")
-from RN2_NeuralWeightOptimizationMetrics import NeuralWeightOptimizationMetrics  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN2_NeuralWeightOptimizationMetrics import NeuralWeightOptimizationMetrics  # CLASSPACK

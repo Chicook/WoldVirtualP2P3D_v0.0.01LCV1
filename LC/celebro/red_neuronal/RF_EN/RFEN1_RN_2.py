@@ -374,4 +374,4 @@ def comparar_inicializaciones_pg(input_size: int, output_size: int, pasos: int =
         out[k] = {'norma_grad': float(np.linalg.norm(gw)), 'entropia': float(np.mean(n.historial_entropias.tail(10)))}
     return out
 logger.info("RFEN1_RN_2.py cargado correctamente - Neurona de Refuerzo Policy Gradient")
-from RFEN1_RN_2_InicializadoresRL import InicializadoresRL  # CLASSPACK
+from LC.celebro.red_neuronal.RF_EN.RFEN1_RN_2_InicializadoresRL import InicializadoresRL  # CLASSPACK

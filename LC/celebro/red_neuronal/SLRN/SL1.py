@@ -279,5 +279,5 @@ def export_backpropagation_results(result: SupervisedLearningNeuralResult,
         _json.dump(data, fh, indent=2)
 
 logger.info("SL1.py - Backpropagation 2026 (Muon+SOAP+NAG+GSNR+Polyak) cargado")
-from SL1_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
-from SL1_BackpropagationOptimizerInternal import BackpropagationOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL1_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL1_BackpropagationOptimizerInternal import BackpropagationOptimizerInternal  # CLASSPACK

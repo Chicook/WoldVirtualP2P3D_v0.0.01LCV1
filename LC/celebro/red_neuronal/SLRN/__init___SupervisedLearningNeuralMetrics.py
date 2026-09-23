@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class SupervisedLearningNeuralMetrics:
     """Metricas de rendimiento completas del optimizador SLRN 2026."""
     algorithm_name: str

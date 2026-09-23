@@ -312,5 +312,5 @@ def export_adam_results(result: SupervisedLearningNeuralResult,
         _json.dump(payload, fh, indent=2)
 
 logger.info("SL6.py - Adam Avanzado 2026 cargado exitosamente")
-from SL6_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
-from SL6_AdamOptimizerInternal import AdamOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL6_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL6_AdamOptimizerInternal import AdamOptimizerInternal  # CLASSPACK

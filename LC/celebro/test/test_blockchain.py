@@ -165,6 +165,6 @@ class TestSingletonBlockchain:
         assert callable(iniciar_servidor_blockchain), (
             "iniciar_servidor_blockchain debe ser callable"
         )
-from test_blockchain_TestBloqueNeuronalConstruccion import TestBloqueNeuronalConstruccion  # CLASSPACK
-from test_blockchain_TestMinadoPoNL import TestMinadoPoNL  # CLASSPACK
-from test_blockchain_TestPersistenciaLedger import TestPersistenciaLedger  # CLASSPACK
+from LC.celebro.test.test_blockchain_TestBloqueNeuronalConstruccion import TestBloqueNeuronalConstruccion  # CLASSPACK
+from LC.celebro.test.test_blockchain_TestMinadoPoNL import TestMinadoPoNL  # CLASSPACK
+from LC.celebro.test.test_blockchain_TestPersistenciaLedger import TestPersistenciaLedger  # CLASSPACK

@@ -271,5 +271,5 @@ def export_swats_results(result: NeuralWeightOptimizationResult,
         _json.dump(data, handle, indent=2)
 
 logger.info("RN9.py - SWATS Avanzado con Muon 2026 cargado exitosamente")
-from RN9_MathematicalPrecision import MathematicalPrecision  # CLASSPACK
-from RN9_SWATSOptimizerInternal import SWATSOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN9_MathematicalPrecision import MathematicalPrecision  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN9_SWATSOptimizerInternal import SWATSOptimizerInternal  # CLASSPACK

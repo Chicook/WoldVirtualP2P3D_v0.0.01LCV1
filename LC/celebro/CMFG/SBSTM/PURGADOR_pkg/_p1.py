@@ -144,6 +144,6 @@ def depositar_en_chg(origen: Path, chg_dir: Optional[Path] = None) -> Optional[P
     except Exception as exc:
         logger.warning("depositar_en_chg(%s): %s", origen, exc)
         return None
-from _p1_CustodiaIPFS import CustodiaIPFS  # CLASSPACK
-from _p1_PurgaFilesystem import PurgaFilesystem  # CLASSPACK
-from _p1_Purgador import Purgador  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.PURGADOR_pkg._p1_CustodiaIPFS import CustodiaIPFS  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.PURGADOR_pkg._p1_PurgaFilesystem import PurgaFilesystem  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.PURGADOR_pkg._p1_Purgador import Purgador  # CLASSPACK

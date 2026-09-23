@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class SupervisedLearningNeuralConfig:
     """Configuracion unificada para todos los optimizadores de SLRN 2026."""
     # --- Generales ---

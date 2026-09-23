@@ -140,4 +140,4 @@ if __name__ == "__main__":
     print("  Recomendados:", ", ".join(m["id"] for m in g.recomendar()[:3]))
     print("  Ollama:", g.ollama_online(), "| Descargados:", len(g.listar_descargados()))
     print("=" * 70)
-from __init___GestorDescargaModelos import GestorDescargaModelos  # CLASSPACK
+from LC.modelosIAlocal.MDSTM.__init___GestorDescargaModelos import GestorDescargaModelos  # CLASSPACK

@@ -300,5 +300,5 @@ def export_sam_results(result: NeuralWeightOptimizationResult,
         _json.dump(data, handle, indent=2)
 
 logger.info("RN8.py - SAM Avanzado cargado exitosamente")
-from RN8_MathematicalPrecision import MathematicalPrecision  # CLASSPACK
-from RN8_SAMOptimizerInternal import SAMOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN8_MathematicalPrecision import MathematicalPrecision  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN8_SAMOptimizerInternal import SAMOptimizerInternal  # CLASSPACK

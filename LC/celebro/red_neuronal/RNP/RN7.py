@@ -299,5 +299,5 @@ def export_lion_results(result: NeuralWeightOptimizationResult,
         _json.dump(data, handle, indent=2)
 
 logger.info("RN7.py - Lion Optimizer Avanzado cargado exitosamente")
-from RN7_MathematicalPrecision import MathematicalPrecision  # CLASSPACK
-from RN7_LionOptimizerInternal import LionOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN7_MathematicalPrecision import MathematicalPrecision  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN7_LionOptimizerInternal import LionOptimizerInternal  # CLASSPACK

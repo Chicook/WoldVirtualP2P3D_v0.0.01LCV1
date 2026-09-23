@@ -331,5 +331,5 @@ def create_random_forest_optimizer(input_size: int = 4, output_size: int = 8) ->
 
 if __name__ == "__main__":
     logger.info("RF_SL1_3.py cargado exitosamente")
-from RF_SL1_3_DecisionTree import DecisionTree  # CLASSPACK
-from RF_SL1_3_RandomForestTrainer import RandomForestTrainer  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_3_DecisionTree import DecisionTree  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_3_RandomForestTrainer import RandomForestTrainer  # CLASSPACK

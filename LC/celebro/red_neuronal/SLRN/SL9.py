@@ -313,5 +313,5 @@ def export_adabound_results(result: SupervisedLearningNeuralResult,
         _json.dump(payload, fh, indent=2)
 
 logger.info("SL9.py - AdaBound Avanzado 2026 cargado exitosamente")
-from SL9_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
-from SL9_AdaBoundOptimizerInternal import AdaBoundOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL9_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL9_AdaBoundOptimizerInternal import AdaBoundOptimizerInternal  # CLASSPACK

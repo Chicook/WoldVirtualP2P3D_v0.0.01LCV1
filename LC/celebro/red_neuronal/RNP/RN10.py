@@ -308,5 +308,5 @@ def export_integrated_results(result: NeuralWeightOptimizationResult, filepath: 
 
 
 logger.info("RN10.py - Sistema Integrado de Optimizacion de Pesos Neuronales 2026 cargado exitosamente")
-from RN10_NeuralWeightOptimizationConfig import NeuralWeightOptimizationConfig  # CLASSPACK
-from RN10_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN10_NeuralWeightOptimizationConfig import NeuralWeightOptimizationConfig  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN10_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK

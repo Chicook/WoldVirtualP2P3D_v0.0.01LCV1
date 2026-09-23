@@ -339,5 +339,5 @@ def export_adabelief_results(result: NeuralWeightOptimizationResult,
         _json.dump(data, handle, indent=2)
 
 logger.info("RN6.py - AdaBelief Avanzado cargado exitosamente")
-from RN6_MathematicalPrecision import MathematicalPrecision  # CLASSPACK
-from RN6_AdaBeliefOptimizerInternal import AdaBeliefOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN6_MathematicalPrecision import MathematicalPrecision  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN6_AdaBeliefOptimizerInternal import AdaBeliefOptimizerInternal  # CLASSPACK

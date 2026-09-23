@@ -4,14 +4,14 @@
       "archivo": "qwen2.5_0.5b.gguf",
       "tamano_gb": 0.4,
       "origen": "gguf-cache",
-      "fecha": 1790124303.9200718,
+      "fecha": 1790126095.017351,
       "ollama_tag": "qwen2.5:0.5b"
     },
     "tinyllama:1.1b": {
       "archivo": "tinyllama.gguf",
       "tamano_gb": 0.7,
       "origen": "gguf-cache",
-      "fecha": 1790124303.9736023,
+      "fecha": 1790126095.067042,
       "ollama_tag": "tinyllama"
     }
   }

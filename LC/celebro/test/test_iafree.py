@@ -269,5 +269,5 @@ class TestClienteIAFreeRed:
         )
         assert len(texto) > 0, "Respuesta real no debe estar vacía"
         assert lat > 0, "Latencia de respuesta real debe ser > 0"
-from test_iafree_TestCatalogoModelosGratuitos import TestCatalogoModelosGratuitos  # CLASSPACK
-from test_iafree_TestSingletonClienteIAFree import TestSingletonClienteIAFree  # CLASSPACK
+from LC.celebro.test.test_iafree_TestCatalogoModelosGratuitos import TestCatalogoModelosGratuitos  # CLASSPACK
+from LC.celebro.test.test_iafree_TestSingletonClienteIAFree import TestSingletonClienteIAFree  # CLASSPACK

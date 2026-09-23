@@ -384,4 +384,4 @@ def export_results(result: NeuralWeightOptimizationResult,
 
 
 logger.info("RN1.py - AdamW (Adam with Weight Decay) Avanzado cargado exitosamente")
-from RN1_NeuralWeightOptimizationMetrics import NeuralWeightOptimizationMetrics  # CLASSPACK
+from LC.celebro.red_neuronal.RNP.RN1_NeuralWeightOptimizationMetrics import NeuralWeightOptimizationMetrics  # CLASSPACK

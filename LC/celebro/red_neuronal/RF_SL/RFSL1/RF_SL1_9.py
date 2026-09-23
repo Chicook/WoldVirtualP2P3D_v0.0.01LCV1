@@ -379,4 +379,4 @@ def create_linear_regression_optimizer(input_size: int = 4, output_size: int = 8
 
 if __name__ == "__main__":
     logger.info("RF_SL1_9.py cargado exitosamente")
-from RF_SL1_9_ModelMetrics import ModelMetrics  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_9_ModelMetrics import ModelMetrics  # CLASSPACK

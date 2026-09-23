@@ -373,4 +373,4 @@ def create_naive_bayes_optimizer(input_size: int = 4, output_size: int = 8) -> N
 
 if __name__ == "__main__":
     logger.info("RF_SL1_6.py cargado exitosamente")
-from RF_SL1_6_BayesianClassifier import BayesianClassifier  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_6_BayesianClassifier import BayesianClassifier  # CLASSPACK

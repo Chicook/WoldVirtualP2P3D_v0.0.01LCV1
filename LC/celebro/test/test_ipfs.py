@@ -72,11 +72,11 @@ class TestIPFSManagerGlobal:
 
 
 # Fin de suite exhaustiva test_ipfs.py
-from test_ipfs_TestCIDv1Autonomo import TestCIDv1Autonomo  # CLASSPACK
-from test_ipfs_TestIPFSManagerManifiesto import TestIPFSManagerManifiesto  # CLASSPACK
-from test_ipfs_TestIPFSManagerRotacionTTL import TestIPFSManagerRotacionTTL  # CLASSPACK
-from test_ipfs_TestIPFSManagerOffline import TestIPFSManagerOffline  # CLASSPACK
-from test_ipfs_TestIPFSManagerRecuperacion import TestIPFSManagerRecuperacion  # CLASSPACK
-from test_ipfs_TestIPFSManagerKuboRPC import TestIPFSManagerKuboRPC  # CLASSPACK
-from test_ipfs_TestIPFSManagerBatchPSNRL import TestIPFSManagerBatchPSNRL  # CLASSPACK
-from test_ipfs_TestIPFSManagerConsultas import TestIPFSManagerConsultas  # CLASSPACK
+from LC.celebro.test.test_ipfs_TestCIDv1Autonomo import TestCIDv1Autonomo  # CLASSPACK
+from LC.celebro.test.test_ipfs_TestIPFSManagerManifiesto import TestIPFSManagerManifiesto  # CLASSPACK
+from LC.celebro.test.test_ipfs_TestIPFSManagerRotacionTTL import TestIPFSManagerRotacionTTL  # CLASSPACK
+from LC.celebro.test.test_ipfs_TestIPFSManagerOffline import TestIPFSManagerOffline  # CLASSPACK
+from LC.celebro.test.test_ipfs_TestIPFSManagerRecuperacion import TestIPFSManagerRecuperacion  # CLASSPACK
+from LC.celebro.test.test_ipfs_TestIPFSManagerKuboRPC import TestIPFSManagerKuboRPC  # CLASSPACK
+from LC.celebro.test.test_ipfs_TestIPFSManagerBatchPSNRL import TestIPFSManagerBatchPSNRL  # CLASSPACK
+from LC.celebro.test.test_ipfs_TestIPFSManagerConsultas import TestIPFSManagerConsultas  # CLASSPACK

@@ -135,9 +135,9 @@ class TestDeteccionVozAjena:
 # 3. CAPA 2: TRANSFORMADOR COGNITIVO HEBBIANO
 # ============================================================================
 
-from test_rplc_TestTransformadorCognitivoRPLC import TestTransformadorCognitivoRPLC  # CLASSPACK
-from test_rplc_TestReformuladorLinguisticoLucia import TestReformuladorLinguisticoLucia  # CLASSPACK
-from test_rplc_TestCacheMemoriaCognitiva import TestCacheMemoriaCognitiva  # CLASSPACK
-from test_rplc_TestProcesadorRPLC import TestProcesadorRPLC  # CLASSPACK
-from test_rplc_TestRobustezLingüística import TestRobustezLingüística  # CLASSPACK
-from test_rplc_TestRPLCConcurrenciaYGlobales import TestRPLCConcurrenciaYGlobales  # CLASSPACK
+from LC.celebro.test.test_rplc_TestTransformadorCognitivoRPLC import TestTransformadorCognitivoRPLC  # CLASSPACK
+from LC.celebro.test.test_rplc_TestReformuladorLinguisticoLucia import TestReformuladorLinguisticoLucia  # CLASSPACK
+from LC.celebro.test.test_rplc_TestCacheMemoriaCognitiva import TestCacheMemoriaCognitiva  # CLASSPACK
+from LC.celebro.test.test_rplc_TestProcesadorRPLC import TestProcesadorRPLC  # CLASSPACK
+from LC.celebro.test.test_rplc_TestRobustezLingüística import TestRobustezLingüística  # CLASSPACK
+from LC.celebro.test.test_rplc_TestRPLCConcurrenciaYGlobales import TestRPLCConcurrenciaYGlobales  # CLASSPACK

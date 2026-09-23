@@ -179,5 +179,5 @@ if __name__ == "__main__":
 
     archivos = checkpoint_y_registrar(conv, sesion=None, etiqueta="pesos_vivos_test")
     print(f"\n{ANSI.GREEN}Test finalizado con éxito. Archivos en PSNRL: {len(archivos)}{ANSI.RESET}\n")
-from pesos_vivos_VisualizadorTerminalPesos import VisualizadorTerminalPesos  # CLASSPACK
-from pesos_vivos_GestorPesosVivos import GestorPesosVivos  # CLASSPACK
+from LC.celebro.CMFG.pesos_vivos_VisualizadorTerminalPesos import VisualizadorTerminalPesos  # CLASSPACK
+from LC.celebro.CMFG.pesos_vivos_GestorPesosVivos import GestorPesosVivos  # CLASSPACK

@@ -313,5 +313,5 @@ def export_adagrad_results(result: SupervisedLearningNeuralResult,
         _json.dump(payload, fh, indent=2)
 
 logger.info("SL4.py - AdaGrad Avanzado 2026 cargado exitosamente")
-from SL4_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
-from SL4_AdaGradOptimizerInternal import AdaGradOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL4_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL4_AdaGradOptimizerInternal import AdaGradOptimizerInternal  # CLASSPACK

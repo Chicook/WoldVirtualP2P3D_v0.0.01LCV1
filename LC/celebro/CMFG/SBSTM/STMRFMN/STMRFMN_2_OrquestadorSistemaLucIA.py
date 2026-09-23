@@ -1,90 +1,10 @@
-class OrquestadorSistemaLucIA:
-    def __init__(self, ruta_base: str = "."):
-        self.config = ConfiguracionLucia(ruta_base=ruta_base)
-        self.servidor_bks = ServidorBKS()
-        self.conversor_psn = ConversorPSN(max_neuronas=self.config.max_neuronas)
-        self.gestor_hrctrc = GestorHRCTRC()
-        self.cliente_iafree = ClienteIAFree()
-        self.ipfs = ClienteIPFS(Path(ruta_base))
-        self.memoria = GestorMemoria(self.config.ruta_md)
-        self.telemetria = TelemetriaLucia()
-        self.activa: bool = False
-        self.turno_actual: int = 0
-        self.ia_local_lista: bool = True
-        self._lock = threading.Lock()
+import json
+import logging
+import threading
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional
 
-    def inicializar_subsistemas(self) -> bool:
-        try:
-            self.config.validar_rutas()
-            self.servidor_bks.agregar({"evento": "inicio", "sesion": self.config.sesion_id})
-            self.gestor_hrctrc.activar()
-            self.activa = True
-            self.turno_actual = 0
-            logger.info(f"[Orquestador] Sistema iniciado - sesion {self.config.sesion_id}")
-            return True
-        except Exception as e:
-            logger.error(f"[Orquestador] Error en init: {e}")
-            return False
-
-    def procesar_turno_dialogo(self, prompt: str) -> Dict[str, Any]:
-        t0 = time.perf_counter()
-        with self._lock:
-            self.turno_actual += 1
-            hash_bloque = self.servidor_bks.agregar({"turno": self.turno_actual, "prompt": prompt})
-            self.conversor_psn.almacenar(f"turno_{self.turno_actual}", prompt)
-            accion = self.gestor_hrctrc.evaluar(prompt)
-            respuesta = f"[HRCTRC->{accion}]" if accion else self.cliente_iafree.consultar(prompt)
-            self.memoria.registrar(self.turno_actual, prompt, respuesta)
-            latencia = time.perf_counter() - t0
-            self.telemetria.registrar_latencia(latencia)
-            self.telemetria.snapshot_neuronas(self.conversor_psn.cantidad())
-            return {"turno": self.turno_actual, "hash": hash_bloque, "respuesta": respuesta, "neuronas": self.conversor_psn.cantidad(), "latencia": round(latencia, 4)}
-
-    def obtener_telemetria(self) -> Dict[str, Any]:
-        return self.telemetria.reporte()
-
-    def exportar_metricas(self, ruta: Optional[str] = None) -> None:
-        destino = Path(ruta) if ruta else self.config.ruta_base / "telemetria.json"
-        datos = {"metricas": self.telemetria.metricas, "resumen": self.telemetria.reporte(), "exportado": datetime.now().isoformat()}
-        destino.write_text(json.dumps(datos, indent=2, ensure_ascii=False), encoding="utf-8")
-        logger.info(f"[Telemetria] Exportado a {destino}")
-
-    def estado_interno(self) -> Dict[str, Any]:
-        base = estado(self)
-        base["telemetria"] = self.telemetria.reporte()
-        base["ipfs"] = self.ipfs.estadisticas()
-        base["config"] = self.config.como_diccionario()
-        return base
-
-    def reinicializar(self) -> bool:
-        self.cerrar_sistema()
-        self.servidor_bks.limpiar()
-        self.conversor_psn.limpiar()
-        self.gestor_hrctrc.reglas.clear()
-        self.ipfs.limpiar()
-        self.memoria.historial.clear()
-        self.telemetria = TelemetriaLucia()
-        self.turno_actual = 0
-        return self.inicializar_subsistemas()
-
-    def pausar(self) -> None:
-        self.activa = False
-        logger.info("[Orquestador] Sistema pausado.")
-
-    def reanudar(self) -> None:
-        self.activa = True
-        logger.info("[Orquestador] Sistema reanudado.")
-
-    def cerrar_sistema(self) -> None:
-        self.activa = False
-        self.memoria.refactor()
-        self.memoria.persistir()
-        self.servidor_bks.agregar({"evento": "cierre", "turno_final": self.turno_actual})
-        valida, _ = self.servidor_bks.validar_cadena()
-        logger.info(f"[Orquestador] Cerrado. Turnos={self.turno_actual}, ChainValid={valida}")
-
-
-# ═══════════════════════════════════════════════════════════════════
-# Funciones de utilidad publicas (API del ciclo de vida)
-# ═══════════════════════════════════════════════════════════════════
-
+logger = logging.getLogger(__name__)
+from LC.Constructor.LUCIA_20260923_031455.celebro.CMFG.SBSTM.STMRFMN.STMRFMN_2_OrquestadorSistemaLucIA_OrquestadorSistemaLucIA import OrquestadorSistemaLucIA  # CLASSPACK

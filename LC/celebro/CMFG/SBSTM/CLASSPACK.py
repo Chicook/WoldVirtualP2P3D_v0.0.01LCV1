@@ -56,6 +56,11 @@ def _clases_body(source: str) -> List[Tuple[str, int, int, int]]:
         if m:
             nombre = m.group(1)
             inicio = i
+            # Incluir decoradores (@...) inmediatamente superiores a la clase.
+            j = inicio - 1
+            while j >= 0 and lineas[j].strip().startswith("@"):
+                inicio = j
+                j -= 1
             indent = len(lineas[i]) - len(lineas[i].lstrip())
             i += 1
             while i < len(lineas):
@@ -94,7 +99,13 @@ def extraer_clase(archivo: Path, clase: str, overlay: Path,
     if destino.exists():
         return {"exito": False, "error": f"{destino.name} ya existe."}
     destino.write_text(cuerpo, encoding="utf-8")
-    nuevo = restante.rstrip("\n") + f"\nfrom {stem}_{clase} import {clase}  # CLASSPACK\n"
+    partes = archivo.parts
+    if "LC" in partes:
+        pkg = ".".join(partes[partes.index("LC"):-1])
+        linea_import = f"\nfrom {pkg}.{stem}_{clase} import {clase}  # CLASSPACK\n"
+    else:
+        linea_import = f"\nfrom {stem}_{clase} import {clase}  # CLASSPACK\n"
+    nuevo = restante.rstrip("\n") + linea_import
     bak = archivo.with_suffix(".py.bak_clase")
     bak.write_text(source, encoding="utf-8")
     try:

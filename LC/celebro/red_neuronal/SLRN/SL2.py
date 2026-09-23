@@ -303,5 +303,5 @@ def export_sgd_results(result: SupervisedLearningNeuralResult,
         _json.dump(payload, fh, indent=2)
 
 logger.info("SL2.py - Stochastic Gradient Descent (SGD) 2026 cargado exitosamente")
-from SL2_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
-from SL2_SGDOptimizerInternal import SGDOptimizerInternal  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL2_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from LC.celebro.red_neuronal.SLRN.SL2_SGDOptimizerInternal import SGDOptimizerInternal  # CLASSPACK

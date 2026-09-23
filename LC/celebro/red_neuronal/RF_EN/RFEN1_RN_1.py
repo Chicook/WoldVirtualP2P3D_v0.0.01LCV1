@@ -408,4 +408,4 @@ RFEN1_CONFIG = {'inicializacion_preferida': 'xavier', 'learning_rate_default': 0
                 'gamma_default': 0.99, 'epsilon_default': 0.1, 'epsilon_decay_default': 0.995,
                 'epsilon_min_default': 0.01, 'umbral_convergencia': 0.95, 'umbral_estabilidad': 0.7}
 logger.info("RFEN1_RN_1.py cargado correctamente - Neurona de Refuerzo Q-Learning")
-from RFEN1_RN_1_InicializadoresRL import InicializadoresRL  # CLASSPACK
+from LC.celebro.red_neuronal.RF_EN.RFEN1_RN_1_InicializadoresRL import InicializadoresRL  # CLASSPACK

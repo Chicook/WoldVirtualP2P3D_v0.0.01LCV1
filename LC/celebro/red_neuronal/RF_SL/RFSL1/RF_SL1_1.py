@@ -274,7 +274,7 @@ def evaluate_booster(booster: GradientBooster, X: np.ndarray, y: np.ndarray) -> 
 
 if __name__ == "__main__":
     logger.info("RF_SL1_1.py cargado exitosamente")
-from RF_SL1_1_TreeBuilder import TreeBuilder  # CLASSPACK
-from RF_SL1_1_LossCalculator import LossCalculator  # CLASSPACK
-from RF_SL1_1_PredictionAggregator import PredictionAggregator  # CLASSPACK
-from RF_SL1_1_GradientBooster import GradientBooster  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_1_TreeBuilder import TreeBuilder  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_1_LossCalculator import LossCalculator  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_1_PredictionAggregator import PredictionAggregator  # CLASSPACK
+from LC.celebro.red_neuronal.RF_SL.RFSL1.RF_SL1_1_GradientBooster import GradientBooster  # CLASSPACK

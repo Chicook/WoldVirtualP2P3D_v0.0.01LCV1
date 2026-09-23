@@ -43,9 +43,9 @@ from LC.celebro.CMFG.SBSTM.STYLOS import (
 # 1. CONSTANTES DE COLOR Y PALETA CYBER-BIOLUMINISCENTE
 # ============================================================================
 
-from test_stylos_TestColoresLucIA import TestColoresLucIA  # CLASSPACK
-from test_stylos_TestGlifos import TestGlifos  # CLASSPACK
-from test_stylos_TestUtilidadesVisuales import TestUtilidadesVisuales  # CLASSPACK
-from test_stylos_TestRenderizadorMarkdown import TestRenderizadorMarkdown  # CLASSPACK
-from test_stylos_TestEstiloTerminalLucIA import TestEstiloTerminalLucIA  # CLASSPACK
-from test_stylos_TestMetodosGlobalesConveniencia import TestMetodosGlobalesConveniencia  # CLASSPACK
+from LC.celebro.test.test_stylos_TestColoresLucIA import TestColoresLucIA  # CLASSPACK
+from LC.celebro.test.test_stylos_TestGlifos import TestGlifos  # CLASSPACK
+from LC.celebro.test.test_stylos_TestUtilidadesVisuales import TestUtilidadesVisuales  # CLASSPACK
+from LC.celebro.test.test_stylos_TestRenderizadorMarkdown import TestRenderizadorMarkdown  # CLASSPACK
+from LC.celebro.test.test_stylos_TestEstiloTerminalLucIA import TestEstiloTerminalLucIA  # CLASSPACK
+from LC.celebro.test.test_stylos_TestMetodosGlobalesConveniencia import TestMetodosGlobalesConveniencia  # CLASSPACK

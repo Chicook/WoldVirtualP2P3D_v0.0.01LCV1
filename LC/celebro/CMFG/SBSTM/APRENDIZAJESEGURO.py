@@ -43,4 +43,4 @@ def get_aprendizaje_seguro() -> AprendizajeSeguroLucIA:
     if _APRENDIZAJE is None:
         _APRENDIZAJE = AprendizajeSeguroLucIA()
     return _APRENDIZAJE
-from APRENDIZAJESEGURO_AprendizajeSeguroLucIA import AprendizajeSeguroLucIA  # CLASSPACK
+from LC.celebro.CMFG.SBSTM.APRENDIZAJESEGURO_AprendizajeSeguroLucIA import AprendizajeSeguroLucIA  # CLASSPACK
