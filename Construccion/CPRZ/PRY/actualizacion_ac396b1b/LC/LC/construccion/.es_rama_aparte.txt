@@ -1,2 +1,0 @@
-RAMA APARTE `construccion`: copia de trabajo para refactorizar a Lucia.
-NO es LC/. La sesion arranca en LC/mainLCSTM.py.
