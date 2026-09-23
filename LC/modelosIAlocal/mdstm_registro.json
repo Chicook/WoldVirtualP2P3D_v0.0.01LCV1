@@ -6,7 +6,7 @@
       "tamano_gb": 0.4,
       "exito": true,
       "origen_hf": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
-      "fecha": 1790120783.0467803,
+      "fecha": 1790122096.0756829,
       "modulo": "LC.celebro.CMFG.SBSTM.IALOCAL"
     },
     "qwen3:1.7b": {
@@ -33,7 +33,7 @@
       "tamano_gb": 1.0,
       "exito": true,
       "origen_hf": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
-      "fecha": 1790120796.5300155,
+      "fecha": 1790122096.0836263,
       "modulo": "LC.celebro.CMFG.SBSTM.IALOCAL"
     }
   }

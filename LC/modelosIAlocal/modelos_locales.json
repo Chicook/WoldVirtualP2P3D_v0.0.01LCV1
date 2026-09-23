@@ -3,15 +3,15 @@
     "qwen2.5:0.5b": {
       "archivo": "qwen2.5_0.5b.gguf",
       "tamano_gb": 0.4,
-      "origen": "gguf",
-      "fecha": 1790120782.9361348,
+      "origen": "gguf-cache",
+      "fecha": 1790122095.9851384,
       "ollama_tag": "qwen2.5:0.5b"
     },
     "tinyllama:1.1b": {
       "archivo": "tinyllama.gguf",
       "tamano_gb": 0.7,
       "origen": "gguf-cache",
-      "fecha": 1790120783.002131,
+      "fecha": 1790122096.0302775,
       "ollama_tag": "tinyllama"
     }
   }

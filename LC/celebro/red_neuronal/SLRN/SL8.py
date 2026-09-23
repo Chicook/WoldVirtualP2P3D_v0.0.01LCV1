@@ -47,119 +47,6 @@ logger = logging.getLogger(__name__)
 # ===========================================================================
 # 1. PRECISION MATEMATICA 2026 - Monotonic Maximum & Muon Newton-Schulz 5
 # ===========================================================================
-class MathematicalPrecision2026:
-    """Utilidades de precision matematica neuronal 2026 para AMSGrad."""
-
-    EPS: float = 1e-12
-
-    @staticmethod
-    def amsgrad_step(G: np.ndarray, m: np.ndarray, v: np.ndarray, v_max: np.ndarray,
-                     beta1: float, beta2: float, eps: float, t: int) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Calcula el paso AMSGrad con segundo momento monotonico no decreciente."""
-        new_m = beta1 * m + (1.0 - beta1) * G
-        new_v = beta2 * v + (1.0 - beta2) * (G ** 2)
-        new_v_max = np.maximum(v_max, new_v)
-        bias_corr = 1.0 - (beta1 ** t)
-        m_hat = new_m / max(bias_corr, MathematicalPrecision2026.EPS)
-        step = m_hat / (np.sqrt(new_v_max) + eps)
-        return step, new_m, new_v, new_v_max
-
-    @staticmethod
-    def newton_schulz5(G: np.ndarray, steps: int = 5) -> np.ndarray:
-        """Ortogonalizacion polar grado-5 Newton-Schulz (Muon 2026)."""
-        assert G.ndim == 2, "newton_schulz5 requiere matriz 2D"
-        X = G / (np.linalg.norm(G, ord="fro") + MathematicalPrecision2026.EPS)
-        for _ in range(steps):
-            X = 1.5 * X - 0.5 * X @ (X.T @ X)
-        return X
-
-    @staticmethod
-    def gsnr(G: np.ndarray, G_sq: np.ndarray, t: int) -> float:
-        """Gradient Signal-to-Noise Ratio adaptativo (GSNR)."""
-        mean_g, mean_g2 = G / max(t, 1), G_sq / max(t, 1)
-        signal = float(np.sum(mean_g ** 2))
-        noise = float(np.sum(np.maximum(mean_g2 - mean_g ** 2, 0.0)))
-        return signal / (noise + MathematicalPrecision2026.EPS)
-
-    @staticmethod
-    def polyak_step(P: np.ndarray, W: np.ndarray, decay: float = 0.999) -> np.ndarray:
-        """Polyak-Ruppert parameter averaging con decaimiento exponencial."""
-        return decay * P + (1.0 - decay) * W
-
-
-# ===========================================================================
-# 2. INTERNALS - motor de optimizacion AMSGrad 2026
-# ===========================================================================
-class AMSGradOptimizerInternal:
-    """Motor interno de AMSGrad con memoria monotonica + Muon + EMA (2026)."""
-
-    def __init__(self, learning_rate: float, beta1: float, beta2: float,
-                 eps: float, weight_decay: float, use_muon: bool = True,
-                 polyak_decay: float = 0.999):
-        self.lr, self.beta1, self.beta2 = learning_rate, beta1, beta2
-        self.eps, self.weight_decay = eps, weight_decay
-        self.use_muon = use_muon
-        self.polyak_decay = polyak_decay
-        self._m: Optional[np.ndarray] = None
-        self._v: Optional[np.ndarray] = None
-        self._v_max: Optional[np.ndarray] = None
-        self._polyak: Optional[np.ndarray] = None
-        self._G_sum: Optional[np.ndarray] = None
-        self._G_sq_sum: Optional[np.ndarray] = None
-        self.step_count = 0
-        self.amsgrad_score = 0.0
-        self.maximum_efficiency_score = 0.0
-        self.muon_orthogonality = 0.0
-        self.gsnr_score = 0.0
-
-    def _init_state(self, G: np.ndarray) -> None:
-        self._m = np.zeros_like(G)
-        self._v = np.zeros_like(G)
-        self._v_max = np.zeros_like(G)
-        self._polyak = np.zeros_like(G)
-        self._G_sum = np.zeros_like(G)
-        self._G_sq_sum = np.zeros_like(G)
-
-    def step(self, G: Optional[np.ndarray] = None) -> Dict[str, float]:
-        """Ejecuta un paso de optimizacion AMSGrad 2026 y devuelve metricas."""
-        self.step_count += 1
-        t = self.step_count
-        if G is None:
-            G = np.random.randn(8, 8).astype(np.float64) * 0.1
-        if self._m is None:
-            self._init_state(G)
-
-        self._G_sum += G; self._G_sq_sum += G ** 2
-        grad = G + self.weight_decay * self._polyak if self.weight_decay > 0 else G.copy()
-
-        step_grad, self._m, self._v, self._v_max = MathematicalPrecision2026.amsgrad_step(
-            grad, self._m, self._v, self._v_max, self.beta1, self.beta2, self.eps, t
-        )
-
-        if self.use_muon and step_grad.ndim == 2:
-            muon_ortho = MathematicalPrecision2026.newton_schulz5(step_grad, steps=5)
-            expected = math.sqrt(min(step_grad.shape))
-            self.muon_orthogonality = max(0.0, 1.0 - abs(np.linalg.norm(muon_ortho, ord="fro") - expected) / max(expected, 1.0))
-            step_grad = 0.5 * step_grad + 0.5 * muon_ortho
-
-        self._polyak = MathematicalPrecision2026.polyak_step(self._polyak, step_grad, decay=self.polyak_decay)
-        self.gsnr_score = MathematicalPrecision2026.gsnr(self._G_sum, self._G_sq_sum, t)
-
-        std_v, mean_v = float(np.std(step_grad)), float(np.mean(np.abs(step_grad))) + 1e-8
-        self.amsgrad_score = max(0.0, min(1.0, 1.0 - (std_v / (mean_v * 3.0))))
-        self.maximum_efficiency_score = max(0.0, min(1.0, float(np.tanh(self.gsnr_score * 0.5))))
-
-        return {
-            "amsgrad_score": self.amsgrad_score,
-            "maximum_efficiency_score": self.maximum_efficiency_score,
-            "muon_orthogonality": self.muon_orthogonality,
-            "gsnr": self.gsnr_score,
-        }
-
-
-# ===========================================================================
-# 3. OPTIMIZADOR PRINCIPAL - AMSGradOptimizer
-# ===========================================================================
 class AMSGradOptimizer(BaseSupervisedLearningNeuralOptimizer):
     """Optimizador AMSGrad avanzado 2026 con memoria no decreciente + Muon."""
 
@@ -422,3 +309,5 @@ def export_amsgrad_results(result: SupervisedLearningNeuralResult,
         _json.dump(payload, fh, indent=2)
 
 logger.info("SL8.py - AMSGrad Avanzado 2026 cargado exitosamente")
+from SL8_MathematicalPrecision2026 import MathematicalPrecision2026  # CLASSPACK
+from SL8_AMSGradOptimizerInternal import AMSGradOptimizerInternal  # CLASSPACK

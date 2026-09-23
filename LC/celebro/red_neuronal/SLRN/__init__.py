@@ -80,105 +80,7 @@ SLRN_META: Dict[str, str] = {
 # CORE DATA STRUCTURES
 # ===========================================================================
 @dataclass
-class SupervisedLearningNeuralConfig:
-    """Configuracion unificada para todos los optimizadores de SLRN 2026."""
-    # --- Generales ---
-    learning_rate: float = 0.001
-    max_iterations: int = 1000
-    batch_size: int = 32
-    weight_decay: float = 0.0001
-    random_state: int = 42
-    # --- Backpropagation / Momentum ---
-    bp_momentum: float = 0.9
-    bp_nesterov: bool = True
-    # --- SGD ---
-    sgd_momentum: float = 0.9
-    sgd_dampening: float = 0.0
-    # --- RMSprop ---
-    rmsprop_alpha: float = 0.99
-    rmsprop_eps: float = 1e-8
-    # --- AdaGrad ---
-    adagrad_eps: float = 1e-10
-    # --- AdaDelta ---
-    adadelta_rho: float = 0.9
-    adadelta_eps: float = 1e-6
-    # --- Adam / AdamW ---
-    adam_beta1: float = 0.9
-    adam_beta2: float = 0.999
-    adam_eps: float = 1e-8
-    # --- Adamax ---
-    adamax_beta1: float = 0.9
-    adamax_beta2: float = 0.999
-    adamax_eps: float = 1e-8
-    # --- AMSGrad ---
-    amsgrad_beta1: float = 0.9
-    amsgrad_beta2: float = 0.999
-    amsgrad_eps: float = 1e-8
-    # --- AdaBound ---
-    adabound_final_lr: float = 0.1
-    adabound_gamma: float = 0.001
-    # --- LAMB / RAdam / NAdam / NovoGrad / Ranger (reserved) ---
-    lamb_beta1: float = 0.9
-    lamb_beta2: float = 0.999
-    lamb_eps: float = 1e-8
-    radam_beta1: float = 0.9
-    radam_beta2: float = 0.999
-    radam_eps: float = 1e-8
-    nadam_beta1: float = 0.9
-    nadam_beta2: float = 0.999
-    nadam_eps: float = 1e-8
-    nadam_momentum_decay: float = 0.004
-    novograd_beta1: float = 0.9
-    novograd_beta2: float = 0.999
-    novograd_eps: float = 1e-8
-    ranger_beta1: float = 0.9
-    ranger_beta2: float = 0.999
-    ranger_eps: float = 1e-8
-    ranger_lookahead_k: int = 5
-    ranger_lookahead_alpha: float = 0.5
-    def __post_init__(self) -> None:
-        if self.learning_rate <= 0:
-            raise ValueError("learning_rate must be positive")
-        if self.max_iterations <= 0:
-            raise ValueError("max_iterations must be positive")
 @dataclass
-class SupervisedLearningNeuralMetrics:
-    """Metricas de rendimiento completas del optimizador SLRN 2026."""
-    algorithm_name: str
-    initial_loss: float
-    final_loss: float
-    convergence_iterations: int
-    bp_momentum_efficiency: float
-    sgd_gradient_descent_efficiency: float
-    rmsprop_rms_efficiency: float
-    adagrad_adaptive_efficiency: float
-    adadelta_delta_efficiency: float
-    adam_adaptive_momentum: float
-    adamax_max_efficiency: float
-    amsgrad_maximum_efficiency: float
-    adabound_boundary_efficiency: float
-    lamb_layer_efficiency: float
-    radam_rectified_efficiency: float
-    nadam_nesterov_efficiency: float
-    novograd_gradient_efficiency: float
-    ranger_lookahead_efficiency: float
-    supervised_neural_integration_score: float
-    overall_score: float
-    optimization_time: float
-    timestamp: str
-    @property
-    def loss_reduction_pct(self) -> float:
-        """Porcentaje de reduccion de perdida lograda."""
-        if self.initial_loss <= 0:
-            return 0.0
-        return 100.0 * (self.initial_loss - self.final_loss) / self.initial_loss
-    def summary(self) -> str:
-        """Resumen compacto de una linea."""
-        return (
-            f"[{self.algorithm_name}] Loss: {self.initial_loss:.4f} -> {self.final_loss:.4f} "
-            f"({self.loss_reduction_pct:.1f}% red.) | Score: {self.overall_score:.4f} "
-            f"| Iter: {self.convergence_iterations} | {self.timestamp}"
-        )
 @dataclass
 class SupervisedLearningNeuralResult:
     """Resultado completo de una ejecucion de optimizacion SLRN 2026."""
@@ -433,3 +335,5 @@ logger.info(
     __version__,
     list(OPTIMIZER_REGISTRY.keys()),
 )
+from __init___SupervisedLearningNeuralConfig import SupervisedLearningNeuralConfig  # CLASSPACK
+from __init___SupervisedLearningNeuralMetrics import SupervisedLearningNeuralMetrics  # CLASSPACK

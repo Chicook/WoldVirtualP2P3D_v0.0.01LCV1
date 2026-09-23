@@ -244,39 +244,6 @@ class NeuralNetworkOptimizer(NeuronaMemoriaBase):
         return f"{self.nombre}(ent={self.input_size},sal={self.output_size})"
 
 
-class ActivationEngine:
-    @staticmethod
-    def relu(x: np.ndarray) -> np.ndarray: return np.maximum(0, x)
-
-    @staticmethod
-    def sigmoid(x: np.ndarray) -> np.ndarray: return 1.0 / (1.0 + np.exp(-np.clip(x, -500, 500)))
-
-    @staticmethod
-    def tanh(x: np.ndarray) -> np.ndarray: return np.tanh(x)
-
-    @staticmethod
-    def leaky_relu(x: np.ndarray, alpha: float = 0.01) -> np.ndarray: return np.where(x > 0, x, alpha * x)
-
-    @staticmethod
-    def softmax(x: np.ndarray) -> np.ndarray:
-        e = np.exp(x - np.max(x, axis=-1, keepdims=True)); return e / np.sum(e, axis=-1, keepdims=True)
-
-    @staticmethod
-    def relu_derivative(x: np.ndarray) -> np.ndarray: return (x > 0).astype(np.float32)
-
-    @staticmethod
-    def sigmoid_derivative(x: np.ndarray) -> np.ndarray: s = ActivationEngine.sigmoid(x); return s * (1 - s)
-
-    @staticmethod
-    def apply(x: np.ndarray, activation: str) -> np.ndarray:
-        if activation == "relu": return ActivationEngine.relu(x)
-        if activation == "sigmoid": return ActivationEngine.sigmoid(x)
-        if activation == "tanh": return ActivationEngine.tanh(x)
-        if activation == "leaky_relu": return ActivationEngine.leaky_relu(x)
-        if activation == "softmax": return ActivationEngine.softmax(x)
-        return x
-
-
 class GradientClipper:
     def __init__(self, max_norm: float = 5.0):
         self.max_norm = max_norm
@@ -359,44 +326,11 @@ class LearningRateScheduler:
     def get_lr(self) -> float: return self.lr
 
 
-class NeuralNetTrainer:
-    def __init__(self, network: NeuralNetworkOptimizer, max_norm: float = 5.0):
-        self.network = network; self.max_norm = max_norm
-        self._train_losses: List[float] = []; self._val_losses: List[float] = []
-
-    def train_epoch(self, X: np.ndarray, y: np.ndarray) -> float:
-        pred = self.network.forward(X)
-        loss = self.network.compute_loss(pred, y)
-        grad = self.network.compute_gradient(pred, y)
-        grad = GradientClipper(self.max_norm).clip(grad)
-        gp, gs = self.network.backward(grad, X)
-        self.network.update_weights_momentum(gp, gs)
-        self._train_losses.append(loss)
-        return loss
-
-    def validate(self, X: np.ndarray, y: np.ndarray) -> float:
-        pred = self.network.predict(X)
-        loss = LossFunctions.mse(pred, y)
-        self._val_losses.append(loss)
-        return loss
-
-    def train_with_validation(self, X: np.ndarray, y: np.ndarray,
-                                X_val: np.ndarray, y_val: np.ndarray,
-                                epochs: int = 10) -> Dict[str, List[float]]:
-        for epoch in range(epochs):
-            train_loss = self.train_epoch(X, y)
-            val_loss = self.validate(X_val, y_val)
-            logger.info(f"Epoch {epoch+1}: train={train_loss:.6f}, val={val_loss:.6f}")
-        return {'train': self._train_losses, 'val': self._val_losses}
-
-    def get_train_losses(self) -> List[float]: return self._train_losses.copy()
-
-    def get_val_losses(self) -> List[float]: return self._val_losses.copy()
-
-
 def create_neural_network_optimizer(input_size: int = 4, output_size: int = 8) -> NeuralNetworkOptimizer:
     return NeuralNetworkOptimizer(input_size=input_size, output_size=output_size)
 
 
 if __name__ == "__main__":
     logger.info("RF_SL1_4.py cargado exitosamente")
+from RF_SL1_4_ActivationEngine import ActivationEngine  # CLASSPACK
+from RF_SL1_4_NeuralNetTrainer import NeuralNetTrainer  # CLASSPACK

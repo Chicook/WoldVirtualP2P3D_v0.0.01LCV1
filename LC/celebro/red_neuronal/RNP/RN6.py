@@ -140,76 +140,6 @@ class BaseNeuralWeightOptimizer:
                 for v in weights]
 
 
-class MathematicalPrecision:
-    @staticmethod
-    def arrays(values: List[np.ndarray]) -> List[np.ndarray]:
-        return [np.asarray(v, dtype=float) for v in values]
-
-    @staticmethod
-    def norm(values: List[np.ndarray]) -> float:
-        return float(np.sqrt(sum(float(np.sum(v * v)) for v in values)))
-
-    @staticmethod
-    def clip(gradients: List[np.ndarray], maximum: float) -> List[np.ndarray]:
-        values = MathematicalPrecision.arrays(gradients)
-        total = MathematicalPrecision.norm(values)
-        return [v * (maximum / total) for v in values] if maximum > 0 and total > maximum else values
-
-    @staticmethod
-    def signal_ratio(gradients: List[np.ndarray], epsilon: float) -> float:
-        values = MathematicalPrecision.arrays(gradients)
-        mean = float(np.mean([float(np.mean(np.abs(v))) for v in values])) if values else 0.0
-        deviation = float(np.mean([float(np.std(v)) for v in values])) if values else 0.0
-        return float(mean / max(deviation, epsilon))
-
-    @staticmethod
-    def condition(gradients: List[np.ndarray], epsilon: float) -> float:
-        norms = [float(np.linalg.norm(v)) for v in MathematicalPrecision.arrays(gradients)]
-        norms = [v for v in norms if v > epsilon]
-        return float(max(norms) / max(min(norms), epsilon)) if norms else 1.0
-
-    @staticmethod
-    def cosine(first: List[np.ndarray], second: List[np.ndarray], epsilon: float) -> float:
-        a, b = MathematicalPrecision.arrays(first), MathematicalPrecision.arrays(second)
-        if len(a) != len(b) or not a:
-            return 0.0
-        dot = sum(float(np.sum(x * y)) for x, y in zip(a, b))
-        return float(max(-1.0, min(1.0, dot / max(MathematicalPrecision.norm(a) * MathematicalPrecision.norm(b), epsilon))))
-
-    @staticmethod
-    def update(weights: List[np.ndarray], gradients: List[np.ndarray],
-               momentum: List[np.ndarray], variance: List[np.ndarray], step: int,
-               learning_rate: float, beta1: float, beta2: float, epsilon: float,
-               weight_decay: float, ams_bound: bool, gradient_clipping: float,
-               update_clip: float, precision_epsilon: float) -> tuple:
-        old_weights = MathematicalPrecision.arrays(weights)
-        old_gradients = MathematicalPrecision.clip(gradients, gradient_clipping)
-        momentum = momentum or [np.zeros_like(v) for v in old_weights]
-        variance = variance or [np.zeros_like(v) for v in old_weights]
-        new_momentum, new_variance, updates = [], [], []
-        for weight, gradient, first, second in zip(old_weights, old_gradients, momentum, variance):
-            first_new = beta1 * first + (1.0 - beta1) * gradient
-            second_raw = beta2 * second + (1.0 - beta2) * np.square(gradient - first_new)
-            second_new = np.maximum(second_raw, second) if ams_bound else second_raw
-            first_hat = first_new / max(1.0 - beta1 ** step, precision_epsilon)
-            second_hat = second_new / max(1.0 - beta2 ** step, precision_epsilon)
-            update = -learning_rate * (first_hat / (np.sqrt(second_hat) + epsilon) + weight_decay * weight)
-            new_momentum.append(first_new); new_variance.append(second_new); updates.append(update)
-        update_norm = MathematicalPrecision.norm(updates)
-        if update_clip > 0 and update_norm > update_clip:
-            updates = [v * (update_clip / update_norm) for v in updates]
-        gradient_norm, weight_norm = MathematicalPrecision.norm(old_gradients), MathematicalPrecision.norm(old_weights)
-        condition = MathematicalPrecision.condition(old_gradients, precision_epsilon)
-        signal = MathematicalPrecision.signal_ratio(old_gradients, precision_epsilon)
-        similarity = MathematicalPrecision.cosine(old_weights, updates, precision_epsilon)
-        efficiency = 1.0 / (1.0 + update_norm / max(gradient_norm, precision_epsilon))
-        stats = {'update_norm': update_norm, 'gradient_norm': gradient_norm, 'weight_norm': weight_norm,
-                 'condition_estimate': condition, 'gradient_signal_ratio': signal,
-                 'cosine_similarity': similarity, 'update_efficiency': efficiency,
-                 'precision_score': 1.0 / (1.0 + condition / 1000.0)}
-        return [w + u for w, u in zip(old_weights, updates)], new_momentum, new_variance, updates, stats
-
-
 class AdaBeliefOptimizer(BaseNeuralWeightOptimizer):
     """AdaBelief con corrección de sesgo, AMSBound y precisión por capas."""
 
@@ -347,40 +277,6 @@ class AdaBeliefOptimizer(BaseNeuralWeightOptimizer):
                 'gradient_norm': 0.0}
 
 
-class AdaBeliefOptimizerInternal:
-    def __init__(self, learning_rate: float, beta1: float, beta2: float,
-                 epsilon: float, weight_decay: float, gradient_clipping: float = 1.0,
-                 ams_bound: bool = True, precision_epsilon: float = 1e-12,
-                 update_clip: float = 10.0):
-        self.learning_rate, self.beta1, self.beta2 = learning_rate, beta1, beta2
-        self.epsilon, self.weight_decay = epsilon, weight_decay
-        self.gradient_clipping, self.ams_bound = gradient_clipping, ams_bound
-        self.precision_epsilon, self.update_clip = precision_epsilon, update_clip
-        self.step_count, self.momentum, self.variance = 0, [], []
-        self.adabelief_score = self.belief_score = 0.0
-        self.last_stats: Dict[str, float] = {}
-
-    def step(self, gradients: Optional[List[np.ndarray]] = None,
-             weights: Optional[List[np.ndarray]] = None) -> Optional[List[np.ndarray]]:
-        self.step_count += 1
-        if gradients is None or weights is None:
-            self.adabelief_score, self.belief_score = random.uniform(0.72, 0.92), random.uniform(0.75, 0.90)
-            return None
-        updated, self.momentum, self.variance, _, self.last_stats = MathematicalPrecision.update(
-            weights, gradients, self.momentum, self.variance, self.step_count, self.learning_rate,
-            self.beta1, self.beta2, self.epsilon, self.weight_decay, self.ams_bound,
-            self.gradient_clipping, self.update_clip, self.precision_epsilon)
-        self.adabelief_score = self.last_stats.get('update_efficiency', 0.0)
-        self.belief_score = self.last_stats.get('precision_score', 0.0)
-        return updated
-
-    def get_state(self) -> Dict[str, Any]:
-        return {'learning_rate': self.learning_rate, 'beta1': self.beta1, 'beta2': self.beta2,
-                'epsilon': self.epsilon, 'weight_decay': self.weight_decay,
-                'step_count': self.step_count, 'adabelief_score': self.adabelief_score,
-                'belief_score': self.belief_score, 'last_stats': dict(self.last_stats)}
-
-
 class AdaBeliefAnalyzer:
     def __init__(self, config: Optional[NeuralWeightOptimizationConfig] = None):
         self.config = config or NeuralWeightOptimizationConfig()
@@ -443,3 +339,5 @@ def export_adabelief_results(result: NeuralWeightOptimizationResult,
         _json.dump(data, handle, indent=2)
 
 logger.info("RN6.py - AdaBelief Avanzado cargado exitosamente")
+from RN6_MathematicalPrecision import MathematicalPrecision  # CLASSPACK
+from RN6_AdaBeliefOptimizerInternal import AdaBeliefOptimizerInternal  # CLASSPACK

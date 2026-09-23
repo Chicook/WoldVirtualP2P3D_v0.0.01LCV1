@@ -243,52 +243,6 @@ class KernelEngine:
         self.gamma = gamma
 
 
-class SMOTrainer:
-    def __init__(self, C: float = 1.0, tol: float = 1e-3, max_iter: int = 1000):
-        self.C = C
-        self.tol = tol
-        self.max_iter = max_iter
-        self._objective_history: List[float] = []
-
-    def optimize(self, K: np.ndarray, y: np.ndarray) -> Tuple[np.ndarray, float]:
-        n = len(y)
-        alphas = np.zeros(n)
-        bias = 0.0
-        for _ in range(self.max_iter):
-            alpha_prev = alphas.copy()
-            for i in range(n):
-                Ei = np.sum(alphas * y * K[:, i]) + bias - y[i]
-                if (y[i] * Ei < -self.tol and alphas[i] < self.C) or (y[i] * Ei > self.tol and alphas[i] > 0):
-                    j = np.random.randint(0, n)
-                    Ej = np.sum(alphas * y * K[:, j]) + bias - y[j]
-                    alpha_i_old, alpha_j_old = alphas[i], alphas[j]
-                    if y[i] != y[j]:
-                        L = max(0, alphas[j] - alphas[i])
-                        H = min(self.C, self.C + alphas[j] - alphas[i])
-                    else:
-                        L = max(0, alphas[i] + alphas[j] - self.C)
-                        H = min(self.C, alphas[i] + alphas[j])
-                    if L == H: continue
-                    eta = 2 * K[i, j] - K[i, i] - K[j, j]
-                    if eta >= 0: continue
-                    alphas[j] -= y[j] * (Ei - Ej) / eta
-                    alphas[j] = np.clip(alphas[j], L, H)
-                    if abs(alphas[j] - alpha_j_old) < 1e-5: continue
-                    alphas[i] += y[i] * y[j] * (alpha_j_old - alphas[j])
-            if np.max(np.abs(alphas - alpha_prev)) < self.tol: break
-        sv = alphas > 1e-5
-        self._objective_history.append(float(np.sum(alphas[sv])))
-        return alphas, bias
-
-    def get_objective_history(self) -> List[float]: return self._objective_history.copy()
-
-    def is_converged(self, tol: float = 1e-4) -> bool:
-        if len(self._objective_history) < 2: return False
-        return abs(self._objective_history[-1] - self._objective_history[-2]) < tol
-
-    def reset(self) -> None: self._objective_history.clear()
-
-
 class SupportVectorIdentifier:
     def __init__(self, threshold: float = 1e-5):
         self.threshold = threshold
@@ -339,58 +293,6 @@ class MarginOptimizer:
         self._margin_history.clear()
 
 
-class SVMClassifier:
-    def __init__(self, kernel: str = "rbf", C: float = 1.0, gamma: float = 0.1):
-        self.kernel_type = kernel
-        self.C = C
-        self.gamma = gamma
-        self.kernel_engine = KernelEngine(kernel, gamma)
-        self.trainer = SMOTrainer(C)
-        self.identifier = SupportVectorIdentifier()
-        self.margin_opt = MarginOptimizer()
-        self._is_trained: bool = False
-        self._training_time: float = 0.0
-
-    def train(self, X: np.ndarray, y: np.ndarray) -> Dict[str, Any]:
-        t0 = time.perf_counter()
-        K = self.kernel_engine.gram_matrix(X)
-        alphas, bias = self.trainer.optimize(K, y)
-        sv_mask = alphas > self.identifier.threshold
-        self._support_vectors = X[sv_mask]
-        self._support_labels = y[sv_mask]
-        self._alphas = alphas[sv_mask]
-        self._bias = bias
-        self._is_trained = True
-        self._training_time = time.perf_counter() - t0
-        self.identifier.identify(alphas)
-        margin = self.margin_opt.compute(self.pesos_svm) if hasattr(self, 'pesos_svm') else 0.0
-        return {
-            'n_support_vectors': self.identifier.count(),
-            'margin': margin, 'training_time': self._training_time,
-            'kernel': self.kernel_type, 'C': self.C, 'converged': True,
-        }
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        if not self._is_trained: raise RuntimeError("SVM no entrenado")
-        K = self.kernel_engine.compute(self._support_vectors, X)
-        decision = (self._alphas * self._support_labels) @ K + self._bias
-        return np.sign(decision)
-
-    def decision_function(self, X: np.ndarray) -> np.ndarray:
-        if not self._is_trained: raise RuntimeError("SVM no entrenado")
-        K = self.kernel_engine.compute(self._support_vectors, X)
-        return (self._alphas * self._support_labels) @ K + self._bias
-
-    @property
-    def is_trained(self) -> bool: return self._is_trained
-
-    @property
-    def n_support_vectors(self) -> int: return self.identifier.count()
-
-    @property
-    def training_time(self) -> float: return self._training_time
-
-
 def create_support_vector_machine_optimizer(input_size: int = 4, output_size: int = 8) -> SupportVectorMachineOptimizer:
     return SupportVectorMachineOptimizer(input_size=input_size, output_size=output_size)
 
@@ -409,3 +311,5 @@ def evaluate_svm(clf: SVMClassifier, X: np.ndarray, y: np.ndarray) -> Dict[str, 
 
 if __name__ == "__main__":
     logger.info("RF_SL1_2.py cargado exitosamente")
+from RF_SL1_2_SMOTrainer import SMOTrainer  # CLASSPACK
+from RF_SL1_2_SVMClassifier import SVMClassifier  # CLASSPACK

@@ -1,0 +1,200 @@
+"""
+test_pesos_vivos.py — Suite exhaustiva de pruebas para GestorPesosVivos de LucIA
+================================================================================
+Cubre la dinámica de pesos vivos, telemetría sináptica y checkpoints en PSNRL:
+  1. Constantes ANSI para interfaces de terminal enriquecidas.
+  2. Métricas dinámicas de pesos 2026:
+     - Entropía de Shannon normalizada sobre vectores de pesos.
+     - Deriva espectral Muon (alineación ortogonal W y delta).
+     - Barras de progreso en bloques Unicode con porcentaje.
+     - Índice de estabilidad y diagnóstico de salud sináptica.
+  3. VisualizadorTerminalPesos: renderizado de paneles de turno y cierre de sesión.
+  4. GestorPesosVivos:
+     - Inyección de turnos en vivo con cálculo de derivas y GSNR por familia.
+     - Historial de turnos y acumulador de deriva.
+     - Generación de checkpoints binarios comprimidos .npz y metadata JSON en PSNRL.
+     - Resumen consolidado de telemetría sináptica.
+  5. Contrato de interfaz global: get_gestor_pesos_vivos, inyectar_pesos_turno, checkpoint_y_registrar.
+  6. Pruebas de integración con conversor y subsistemas de neuronas (ENRN, RF_SL, etc.).
+  7. Casos límite, estabilidad matemática y robustez ante tensores nulos o vacíos.
+"""
+from __future__ import annotations
+
+import math
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+from unittest.mock import MagicMock, patch
+import numpy as np
+import pytest
+
+from LC.celebro.CMFG.pesos_vivos import (
+    ANSI,
+    GestorPesosVivos,
+    MetricasDinamicasPesos,
+    VisualizadorTerminalPesos,
+    checkpoint_y_registrar,
+    get_gestor_pesos_vivos,
+    inyectar_pesos_turno,
+)
+from LC.celebro.test.conftest import (
+    assert_tensor_valido,
+    assert_norma_acotada,
+    psnrl_tmp,
+    vector_512,
+    matriz_2d_32x32,
+)
+
+
+# ============================================================================
+# 1. CONSTANTES ANSI DE TERMINAL
+# ============================================================================
+
+class TestANSIConstantes:
+    """Verifica la definición de códigos ANSI para telemetría visual."""
+
+    def test_constantes_ansi_definidas(self) -> None:
+        """Comprueba que todos los colores y atributos básicos existan."""
+        attrs = [
+            "RESET", "BOLD", "DIM", "ITALIC", "CYAN", "BLUE",
+            "GREEN", "YELLOW", "MAGENTA", "RED", "WHITE", "BG_DARK", "CLEAR",
+        ]
+        for a in attrs:
+            assert hasattr(ANSI, a)
+            val = getattr(ANSI, a)
+            assert isinstance(val, str)
+            assert val.startswith("\033[")
+
+    def test_ansi_reset_estandar(self) -> None:
+        """Verifica que ANSI.RESET corresponda al reset estándar."""
+        assert ANSI.RESET == "\033[0m"
+
+
+# ============================================================================
+# 2. MÉTRICAS DINÁMICAS DE PESOS 2026
+# ============================================================================
+
+class TestMetricasDinamicasPesos:
+    """Pruebas para los algoritmos de entropía, deriva Muon y estabilidad."""
+
+    def test_entropia_shannon_vector_uniforme(self) -> None:
+        """Verifica que un vector con valores idénticos tenga máxima entropía (cercana a 1.0)."""
+        vec = np.ones(64, dtype=np.float32)
+        h = MetricasDinamicasPesos.entropia_shannon(vec)
+        assert 0.95 <= h <= 1.0
+
+    def test_entropia_shannon_vector_nulo_o_casi_cero(self) -> None:
+        """Comprueba que un vector de ceros retorne entropía 0.0 de forma segura."""
+        vec = np.zeros(32, dtype=np.float32)
+        h = MetricasDinamicasPesos.entropia_shannon(vec)
+        assert h == 0.0
+
+    def test_entropia_shannon_vector_pico_unico(self) -> None:
+        """Verifica que un vector con un solo elemento activo tenga baja entropía."""
+        vec = np.zeros(50, dtype=np.float32)
+        vec[0] = 10.0
+        h = MetricasDinamicasPesos.entropia_shannon(vec)
+        assert h < 0.1
+
+    def test_deriva_espectral_muon_matrices_identicas(self) -> None:
+        """Comprueba que matrices colineales den deriva cercana a 1.0."""
+        W = np.eye(8, dtype=np.float32)
+        delta = np.eye(8, dtype=np.float32) * 0.5
+        cos_sim = MetricasDinamicasPesos.deriva_espectral_muon(W, delta)
+        assert 0.95 <= cos_sim <= 1.0
+
+    def test_deriva_espectral_muon_matrices_ortogonales(self) -> None:
+        """Verifica que matrices ortogonales den deriva cercana a 0.0."""
+        W = np.zeros((4, 4), dtype=np.float32)
+        W[0, 1] = 1.0
+        delta = np.zeros((4, 4), dtype=np.float32)
+        delta[1, 0] = 1.0
+        cos_sim = MetricasDinamicasPesos.deriva_espectral_muon(W, delta)
+        assert cos_sim < 0.05
+
+    def test_barra_progreso_formato(self) -> None:
+        """Comprueba el formateo de barras con bloques Unicode y porcentajes."""
+        barra_mitad = MetricasDinamicasPesos.barra_progreso(valor=0.5, max_val=1.0, ancho=10)
+        assert "█" in barra_mitad
+        assert "░" in barra_mitad
+        assert "50.0%" in barra_mitad
+
+    def test_barra_progreso_limites(self) -> None:
+        """Verifica acotamiento entre 0% y 100% ante valores fuera de rango."""
+        barra_cero = MetricasDinamicasPesos.barra_progreso(valor=-1.0, max_val=1.0, ancho=10)
+        assert "0.0%" in barra_cero
+        barra_cien = MetricasDinamicasPesos.barra_progreso(valor=2.0, max_val=1.0, ancho=10)
+        assert "100.0%" in barra_cien
+
+    @pytest.mark.parametrize("gsnr,entropia,deriva,diagnostico_esperado", [
+        (2.0, 0.9, 0.05, "OPTIMA"),
+        (1.0, 0.5, 0.5, "ESTABLE"),
+        (0.1, 0.1, 5.0, "ALERTA"),
+    ])
+    def test_calcular_indice_estabilidad(
+        self, gsnr: float, entropia: float, deriva: float, diagnostico_esperado: str
+    ) -> None:
+        """Valida los rangos de clasificación del índice de salud sináptica."""
+        estabilidad, diag = MetricasDinamicasPesos.calcular_indice_estabilidad(gsnr, entropia, deriva)
+        assert 0.0 <= estabilidad <= 1.0
+        assert diagnostico_esperado in diag
+
+
+# ============================================================================
+# 3. VISUALIZADOR DE PESOS EN TERMINAL
+# ============================================================================
+
+class TestRobustezPesosVivos:
+    """Verifica tolerancia ante arrays vacíos, NaN o dimensiones no convencionales."""
+
+    def test_deriva_muon_arrays_1d_fallback(self) -> None:
+        """Comprueba que arrays 1D no fallen y usen el cálculo de norma relativo."""
+        w1d = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+        d1d = np.array([0.1, 0.2, 0.3], dtype=np.float32)
+        deriva = MetricasDinamicasPesos.deriva_espectral_muon(w1d, d1d)
+        assert isinstance(deriva, float)
+        assert deriva >= 0.0
+
+    def test_inyeccion_sin_neuronas_en_conversor(self) -> None:
+        """Verifica que un conversor sin diccionario de neuronas opere sin errores."""
+        gestor = GestorPesosVivos()
+        mock_vacio = object()
+        info = {"norma_delta_aplicada": 0.02}
+
+        res = gestor.inyectar_turno_en_vivo(
+            conversor=mock_vacio,
+            pregunta="P",
+            respuesta="R",
+            info_pesos=info,
+            mostrar_en_terminal=False,
+        )
+        assert res["turno"] >= 1
+        assert "stats_familias" in res
+
+    def test_historial_turnos_convergencia(self) -> None:
+        """Comprueba que múltiples inyecciones sucesivas preserven la serie temporal de turnos."""
+        gestor = GestorPesosVivos()
+        mock_conv = MagicMock()
+        mock_conv.neuronas = {}
+
+        for i in range(1, 6):
+            info = {"norma_delta_aplicada": 0.01 * i, "estado_emocional": 0.1 * i}
+            res = gestor.inyectar_turno_en_vivo(
+                conversor=mock_conv,
+                pregunta=f"Pregunta #{i}",
+                respuesta=f"Respuesta #{i}",
+                info_pesos=info,
+                mostrar_en_terminal=False,
+            )
+            assert res["turno"] == i
+
+        assert len(gestor.historial_turnos) == 5
+        assert gestor.deriva_sesion > 0.0
+        assert gestor.historial_turnos[0]["turno"] == 1
+        assert gestor.historial_turnos[-1]["turno"] == 5
+
+
+# Fin de suite exhaustiva test_pesos_vivos.py
+from test_pesos_vivos_TestVisualizadorTerminalPesos import TestVisualizadorTerminalPesos  # CLASSPACK
+from test_pesos_vivos_TestGestorPesosVivos import TestGestorPesosVivos  # CLASSPACK
+from test_pesos_vivos_TestIntegracionFamiliasPesosVivos import TestIntegracionFamiliasPesosVivos  # CLASSPACK
+from test_pesos_vivos_TestInterfazGlobalPesosVivos import TestInterfazGlobalPesosVivos  # CLASSPACK

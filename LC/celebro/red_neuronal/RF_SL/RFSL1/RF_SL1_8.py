@@ -316,39 +316,6 @@ class DecisionBoundary:
         }
 
 
-class FeatureScaler:
-    def __init__(self, method: str = "standard"):
-        self.method = method if method in ("standard", "minmax", "robust") else "standard"
-        self._mean: Optional[np.ndarray] = None
-        self._std: Optional[np.ndarray] = None
-        self._min: Optional[np.ndarray] = None
-        self._max: Optional[np.ndarray] = None
-
-    def fit(self, X: np.ndarray) -> None:
-        if self.method == "standard":
-            self._mean = np.mean(X, axis=0)
-            self._std = np.std(X, axis=0) + 1e-8
-        elif self.method == "minmax":
-            self._min = np.min(X, axis=0)
-            self._max = np.max(X, axis=0)
-        elif self.method == "robust":
-            self._mean = np.median(X, axis=0)
-            self._std = np.percentile(X, 75, axis=0) - np.percentile(X, 25, axis=0) + 1e-8
-
-    def transform(self, X: np.ndarray) -> np.ndarray:
-        if self.method == "standard":
-            return (X - self._mean) / self._std
-        elif self.method == "minmax":
-            return (X - self._min) / (self._max - self._min + 1e-8)
-        elif self.method == "robust":
-            return (X - self._mean) / self._std
-        return X
-
-    def fit_transform(self, X: np.ndarray) -> np.ndarray:
-        self.fit(X)
-        return self.transform(X)
-
-
 class LRClassifier:
     def __init__(self, input_size: int, output_size: int = 1, threshold: float = 0.5):
         self.input_size = input_size
@@ -371,48 +338,11 @@ class LRClassifier:
         return float(np.mean(preds == y))
 
 
-class ModelEvaluator:
-    def __init__(self):
-        self._results: Dict[str, Any] = {}
-
-    def accuracy(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        return float(np.mean(y_true == y_pred))
-
-    def precision(self, y_true: np.ndarray, y_pred: np.ndarray, average: str = "binary") -> float:
-        y_true = y_true.astype(int)
-        y_pred = y_pred.astype(int)
-        if average == "binary":
-            tp = int(np.sum((y_pred == 1) & (y_true == 1)))
-            fp = int(np.sum((y_pred == 1) & (y_true == 0)))
-            return tp / max(1, tp + fp)
-        return 0.0
-
-    def recall(self, y_true: np.ndarray, y_pred: np.ndarray, average: str = "binary") -> float:
-        y_true = y_true.astype(int)
-        y_pred = y_pred.astype(int)
-        if average == "binary":
-            tp = int(np.sum((y_pred == 1) & (y_true == 1)))
-            fn = int(np.sum((y_pred == 0) & (y_true == 1)))
-            return tp / max(1, tp + fn)
-        return 0.0
-
-    def f1_score(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
-        p = self.precision(y_true, y_pred)
-        r = self.recall(y_true, y_pred)
-        return 2.0 * p * r / max(1e-8, p + r)
-
-    def evaluate_all(self, y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
-        return {
-            'accuracy': self.accuracy(y_true, y_pred),
-            'precision': self.precision(y_true, y_pred),
-            'recall': self.recall(y_true, y_pred),
-            'f1': self.f1_score(y_true, y_pred),
-        }
-
-
 def create_logistic_regression_optimizer(input_size: int = 4, output_size: int = 8) -> LogisticRegressionOptimizer:
     return LogisticRegressionOptimizer(input_size=input_size, output_size=output_size)
 
 
 if __name__ == "__main__":
     logger.info("RF_SL1_8.py cargado exitosamente")
+from RF_SL1_8_FeatureScaler import FeatureScaler  # CLASSPACK
+from RF_SL1_8_ModelEvaluator import ModelEvaluator  # CLASSPACK

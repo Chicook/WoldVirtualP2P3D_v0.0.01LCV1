@@ -209,99 +209,6 @@ class GradientBoostingOptimizer(NeuronaMemoriaBase):
         return f"{self.nombre}(ent={self.input_size},sal={self.output_size})"
 
 
-class TreeBuilder:
-    def __init__(self, max_depth: int = 3, min_samples_split: int = 2):
-        self.max_depth = max_depth
-        self.min_samples_split = min_samples_split
-        self._tree: Optional[Dict] = None
-
-    def fit(self, X: np.ndarray, y: np.ndarray) -> Dict:
-        self._tree = self._build_tree(X, y, depth=0)
-        return self._tree
-
-    def _build_tree(self, X: np.ndarray, y: np.ndarray, depth: int) -> Dict:
-        n_samples = len(X)
-        if depth >= self.max_depth or n_samples < self.min_samples_split:
-            return {'leaf': True, 'value': float(np.mean(y))}
-        best_feat, best_thresh, best_gain = self._find_best_split(X, y)
-        if best_gain < 1e-8: return {'leaf': True, 'value': float(np.mean(y))}
-        left_mask = X[:, best_feat] <= best_thresh
-        right_mask = ~left_mask
-        return {
-            'leaf': False, 'feature': best_feat, 'threshold': best_thresh,
-            'left': self._build_tree(X[left_mask], y[left_mask], depth + 1),
-            'right': self._build_tree(X[right_mask], y[right_mask], depth + 1),
-            'gain': float(best_gain), 'n_samples': n_samples,
-        }
-
-    def _find_best_split(self, X: np.ndarray, y: np.ndarray) -> Tuple[int, float, float]:
-        best_feat, best_thresh, best_gain = 0, 0.0, 0.0
-        parent_var = float(np.var(y))
-        n_features = X.shape[1]
-        for feat in range(n_features):
-            thresholds = np.unique(X[:, feat])
-            for thresh in thresholds:
-                left_mask = X[:, feat] <= thresh
-                if left_mask.sum() == 0 or left_mask.sum() == len(y): continue
-                left_var = float(np.var(y[left_mask]))
-                right_var = float(np.var(y[~left_mask]))
-                n_l, n_r = left_mask.sum(), (~left_mask).sum()
-                gain = parent_var - (n_l * left_var + n_r * right_var) / len(y)
-                if gain > best_gain: best_gain = gain; best_feat = feat; best_thresh = float(thresh)
-        return best_feat, best_thresh, best_gain
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        if self._tree is None: raise RuntimeError("Tree no ajustado")
-        return np.array([self._predict_one(x, self._tree) for x in X])
-
-    def _predict_one(self, x: np.ndarray, node: Dict) -> float:
-        if node['leaf']: return node['value']
-        if x[node['feature']] <= node['threshold']: return self._predict_one(x, node['left'])
-        return self._predict_one(x, node['right'])
-
-
-class LossCalculator:
-    def __init__(self, loss_type: str = "mse"):
-        self.loss_type = loss_type
-
-    def compute(self, pred: np.ndarray, target: np.ndarray) -> float:
-        if self.loss_type == "mse": return float(np.mean((pred - target) ** 2))
-        if self.loss_type == "mae": return float(np.mean(np.abs(pred - target)))
-        if self.loss_type == "huber":
-            delta = 1.0; abs_err = np.abs(pred - target)
-            quadratic = np.minimum(abs_err, delta)
-            linear = abs_err - quadratic
-            return float(np.mean(0.5 * quadratic ** 2 + delta * linear))
-        if self.loss_type == "log":
-            p = np.clip(pred, 1e-8, 1 - 1e-8)
-            return float(-np.mean(target * np.log(p) + (1 - target) * np.log(1 - p)))
-        if self.loss_type == "smoothed_l1":
-            return self.huber_loss(pred, target)
-        return float(np.mean((pred - target) ** 2))
-
-    def gradient(self, pred: np.ndarray, target: np.ndarray) -> np.ndarray:
-        diff = pred - target
-        if self.loss_type == "mse": return diff
-        if self.loss_type == "huber":
-            delta = 1.0; abs_diff = np.abs(diff)
-            return np.where(abs_diff <= delta, diff, delta * np.sign(diff))
-        if self.loss_type == "log":
-            return (pred - target) / np.clip(pred * (1 - pred), 1e-8, None)
-        return diff
-
-    @staticmethod
-    def huber_loss(pred: np.ndarray, target: np.ndarray, delta: float = 1.0) -> float:
-        abs_err = np.abs(pred - target)
-        quadratic = np.minimum(abs_err, delta)
-        linear = abs_err - quadratic
-        return float(np.mean(0.5 * quadratic ** 2 + delta * linear))
-
-    @staticmethod
-    def masked_loss(pred: np.ndarray, target: np.ndarray, mask: np.ndarray) -> float:
-        if mask.sum() == 0: return 0.0
-        return float(np.mean((pred[mask] - target[mask]) ** 2))
-
-
 class Sampler:
     def __init__(self, subsample: float = 1.0, random_state: int = 42):
         self.subsample = subsample
@@ -343,78 +250,6 @@ class FeatureSelector:
         return mask
 
 
-class PredictionAggregator:
-    def __init__(self, learning_rate: float = 0.1):
-        self.learning_rate = learning_rate
-        self._predictions: List[np.ndarray] = []
-        self._weights: List[float] = []
-
-    def add_prediction(self, prediction: np.ndarray, weight: float = 1.0) -> None:
-        self._predictions.append(prediction)
-        self._weights.append(weight)
-
-    def aggregate(self) -> np.ndarray:
-        if not self._predictions: return np.zeros(1)
-        result = np.zeros_like(self._predictions[0], dtype=np.float64)
-        for pred, w in zip(self._predictions, self._weights):
-            result += self.learning_rate * w * pred.astype(np.float64)
-        return result
-
-    def weighted_aggregate(self, weights: List[float]) -> np.ndarray:
-        if not self._predictions: return np.zeros(1)
-        result = np.zeros_like(self._predictions[0], dtype=np.float64)
-        for pred, w in zip(self._predictions, weights):
-            result += self.learning_rate * w * pred.astype(np.float64)
-        return result
-
-    def reset(self) -> None:
-        self._predictions.clear()
-        self._weights.clear()
-
-    @property
-    def n_predictions(self) -> int: return len(self._predictions)
-
-
-class GradientBooster:
-    def __init__(self, input_size: int = 4, output_size: int = 8, n_estimators: int = 50,
-                 learning_rate: float = 0.1, max_depth: int = 3, subsample: float = 1.0):
-        self.input_size = input_size
-        self.output_size = output_size
-        self.n_estimators = n_estimators
-        self.learning_rate = learning_rate
-        self.max_depth = max_depth
-        self.subsample = subsample
-        self._trees: List[TreeBuilder] = []
-        self._loss_fn = LossCalculator("mse")
-        self._sampler = Sampler(subsample)
-        self._aggregator = PredictionAggregator(learning_rate)
-        self._residuals: Optional[np.ndarray] = None
-        self._training_history: List[float] = []
-
-    def fit(self, X: np.ndarray, y: np.ndarray) -> List[float]:
-        self._residuals = y.copy().astype(np.float64)
-        self._training_history.clear()
-        for i in range(self.n_estimators):
-            X_s, r_s = self._sampler.sample(X, self._residuals)
-            tree = TreeBuilder(max_depth=self.max_depth)
-            tree.fit(X_s, r_s)
-            pred = tree.predict(X)
-            self._trees.append(tree)
-            self._aggregator.add_prediction(pred)
-            self._residuals = self._residuals - self.learning_rate * pred
-            loss = self._loss_fn.compute(self._aggregator.aggregate(), y)
-            self._training_history.append(loss)
-        return self._training_history
-
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        return self._aggregator.aggregate() if self._aggregator.n_predictions > 0 else np.zeros(len(X))
-
-    def get_n_estimators(self) -> int: return len(self._trees)
-
-    def get_trees_info(self) -> List[Dict]:
-        return [{'tree_idx': i, 'n_predictions': self._aggregator.n_predictions} for i in range(len(self._trees))]
-
-
 def create_gradient_boosting_optimizer(input_size: int = 4, output_size: int = 8) -> GradientBoostingOptimizer:
     return GradientBoostingOptimizer(input_size=input_size, output_size=output_size)
 
@@ -439,3 +274,7 @@ def evaluate_booster(booster: GradientBooster, X: np.ndarray, y: np.ndarray) -> 
 
 if __name__ == "__main__":
     logger.info("RF_SL1_1.py cargado exitosamente")
+from RF_SL1_1_TreeBuilder import TreeBuilder  # CLASSPACK
+from RF_SL1_1_LossCalculator import LossCalculator  # CLASSPACK
+from RF_SL1_1_PredictionAggregator import PredictionAggregator  # CLASSPACK
+from RF_SL1_1_GradientBooster import GradientBooster  # CLASSPACK

@@ -1,0 +1,35 @@
+class GestorMemoria:
+    def __init__(self, ruta_md: Path):
+        self.ruta_md = ruta_md
+        self.historial: deque = deque(maxlen=500)
+
+    def registrar(self, turno: int, prompt: str, respuesta: str) -> None:
+        self.historial.append({"turno": turno, "timestamp": datetime.now().isoformat(), "prompt": prompt, "respuesta": respuesta})
+
+    def refactor(self) -> None:
+        if len(self.historial) < 2:
+            return
+        compacto = [self.historial[0]]
+        for e in list(self.historial)[1:]:
+            if e["prompt"] != compacto[-1]["prompt"]:
+                compacto.append(e)
+        self.historial.clear()
+        self.historial.extend(compacto)
+        logger.info(f"[Memoria] Refactor: {len(self.historial)} entradas.")
+
+    def persistir(self) -> None:
+        lineas = ["# Memoria Sistema LucIA", f"_Generado: {datetime.now().isoformat()}_", ""]
+        for e in self.historial:
+            lineas += [f"## Turno {e['turno']} ({e['timestamp']})", f"**P:** {e['prompt']}", f"**R:** {e['respuesta']}", ""]
+        self.ruta_md.write_text("\n".join(lineas), encoding="utf-8")
+        logger.info(f"[Memoria] Guardado en {self.ruta_md}")
+
+    def exportar_historial(self, ruta: Path) -> None:
+        datos = [{"turno": e["turno"], "timestamp": e["timestamp"], "prompt": e["prompt"], "respuesta": e["respuesta"]} for e in self.historial]
+        ruta.write_text(json.dumps(datos, indent=2, ensure_ascii=False), encoding="utf-8")
+        logger.info(f"[Memoria] Historial exportado a {ruta}")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# CLASS 9: Orquestador principal - coordina todos los subsistemas
+# ═══════════════════════════════════════════════════════════════════

@@ -25,51 +25,6 @@ from .RF_SL1_8 import LogisticRegressionOptimizer
 from .RF_SL1_9 import LinearRegressionOptimizer
 
 
-class NeuronaMemoriaBase:
-    def __init__(self, input_size: int, output_size: int, nombre: str = "Neurona"):
-        self.input_size = int(input_size)
-        self.output_size = int(output_size)
-        self.nombre = str(nombre)
-        self.pesos = None
-        self.sesgo = None
-        self.historial_activaciones: List[np.ndarray] = []
-        self.historial_gradientes: List[Dict[str, np.ndarray]] = []
-        self.pasos = 0
-
-    def inicializar_pesos(self) -> None:
-        raise NotImplementedError
-
-    def forward(self, e: np.ndarray) -> np.ndarray:
-        raise NotImplementedError
-
-    def obtener_estadisticas(self) -> Dict[str, Any]:
-        stats = {
-            'nombre': self.nombre, 'input_size': self.input_size,
-            'output_size': self.output_size, 'pasos': self.pasos,
-            'historial_activaciones_len': len(self.historial_activaciones),
-            'historial_gradientes_len': len(self.historial_gradientes),
-        }
-        if self.pesos is not None:
-            stats['pesos_shape'] = self.pesos.shape
-            stats['pesos_size'] = self.pesos.size
-        if self.sesgo is not None:
-            stats['sesgo_shape'] = self.sesgo.shape
-        return stats
-
-    def resetear_historial(self) -> None:
-        self.historial_activaciones.clear()
-        self.historial_gradientes.clear()
-
-    def info(self) -> str:
-        return f"{self.nombre}(in={self.input_size},out={self.output_size},pasos={self.pasos})"
-
-    def params_count(self) -> int:
-        total = 0
-        if self.pesos is not None: total += self.pesos.size
-        if self.sesgo is not None: total += self.sesgo.size
-        return total
-
-
 class ModelRegistry:
     def __init__(self):
         self._models: Dict[str, Any] = {}
@@ -222,38 +177,6 @@ def validate_model(model: Any, X: np.ndarray, y: np.ndarray,
             model.train(X, y, epochs=5, verbose=False)
             return validate_model(model, X, y, metric)
     return 0.0
-
-
-class HyperparameterSearch:
-    def __init__(self, param_grid: Dict[str, List[Any]]):
-        self.param_grid = param_grid
-        self._results: List[Dict[str, Any]] = []
-
-    def enumerate_combinations(self) -> List[Dict[str, Any]]:
-        keys = list(self.param_grid.keys())
-        values = list(self.param_grid.values())
-        combos = []
-        for combo in itertools.product(*values):
-            combos.append(dict(zip(keys, combo)))
-        return combos
-
-    def search(self, X: np.ndarray, y: np.ndarray,
-                  model_type: str, metric: str = "r2") -> Dict[str, Any]:
-        best_score = float('-inf')
-        best_params = {}
-        for params in self.enumerate_combinations():
-            model = build_model(model_type, X.shape[1],
-                                y.shape[1] if len(y.shape) > 1 else 1)
-            if hasattr(model, 'train'):
-                import inspect as _ins
-                sig = _ins.signature(model.train)
-                valid = {k: v for k, v in params.items() if k in sig.parameters}
-                model.train(X, y, epochs=5, verbose=False, **valid)
-            score = validate_model(model, X, y, metric=metric)
-            if score > best_score:
-                best_score = score
-                best_params = params
-        return {'best_score': best_score, 'best_params': best_params}
 
 
 class PerformanceMonitor:
@@ -436,3 +359,5 @@ __all__ = [
 ]
 
 logger.info("RFSL1 cargado correctamente")
+from __init___NeuronaMemoriaBase import NeuronaMemoriaBase  # CLASSPACK
+from __init___HyperparameterSearch import HyperparameterSearch  # CLASSPACK

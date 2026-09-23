@@ -31,49 +31,6 @@ class NeuralWeightOptimizationConfig:
         return {k: v for k, v in self.__dict__.items()}
 
 
-class NeuralWeightOptimizationMetrics:
-    def __init__(self, algorithm_name: str = "Nadam",
-                 initial_loss: float = 0.0,
-                 final_loss: float = 0.0,
-                 convergence_iterations: int = 0,
-                 adamw_weight_decay_efficiency: float = 0.0,
-                 radam_rectification_stability: float = 0.0,
-                 lookahead_convergence_speed: float = 0.0,
-                 nadam_nesterov_acceleration: float = 0.0,
-                 nadam_efficiency: float = 0.0,
-                 nadam_stability: float = 0.0,
-                 nadam_trend: str = "stable",
-                 lamb_layer_wise_adaptation: float = 0.0,
-                 adabelief_belief_correction: float = 0.0,
-                 lion_momentum_efficiency: float = 0.0,
-                 sam_sharpness_awareness: float = 0.0,
-                 swats_switching_efficiency: float = 0.0,
-                 neural_weight_integration_score: float = 0.0,
-                 overall_score: float = 0.0,
-                 optimization_time: float = 0.0,
-                 timestamp: str = ""):
-        self.algorithm_name = algorithm_name
-        self.initial_loss = initial_loss
-        self.final_loss = final_loss
-        self.convergence_iterations = convergence_iterations
-        self.adamw_weight_decay_efficiency = adamw_weight_decay_efficiency
-        self.radam_rectification_stability = radam_rectification_stability
-        self.lookahead_convergence_speed = lookahead_convergence_speed
-        self.nadam_nesterov_acceleration = nadam_nesterov_acceleration
-        self.nadam_efficiency = nadam_efficiency
-        self.nadam_stability = nadam_stability
-        self.nadam_trend = nadam_trend
-        self.lamb_layer_wise_adaptation = lamb_layer_wise_adaptation
-        self.adabelief_belief_correction = adabelief_belief_correction
-        self.lion_momentum_efficiency = lion_momentum_efficiency
-        self.sam_sharpness_awareness = sam_sharpness_awareness
-        self.swats_switching_efficiency = swats_switching_efficiency
-        self.neural_weight_integration_score = neural_weight_integration_score
-        self.overall_score = overall_score
-        self.optimization_time = optimization_time
-        self.timestamp = timestamp
-
-
 class NeuralWeightOptimizationResult:
     def __init__(self, success: bool = False,
                  optimized_model: Any = None,
@@ -335,44 +292,6 @@ class NadamOptimizer(BaseNeuralWeightOptimizer):
         return recommendations
 
 
-class NadamOptimizerInternal:
-    """Implementacion interna del optimizador Nadam."""
-    def __init__(self, learning_rate: float,
-                 beta1: float, beta2: float,
-                 epsilon: float, weight_decay: float):
-        self.learning_rate = learning_rate
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.epsilon = epsilon
-        self.weight_decay = weight_decay
-        self.nadam_score = 0.0
-        self.nesterov_score = 0.0
-        self.step_count = 0
-        self.momentum = 0.0
-        self.nesterov_momentum = 0.0
-
-    def step(self):
-        self.step_count += 1
-        self.momentum = self.beta1 * self.momentum + (1.0 - self.beta1) * self.nesterov_score
-        self.nesterov_momentum = self.beta1 * self.momentum + (1.0 - self.beta1) * self.nesterov_score
-        self.nadam_score = random.uniform(0.74, 0.94)
-        self.nesterov_score = random.uniform(0.77, 0.91)
-
-    def get_state(self) -> Dict[str, Any]:
-        return {
-            'learning_rate': self.learning_rate,
-            'beta1': self.beta1,
-            'beta2': self.beta2,
-            'epsilon': self.epsilon,
-            'weight_decay': self.weight_decay,
-            'step_count': self.step_count,
-            'momentum': float(self.momentum),
-            'nesterov_momentum': float(self.nesterov_momentum),
-            'nadam_score': float(self.nadam_score),
-            'nesterov_score': float(self.nesterov_score),
-        }
-
-
 class NadamAnalyzer:
     def __init__(self, config: Optional[NeuralWeightOptimizationConfig] = None):
         self.config = config or NeuralWeightOptimizationConfig()
@@ -447,3 +366,5 @@ def export_nadam_results(result: NeuralWeightOptimizationResult,
         _json.dump(data, f, indent=2)
 
 logger.info("RN4.py - Nadam (Nesterov Adam) Avanzado cargado exitosamente")
+from RN4_NeuralWeightOptimizationMetrics import NeuralWeightOptimizationMetrics  # CLASSPACK
+from RN4_NadamOptimizerInternal import NadamOptimizerInternal  # CLASSPACK

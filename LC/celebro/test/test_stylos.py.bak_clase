@@ -1,0 +1,89 @@
+"""
+test_stylos.py — Suite exhaustiva de pruebas para el subsistema STYLOS de LucIA
+=============================================================================
+Cubre el motor de estilos visuales y renderizado de terminal (Arquitectura 2026):
+  1. Constantes de color ANSI y paleta cyber-bioluminiscente (ColoresLucIA).
+  2. Glifos y caracteres estructurales Unicode (Glifos).
+  3. Utilidades de cálculo y saneamiento (limpiar_codigos_ansi, longitud_visual, obtener_ancho_consola).
+  4. Renderizador Markdown: sintaxis inline (bold, italic, code), encabezados y tablas estructuradas.
+  5. Tarjetas y componentes de UI en terminal (EstiloTerminalLucIA):
+     - Encabezados de sesión y bienvenida (banner_bienvenida).
+     - Tarjetas de prompt de usuario.
+     - Streaming token a token y apertura/cierre de respuesta.
+     - Renderizado de respuesta completa y paneles de ayuda.
+     - Badges de telemetría sináptica/blockchain y notificaciones de bloque PoNL.
+  6. Casos borde de formato (tablas asimétricas, markdown anidado, textos multilínea).
+  7. Métodos de conveniencia y atajos globales del subsistema.
+"""
+from __future__ import annotations
+
+import io
+import re
+import sys
+from typing import Any, Dict, List
+import pytest
+
+from LC.celebro.CMFG.SBSTM.STYLOS import (
+    ColoresLucIA,
+    EstiloTerminalLucIA,
+    Glifos,
+    RenderizadorMarkdown,
+    badge_turno,
+    banner_bienvenida,
+    formatear_respuesta_lucia,
+    limpiar_codigos_ansi,
+    longitud_visual,
+    obtener_ancho_consola,
+    panel_ayuda_comandos,
+    tarjeta_diagnostico,
+)
+
+
+# ============================================================================
+# 1. CONSTANTES DE COLOR Y PALETA CYBER-BIOLUMINISCENTE
+# ============================================================================
+
+class TestMetodosGlobalesConveniencia:
+    """Pruebas sobre las funciones exportadas directamente en el módulo."""
+
+    def test_formatear_respuesta_lucia_shortcut(self, capsys: pytest.CaptureFixture) -> None:
+        """Comprueba el atajo formatear_respuesta_lucia()."""
+        formatear_respuesta_lucia("Respuesta de prueba rápida", modelo="openrouter/free")
+        captured = capsys.readouterr()
+        assert "Respuesta de prueba rápida" in captured.out
+
+    def test_banner_bienvenida_shortcut(self, capsys: pytest.CaptureFixture) -> None:
+        """Comprueba el atajo banner_bienvenida()."""
+        banner_bienvenida("SESION_RAPIDA", "modelo_demo")
+        captured = capsys.readouterr()
+        assert "SESION_RAPIDA" in captured.out
+
+    def test_badge_turno_shortcut(self, capsys: pytest.CaptureFixture) -> None:
+        """Comprueba el atajo badge_turno()."""
+        badge_turno(
+            turno=1, dt=100.0, mod="test:free", der=0.5, neu=50, cid="--", txs=0
+        )
+        captured = capsys.readouterr()
+        assert "Turno #1" in captured.out
+
+    def test_panel_ayuda_comandos_shortcut(self, capsys: pytest.CaptureFixture) -> None:
+        """Comprueba el atajo panel_ayuda_comandos()."""
+        panel_ayuda_comandos()
+        captured = capsys.readouterr()
+        assert "COMANDOS DISPONIBLES EN CONSOLA" in captured.out
+
+    def test_tarjeta_diagnostico_shortcut(self, capsys: pytest.CaptureFixture) -> None:
+        """Comprueba el atajo tarjeta_diagnostico()."""
+        tarjeta_diagnostico("PRUEBA_TITULO", {"Parametro": "Valor123"})
+        captured = capsys.readouterr()
+        assert "PRUEBA_TITULO" in captured.out
+        assert "Parametro" in captured.out
+        assert "Valor123" in captured.out
+
+
+# Fin de suite exhaustiva test_stylos.py
+from test_stylos_TestColoresLucIA import TestColoresLucIA  # CLASSPACK
+from test_stylos_TestGlifos import TestGlifos  # CLASSPACK
+from test_stylos_TestUtilidadesVisuales import TestUtilidadesVisuales  # CLASSPACK
+from test_stylos_TestRenderizadorMarkdown import TestRenderizadorMarkdown  # CLASSPACK
+from test_stylos_TestEstiloTerminalLucIA import TestEstiloTerminalLucIA  # CLASSPACK
