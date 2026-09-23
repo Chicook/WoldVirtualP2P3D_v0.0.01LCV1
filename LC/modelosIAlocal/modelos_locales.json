@@ -4,22 +4,14 @@
       "archivo": "qwen2.5_0.5b.gguf",
       "tamano_gb": 0.4,
       "origen": "gguf-cache",
-<<<<<<< HEAD
-      "fecha": 1790123956.0514648,
-=======
-      "fecha": 1790123585.211833,
->>>>>>> 57351982d1f85e4283876a715a7696f710a3bcf0
+      "fecha": 1790124105.563514,
       "ollama_tag": "qwen2.5:0.5b"
     },
     "tinyllama:1.1b": {
       "archivo": "tinyllama.gguf",
       "tamano_gb": 0.7,
       "origen": "gguf-cache",
-<<<<<<< HEAD
-      "fecha": 1790123956.1042612,
-=======
-      "fecha": 1790123585.2583742,
->>>>>>> 57351982d1f85e4283876a715a7696f710a3bcf0
+      "fecha": 1790124105.6134138,
       "ollama_tag": "tinyllama"
     }
   }

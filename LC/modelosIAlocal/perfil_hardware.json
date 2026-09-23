@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
-  "timestamp": 1790123956.1354923,
-=======
-  "timestamp": 1790123585.288961,
->>>>>>> 57351982d1f85e4283876a715a7696f710a3bcf0
+  "timestamp": 1790124105.6463811,
   "cpu": {
     "sistema": "Windows",
     "version": "10.0.26200",
@@ -12,10 +8,10 @@
     "nucleos": 12
   },
   "ram_total_gb": 8.47,
-  "ram_libre_gb": 1.12,
+  "ram_libre_gb": 1.06,
   "vram_total_gb": 1.5,
   "gpu": "GPU integrada (configurado)",
-  "disco_libre_gb": 39.9,
+  "disco_libre_gb": 40.31,
   "ollama_host": "http://127.0.0.1:11434",
   "dsialclgrg_version": "2026.3.1",
   "modulo": "LC.celebro.CMFG.SBSTM.IALOCAL"

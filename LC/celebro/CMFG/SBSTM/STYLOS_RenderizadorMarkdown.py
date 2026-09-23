@@ -1,3 +1,5 @@
+from typing import Dict, List
+
 class RenderizadorMarkdown:
     """Convierte texto plano y Markdown basico en salida coloreada y estructurada."""
 
