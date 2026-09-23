@@ -14,7 +14,15 @@ if str(Path(__file__).resolve().parent.parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from LC.compatibility import import_legacy
-from LC.celebro.CMFG.SBSTM.BASELUC import EstiloTerminalLucIA, get_cliente_iafree
+from LC.celebro.CMFG.SBSTM.BASELUC import (
+    EstiloTerminalLucIA,
+    get_cliente_iafree,
+    _descargar_hf_recomendados,
+    _orquestar_pre_sesion,
+    _limpiar_ia_temporal,
+    _listar_py_constructor,
+    _refactorizar_constructor,
+)
 from LC.celebro.CMFG.SBSTM.CMDLUC import CMDLUCMixin
 from LC.celebro.CMFG.SBSTM.PRTLUC import PRTLUCMixin
 from LC.celebro.CMFG.SBSTM.TRNLUC import TRNLUCMixin
@@ -69,7 +77,7 @@ class GestorDescargasIA:
         texto, mid, lat = consultar_lucia_local(prompt, None)
         return {"texto": texto, "modelo": mid, "latencia_ms": lat}
 
-# CLASE 2.5: GestorIALocal — descarga temporal de IA, refactorizador Constructor, limpieza.
+# CLASE 2.5: GestorConstructor — overlay y unificación del Constructor.
 class GestorConstructor:
     @staticmethod
     def abrir(sesion_id: str = "") -> Dict[str, Any]:
@@ -110,6 +118,42 @@ class GestorConstructor:
         from LC.celebro.CMFG.SBSTM.HRCTRC_RFCT import RefactorizadorSesion
         ruta = Path(overlay) if overlay else get_gestor_hrctrc().overlay
         return RefactorizadorSesion(ruta).estado_version()
+
+
+# CLASE 3: GestorIALocal — fachada tipada para SBSTM/IALOCAL.py.
+class GestorIALocal:
+    """Expone la API histórica de IA local sin duplicar su implementación."""
+
+    @staticmethod
+    def recomendar_y_descargar(limite: int = 2) -> List[Dict[str, Any]]:
+        if _descargar_hf_recomendados is None:
+            return [{"exito": False, "mensaje": "IALOCAL no disponible"}]
+        return list(_descargar_hf_recomendados(limite=limite))
+
+    @staticmethod
+    def pre_sesion(modelo_id: Optional[str] = None) -> Dict[str, Any]:
+        if _orquestar_pre_sesion is None:
+            return {"exito": False, "mensaje": "IALOCAL no disponible"}
+        return dict(_orquestar_pre_sesion(modelo_id=modelo_id))
+
+    @staticmethod
+    def limpiar_sesion() -> Dict[str, Any]:
+        if _limpiar_ia_temporal is None:
+            return {"exito": False, "mensaje": "IALOCAL no disponible"}
+        return dict(_limpiar_ia_temporal())
+
+    @staticmethod
+    def listar_py_constructor() -> List[Any]:
+        if _listar_py_constructor is None:
+            return []
+        return list(_listar_py_constructor())
+
+    @staticmethod
+    def refactorizar_constructor(modelo_hf: str = "google/gemma-2-2b-it:free",
+                                 usar_local: bool = True) -> Dict[str, Any]:
+        if _refactorizar_constructor is None:
+            return {"exito": False, "mensaje": "IALOCAL no disponible"}
+        return dict(_refactorizar_constructor(modelo_hf=modelo_hf, usar_local=usar_local))
 
 # CLASE 4: GestorIntegracion — bitácora .md, respaldos CHG y el ciclo pesos -> IPFS -> devopencode (INTEGRACIONRF).
 class GestorIntegracion:

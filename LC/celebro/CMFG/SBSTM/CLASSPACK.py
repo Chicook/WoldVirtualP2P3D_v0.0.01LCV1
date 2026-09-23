@@ -4,10 +4,16 @@ import importlib.util
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Final, List, Tuple
 
 __version__: str = "2026.3.1"
 MIN_CLASE: int = 30
+EXCLUIR: Final[Tuple[str, ...]] = (
+    "mainLCSTM.py", "__init__.py", "HRCTRC.py", "HRCTRC_RFCT.py",
+    "HRCNTR.py", "DSIALCLGRG.py", "IAFREE.py", "BASELUC.py",
+    "PRTLUC.py", "CMDLUC.py", "STMRFCR.py", "PURGADOR.py",
+    "ipfs_manager.py", "neural_math.py", "pesos_vivos.py", "PSNRCV.py",
+)
 
 
 def escanear_clases(overlay: Path, min_body: int = MIN_CLASE) -> List[Dict[str, Any]]:
@@ -16,6 +22,8 @@ def escanear_clases(overlay: Path, min_body: int = MIN_CLASE) -> List[Dict[str, 
     resultados: List[Dict[str, Any]] = []
     for f in sorted(overlay.rglob("*.py")):
         if "__pycache__" in f.parts or "_pkg" in f.name:
+            continue
+        if f.name in EXCLUIR:
             continue
         try:
             source = f.read_text(encoding="utf-8", errors="replace")
