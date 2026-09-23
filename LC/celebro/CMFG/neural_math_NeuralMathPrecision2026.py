@@ -1,2 +1,0 @@
-
-from LC.Constructor.LUCIA_20260923_031455.celebro.CMFG.neural_math_NeuralMathPrecision2026_NeuralMathPrecision2026 import NeuralMathPrecision2026  # CLASSPACK

@@ -1,2 +1,0 @@
-
-from LC.Constructor.LUCIA_20260923_031455.celebro.test.test_pesos_vivos_TestInterfazGlobalPesosVivos_TestInterfazGlobalPesosVivos import TestInterfazGlobalPesosVivos  # CLASSPACK

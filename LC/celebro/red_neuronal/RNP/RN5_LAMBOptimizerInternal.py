@@ -1,2 +1,0 @@
-
-from LC.Constructor.LUCIA_20260923_031455.celebro.red_neuronal.RNP.RN5_LAMBOptimizerInternal_LAMBOptimizerInternal import LAMBOptimizerInternal  # CLASSPACK

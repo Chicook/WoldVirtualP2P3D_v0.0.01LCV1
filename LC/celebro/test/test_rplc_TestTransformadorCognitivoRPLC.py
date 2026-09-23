@@ -1,2 +1,0 @@
-
-from LC.Constructor.LUCIA_20260923_031455.celebro.test.test_rplc_TestTransformadorCognitivoRPLC_TestTransformadorCognitivoRPLC import TestTransformadorCognitivoRPLC  # CLASSPACK

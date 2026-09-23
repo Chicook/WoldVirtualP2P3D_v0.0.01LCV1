@@ -1,2 +1,0 @@
-
-from LC.Constructor.LUCIA_20260923_031455.celebro.CMFG.pesos_vivos_VisualizadorTerminalPesos_VisualizadorTerminalPesos import VisualizadorTerminalPesos  # CLASSPACK

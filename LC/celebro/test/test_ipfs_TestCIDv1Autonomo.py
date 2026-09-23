@@ -1,2 +1,0 @@
-
-from LC.Constructor.LUCIA_20260923_031455.celebro.test.test_ipfs_TestCIDv1Autonomo_TestCIDv1Autonomo import TestCIDv1Autonomo  # CLASSPACK

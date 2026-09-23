@@ -1,2 +1,0 @@
-
-from LC.Constructor.LUCIA_20260923_031455.celebro.red_neuronal.SLRN.SL2_SGDOptimizerInternal_SGDOptimizerInternal import SGDOptimizerInternal  # CLASSPACK
