@@ -708,8 +708,15 @@ def _leer_candidatos_codigo() -> list[str]:
     for respaldo in MODELOS_CODIGO_LIGEROS:
         if respaldo not in candidatos:
             candidatos.append(respaldo)
-    # Prioriza modelos de código primero.
-    candidatos.sort(key=lambda n: 0 if "coder" in n.lower() or "code" in n.lower() else 1)
+    # Prioriza código primero y, dentro de eso, modelos PEQUEÑOS primero:
+    # un 7b en CPU (sin GPU) tarda minutos por token y el vigilante lo aborta.
+    def _prioridad(nombre: str) -> tuple[int, float]:
+        bajo = nombre.lower()
+        codigo = 0 if ("coder" in bajo or "code" in bajo) else 1
+        m = re.search(r"(\d+(?:\.\d+)?)\s*b", bajo)
+        tam = float(m.group(1)) if m else 9.0
+        return (codigo, tam)
+    candidatos.sort(key=_prioridad)
     return candidatos
 
 
@@ -814,36 +821,52 @@ def _borrar_modelo_ollama(endpoint: str, modelo: str) -> None:
     informar(f"Modelo local borrado tras el registro: {modelo}")
 
 
-def _refactorizar_con_modelo(contenido: str, analisis: AnalisisArchivo, modelo: str,
-                             timeout_primer_token: int = 60) -> str:
-    """Pide al modelo local el código refactorizado respetando 400/450 líneas.
+def _liberar_ollama(excepto: str = "") -> None:
+    """Descarga de CPU/RAM los modelos Ollama cargados salvo ``excepto``.
 
-    Usa stream con progreso visible. Subsistema vigilante: si pasan
-    ``timeout_primer_token`` segundos sin el primer token, se aborta con
-    ``ErrorProyecto`` para que el llamador borre esa IA y pruebe con otra.
+    Ollama en este equipo corre 100% CPU (GPU Intel Arc no soportada): dos
+    modelos a la vez se reparten el Ryzen y ninguno genera a tiempo.
     """
+    try:
+        proc = subprocess.run(["ollama", "ps"], timeout=30, capture_output=True, text=True)
+        for linea in proc.stdout.splitlines()[1:]:
+            nombre = linea.split()[0] if linea.split() else ""
+            if nombre and nombre.lower() != excepto.lower():
+                _imprimir_seguro(f"[VIGILANTE] Liberando CPU: ollama stop {nombre}")
+                try:
+                    subprocess.run(["ollama", "stop", nombre], timeout=120,
+                                   capture_output=True)
+                except Exception:
+                    pass
+    except Exception as error:
+        advertir(f"No se pudo liberar Ollama ({error}).")
+
+
+#: Líneas por fragmento en refactorización por chunks (calibrado en CPU:
+#: 60 líneas -> primer token ~11s, completo ~2 min con qwen2.5-coder:3b).
+LINEAS_POR_FRAGMENTO = 60
+
+
+def _generar_fragmento(endpoint: str, modelo: str, nombre_archivo: str,
+                       fragmento: str, num: int, total: int,
+                       timeout_primer_token: int) -> str:
+    """Refactoriza UN fragmento (~60 líneas) con el modelo local en stream."""
     import threading as _th, time as _tm
-    endpoint, _ = _cargar_configuracion_ia_local()
-    prompt = (
-        "Eres LucIA. Refactoriza el código dado sin cambiar su comportamiento. "
-        f"LÍMITE OBLIGATORIO: máximo {LIMITE_LINEAS_REFACTOR} líneas en total, ideal 400. "
-        "Cuenta tus líneas mientras escribes y DETENTE antes del límite; resume, compacta "
-        "y elimina duplicados para no superarlo. Responde SOLO con código, sin explicaciones ni cercas."
-    )
     carga = {"model": modelo, "messages": [
-        {"role": "system", "content": prompt},
-        {"role": "user", "content": f"Archivo: {Path(analisis.ruta).name}\n{contenido[:8000]}"}],
+        {"role": "system", "content": (
+            "Eres LucIA. Refactoriza el fragmento de código sin cambiar su "
+            "comportamiento: nombres claros, sin duplicados, documenta lo esencial. "
+            "Responde SOLO con código, sin explicaciones ni cercas.")},
+        {"role": "user", "content": f"Archivo: {nombre_archivo} (parte {num}/{total})\n{fragmento}"}],
         "stream": True, "keep_alive": "10m",
-        "options": {"temperature": 0.2, "num_predict": 4000}}
+        "options": {"temperature": 0.2, "num_predict": 800, "num_ctx": 2048}}
     pet = urllib.request.Request(
         f"{endpoint}/api/chat", data=json.dumps(carga).encode("utf-8"),
         headers={"Content-Type": "application/json"}, method="POST")
-    _imprimir_seguro(f"[REFACTOR] Generando con {modelo} (tope {LIMITE_LINEAS_REFACTOR} líneas)...")
-    _imprimir_seguro(f"[VIGILANTE] Si en {timeout_primer_token}s no hay respuesta, "
-                     f"se borra {modelo} y se prueba con otra IA.")
     piezas: list[str] = []
-    estado: dict = {"error": None, "resp": None, "listo": False}
+    estado: dict = {"error": None, "resp": None}
     primer_token = _th.Event()
+    terminado = _th.Event()
 
     def _trabajar() -> None:
         try:
@@ -861,50 +884,73 @@ def _refactorizar_con_modelo(contenido: str, analisis: AnalisisArchivo, modelo: 
                     if delta:
                         piezas.append(delta)
                         primer_token.set()
-                        if delta.count("\n") > 0:
-                            n = "".join(piezas).count("\n") + 1
-                            if n % 100 == 0:
-                                _imprimir_seguro(f"[REFACTOR] ...{n} líneas generadas")
-                            if n >= LIMITE_LINEAS_REFACTOR + 10:
-                                _imprimir_seguro(
-                                    f"[REFACTOR] Tope {LIMITE_LINEAS_REFACTOR} alcanzado; cortando.")
-                                break
                     if evento.get("done"):
                         break
         except Exception as error:  # noqa: BLE001 - se reporta al hilo principal
             estado["error"] = error
         finally:
-            estado["listo"] = True
             primer_token.set()
+            terminado.set()
 
     _t0 = _tm.time()
-    _hilo = _th.Thread(target=_trabajar, daemon=True)
-    _hilo.start()
-    # Latido + vigilancia: espera el primer token como máximo timeout_primer_token.
+    _th.Thread(target=_trabajar, daemon=True).start()
     while not primer_token.wait(20):
         trasc = int(_tm.time() - _t0)
         if trasc >= timeout_primer_token:
-            _imprimir_seguro(f"[VIGILANTE] {trasc}s sin respuesta de {modelo}: abortando.")
             try:
                 if estado["resp"] is not None:
                     estado["resp"].close()
             except Exception:
                 pass
-            raise ErrorProyecto(f"{modelo} no generó en {timeout_primer_token}s (vigilante).")
-        _imprimir_seguro(f"[REFACTOR] esperando al modelo... {trasc}s")
+            raise ErrorProyecto(f"{modelo} sin respuesta en {timeout_primer_token}s (frag {num}).")
+        _imprimir_seguro(f"[REFACTOR {num}/{total}] esperando... {trasc}s")
     if estado["error"] is not None and not piezas:
         raise ErrorProyecto(f"El modelo {modelo} no respondió ({estado['error']}).")
-    _hilo.join(timeout=900)
+    # Espera al fin del stream con progreso por líneas (tope 10 min/fragmento).
+    _t1, ultimo_n = _tm.time(), 0
+    while not terminado.wait(15):
+        n = "".join(piezas).count("\n") + 1
+        if n != ultimo_n:
+            _imprimir_seguro(f"[REFACTOR {num}/{total}] ...{n} líneas")
+            ultimo_n = n
+        if _tm.time() - _t1 > 600:
+            _imprimir_seguro(f"[REFACTOR {num}/{total}] Tope 10 min; se usa lo generado.")
+            break
     if not piezas:
-        raise ErrorProyecto(f"El modelo {modelo} devolvió vacío.")
-    _imprimir_seguro("[REFACTOR] Generación terminada.")
+        raise ErrorProyecto(f"El modelo {modelo} devolvió vacío (frag {num}).")
     texto = "".join(piezas).strip()
-    # Limpia cercas de código si el modelo las añade.
-    texto = re.sub(r"^```[a-zA-Z]*\n|```$", "", texto, flags=re.MULTILINE).strip()
-    lineas = texto.splitlines()
-    if len(lineas) > LIMITE_LINEAS_REFACTOR:
-        advertir(f"El resultado tiene {len(lineas)} líneas; se recorta a {LIMITE_LINEAS_REFACTOR}.")
-        texto = "\n".join(lineas[:LIMITE_LINEAS_REFACTOR])
+    return re.sub(r"^```[a-zA-Z]*\n|```$", "", texto, flags=re.MULTILINE).strip()
+
+
+def _refactorizar_con_modelo(contenido: str, analisis: AnalisisArchivo, modelo: str,
+                             timeout_primer_token: int = 60) -> str:
+    """Refactoriza POR FRAGMENTOS de 60 líneas (viable en CPU) y une el resultado.
+
+    Cada fragmento entra en el vigilante de ``timeout_primer_token`` segundos;
+    el total respeta el tope 400/450 líneas.
+    """
+    import time as _tm
+    endpoint, _ = _cargar_configuracion_ia_local()
+    lineas = contenido.splitlines()
+    fragmentos = ["\n".join(lineas[i:i + LINEAS_POR_FRAGMENTO])
+                  for i in range(0, len(lineas), LINEAS_POR_FRAGMENTO)]
+    total = len(fragmentos)
+    _imprimir_seguro(f"[REFACTOR] {len(lineas)} líneas en {total} fragmentos con {modelo}.")
+    _imprimir_seguro(f"[VIGILANTE] {timeout_primer_token}s por fragmento; si falla, "
+                     f"se borra {modelo} y se prueba con otra IA.")
+    nombre = Path(analisis.ruta).name
+    salidas: list[str] = []
+    for num, frag in enumerate(fragmentos, start=1):
+        _t0 = _tm.time()
+        salidas.append(_generar_fragmento(endpoint, modelo, nombre, frag, num, total,
+                                          timeout_primer_token))
+        _imprimir_seguro(f"[REFACTOR {num}/{total}] OK en {int(_tm.time() - _t0)}s")
+    texto = "\n".join(salidas).strip()
+    lineas_out = texto.splitlines()
+    if len(lineas_out) > LIMITE_LINEAS_REFACTOR:
+        advertir(f"El resultado tiene {len(lineas_out)} líneas; se recorta a {LIMITE_LINEAS_REFACTOR}.")
+        texto = "\n".join(lineas_out[:LIMITE_LINEAS_REFACTOR])
+    _imprimir_seguro("[REFACTOR] Generación terminada.")
     return texto
 
 
@@ -983,6 +1029,7 @@ def comando_ds_ialocal(consultor: Optional[ConsultorIA] = None) -> bool:
         _imprimir_seguro(f"[1/5] OK, modelo listo: {modelo}")
         # 2) Refactorización con ese modelo (tope explícito 400/450 líneas).
         _imprimir_seguro("[2/5] Refactorizando con el modelo local...")
+        _liberar_ollama(excepto=modelo)  # toda la CPU para el modelo elegido
         try:
             nuevo = _refactorizar_con_modelo(contenido, analisis, modelo,
                                              timeout_primer_token=60)
