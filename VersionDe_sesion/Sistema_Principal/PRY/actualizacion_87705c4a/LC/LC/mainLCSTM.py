@@ -12,6 +12,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any, Callable, Dict, Final, List, Optional, Tuple, Union
+
 CURRENT_FILE: Final[Path] = Path(__file__).resolve()
 LC_DIR: Final[Path] = CURRENT_FILE.parent
 ROOT_DIR: Final[Path] = LC_DIR.parent
