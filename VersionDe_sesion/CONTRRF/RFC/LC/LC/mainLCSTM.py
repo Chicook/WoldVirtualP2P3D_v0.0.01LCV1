@@ -17,7 +17,11 @@ CURRENT_FILE: Final[Path] = Path(__file__).resolve()
 LC_DIR: Final[Path] = CURRENT_FILE.parent
 ROOT_DIR: Final[Path] = LC_DIR.parent
 CONTRRF_DIR: Final[Path] = CURRENT_FILE.parents[3]
-ENV_FILE: Final[Path] = ROOT_DIR / ".env"
+ENV_FILE: Final[Path] = next(
+    (c for c in (LC_DIR / ".env", ROOT_DIR / ".env")  # RFC/LC/LC/.env (real), RFC/LC/.env
+     if c.exists()),
+    LC_DIR / ".env",
+)
 CELEBRO_DIR: Final[Path] = LC_DIR / "celebro"
 PSNRL_DIR: Final[Path] = CELEBRO_DIR / "PSNRL"
 CMFG_DIR: Final[Path] = CELEBRO_DIR / "CMFG"

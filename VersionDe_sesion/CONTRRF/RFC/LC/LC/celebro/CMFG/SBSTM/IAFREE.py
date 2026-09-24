@@ -79,13 +79,22 @@ class GestorModelosGratuitos:
         self._ultimo_refresco = 0.0
 
     def _leer_api_key(self) -> str:
-        """Extrae la clave API desde .env o el entorno de ejecucion."""
-        if ENV_FILE.exists():
+        """Extrae la clave API desde .env (varias ubicaciones) o el entorno."""
+        candidatos = [
+            ENV_FILE,                       # RFC/.env (histórico)
+            LC_DIR / "LC" / ".env",         # RFC/LC/LC/.env (ubicación real)
+            LC_DIR / ".env",                # RFC/LC/.env
+            PACKAGE_ROOT / ".env",
+        ]
+        for ruta in candidatos:
             try:
-                txt = ENV_FILE.read_text(encoding="utf-8-sig", errors="replace")
-                for line in txt.splitlines():
-                    if line.strip().startswith("OPENROUTER_API_KEY="):
-                        return line.strip().split("=", 1)[1].strip().strip("'\"")
+                if ruta.exists():
+                    txt = ruta.read_text(encoding="utf-8-sig", errors="replace")
+                    for line in txt.splitlines():
+                        if line.strip().startswith("OPENROUTER_API_KEY="):
+                            clave = line.strip().split("=", 1)[1].strip().strip("'\"")
+                            if len(clave) > 10:
+                                return clave
             except Exception:
                 pass
         return os.getenv("OPENROUTER_API_KEY", "").strip()
