@@ -1158,7 +1158,7 @@ def _pedir_extra_o_diagnostico(contenido: str, analisis: AnalisisArchivo) -> Non
 
 
 def comando_ds_ialocal(consultor: Optional[ConsultorIA] = None) -> bool:
-    """Flujo 'ds ialocal': plan LucIA -> s/n -> descarga -> refactor (tope 400/450) -> .md -> borra."""
+    """Comando 'ds ialocal': delega todo el pipeline en FlujoRefactorLucIA."""
     entrada = input("Archivo al cual hay que refactorizar: ").strip().strip("\"'")
     if not entrada:
         reportar_error("No se indicó ningún archivo.")
@@ -1172,87 +1172,7 @@ def comando_ds_ialocal(consultor: Optional[ConsultorIA] = None) -> bool:
     except OSError as error:
         reportar_error(f"No se pudo leer: {error}")
         return False
-    # Plan de LucIA con sus propias palabras + pregunta s/n.
-    analisis = analizar_archivo_local(ruta)
-    generador = consultor or consultar_ia_local
-    plan_lucia = generador(contenido, analisis)
-    print(_panel("LucIA · Plan de refactorización", plan_lucia.strip()))
-    plan = crear_plan_refactorizacion(analisis)
-    print(f"\n{E.negrita}Plan de refactorización{E.reset}")
-    for indice, paso in enumerate(plan, start=1):
-        print(f"  {E.cian}{indice}.{E.reset} {paso}")
-    if not pedir_confirmacion("¿Se aplica el plan?"):
-        _pedir_extra_o_diagnostico(contenido, analisis)  # 1 = añadir algo, 2 = diagnóstico
-        return False
-    # 1) Al aceptar se descarga de inmediato un modelo de IA para código.
-    generador = consultor or consultar_ia_local
-    fallidas: set[str] = set()
-    for intento in range(1, 4):  # vigilante: hasta 3 IAs distintas por archivo
-        _imprimir_seguro(f"[1/5] Descargando modelo de IA para código (intento {intento}/3)...")
-        try:
-            endpoint, _ = _cargar_configuracion_ia_local()
-            modelo = _asegurar_modelo_codigo(excluir=fallidas)
-        except (ErrorProyecto, ValueError) as error:
-            reportar_error(str(error))
-            return False
-        _imprimir_seguro(f"[1/5] OK, modelo listo: {modelo}")
-        # 2) Refactorización con ese modelo (tope explícito 400/450 líneas).
-        _imprimir_seguro("[2/5] Refactorizando con el modelo local...")
-        _liberar_ollama(excepto=modelo)  # toda la CPU para el modelo elegido
-        try:
-            nuevo = _refactorizar_con_modelo(contenido, analisis, modelo,
-                                             timeout_primer_token=60)
-            break  # generó bien: se sale del bucle de reintentos
-        except ErrorProyecto as error:
-            reportar_error(f"El modelo local falló: {error}")
-            # Vigilante: se borra la IA lenta, se anota el fallo y se reinicia
-            # el flujo con otro modelo + nuevo diagnóstico y plan de LucIA.
-            _borrar_modelo_ollama(endpoint, modelo)
-            _registrar_refactor_md(ruta, modelo,
-                f"FALLO: {modelo} no generó en 60s y fue borrada por el vigilante.")
-            fallidas.add(modelo)
-            if intento >= 3:
-                reportar_error("3 IAs fallaron; se aborta este archivo.")
-                return False
-            _imprimir_seguro("[VIGILANTE] Reiniciando flujo con otra IA local...")
-            plan_lucia = generador(contenido, analisis)
-            print(_panel("LucIA · Nuevo diagnóstico", plan_lucia.strip()))
-            plan = crear_plan_refactorizacion(analisis)
-            print(f"\n{E.negrita}Plan de refactorización{E.reset}")
-            for indice, paso in enumerate(plan, start=1):
-                print(f"  {E.cian}{indice}.{E.reset} {paso}")
-            if not pedir_confirmacion("¿Se aplica el plan con la nueva IA?"):
-                _pedir_extra_o_diagnostico(contenido, analisis)
-                return False
-            continue
-        except Exception as error:  # noqa: BLE001 - fallo no previsto
-            reportar_error(f"El modelo local falló: {error}")
-            _borrar_modelo_ollama(endpoint, modelo)
-            return False
-    # Validación previa: si el refactor está roto NO se sobrescribe el original.
-    try:
-        nuevo = _validar_refactor(contenido, nuevo, ruta)
-    except ErrorProyecto as error:
-        reportar_error(str(error))
-        _registrar_refactor_md(ruta, modelo, f"FALLO validación: {error}")
-        # La IA local de código falló: se borra y se busca una free en OpenRouter
-        # con el mismo flujo (1 análisis + 2 refactorización).
-        return _fallback_openrouter(ruta, contenido, analisis, modelo, str(error))
-    ruta.write_text(nuevo, encoding="utf-8")
-    exito(f"[2/5] Archivo refactorizado ({len(nuevo.splitlines())} líneas): {ruta}")
-    # 3) Respuesta interna a LucIA: ella describe con sus palabras lo hecho.
-    _imprimir_seguro("[3/5] Pidiendo a LucIA su nota interna...")
-    analisis_nuevo = analizar_archivo_local(ruta)
-    nota_lucia = generador(nuevo, analisis_nuevo)
-    _imprimir_seguro("[3/5] Nota de LucIA recibida.")
-    # 4) LucIA lo apunta en el .md junto con el nombre de la IA local.
-    _imprimir_seguro("[4/5] Registrando en el .md...")
-    _registrar_refactor_md(ruta, modelo, nota_lucia)
-    # 5) Se borra el modelo para no repetir IAlocal entre archivos.
-    _imprimir_seguro("[5/5] Borrando modelo local...")
-    _borrar_modelo_ollama(endpoint, modelo)
-    exito("Flujo ds ialocal completado.")
-    return True
+    return FlujoRefactorLucIA(ruta, contenido, consultor).ejecutar()
 
 
 def _fallback_openrouter(ruta: Path, contenido: str, analisis: AnalisisArchivo,
@@ -1282,6 +1202,216 @@ def _fallback_openrouter(ruta: Path, contenido: str, analisis: AnalisisArchivo,
     _registrar_refactor_md(ruta, modelo_or, nota)
     exito("Flujo ds ialocal completado vía OpenRouter.")
     return True
+
+
+# --- Flujo de refactorización con LucIA --------------------------------------
+# Esta clase centraliza el pipeline "ds ialocal": plan, IA local por fragmentos
+# con validación inmediata y auto-reparación, rotación con `ollama rm` ante fallo,
+# fallback a OpenRouter free y anotación de errores en registro_refactor.md.
+
+
+class FlujoRefactorLucIA:
+    """Máquina de estados del flujo ds ialocal para un archivo.
+
+    Decisiones aplicadas: ante fallo de validación se borra la IA local con
+    ``ollama rm``; el fragmento irreparable (2 reintentos) se escala a otra IA
+    y todos los errores se anotan en ``registro_refactor.md``.
+    """
+
+    MAX_IAS = 3
+    MAX_REINTENTOS_FRAG = 2
+    SOLAPE_LINEAS = 10
+
+    def __init__(self, ruta: Path, contenido: str, consultor: Optional[ConsultorIA] = None) -> None:
+        self.ruta = ruta
+        self.contenido = contenido
+        self.analisis = analizar_archivo_local(ruta)
+        self.generador = consultor or consultar_ia_local
+        self.modelo = ""
+        self.endpoint = ""
+        self.fallidas: set[str] = set()
+        self.errores: list[str] = []      # líneas "### Errores" para el .md
+        self.rotaciones: list[str] = []   # líneas "### Rotación" para el .md
+        self.fragmentos: list[dict] = []  # {num, original, salida, irreparable}
+        self.nota_lucia = ""
+
+    # -- fase PLAN ---------------------------------------------------------
+    def plan_y_confirmacion(self) -> bool:
+        """Muestra diagnóstico+plan de LucIA y pide s/n (con opciones 1/2)."""
+        plan_lucia = self.generador(self.contenido, self.analisis)
+        print(_panel("LucIA · Plan de refactorización", plan_lucia.strip()))
+        plan = crear_plan_refactorizacion(self.analisis)
+        print(f"\n{E.negrita}Plan de refactorización{E.reset}")
+        for indice, paso in enumerate(plan, start=1):
+            print(f"  {E.cian}{indice}.{E.reset} {paso}")
+        if not pedir_confirmacion("¿Se aplica el plan?"):
+            _pedir_extra_o_diagnostico(self.contenido, self.analisis)
+            return False
+        return True
+
+    def nuevo_diagnostico(self) -> bool:
+        """Tras rotar de IA: nuevo diagnóstico+plan de LucIA y confirmación."""
+        _imprimir_seguro("[VIGILANTE] Reiniciando flujo con otra IA local...")
+        plan_lucia = self.generador(self.contenido, self.analisis)
+        print(_panel("LucIA · Nuevo diagnóstico", plan_lucia.strip()))
+        plan = crear_plan_refactorizacion(self.analisis)
+        print(f"\n{E.negrita}Plan de refactorización{E.reset}")
+        for indice, paso in enumerate(plan, start=1):
+            print(f"  {E.cian}{indice}.{E.reset} {paso}")
+        if not pedir_confirmacion("¿Se aplica el plan con la nueva IA?"):
+            _pedir_extra_o_diagnostico(self.contenido, self.analisis)
+            return False
+        return True
+
+    # -- fase IA -----------------------------------------------------------
+    def asegurar_ia(self) -> None:
+        """Descarga/elige IA local no usada y libera la CPU para ella."""
+        self.endpoint, _ = _cargar_configuracion_ia_local()
+        self.modelo = _asegurar_modelo_codigo(excluir=self.fallidas)
+        _liberar_ollama(excepto=self.modelo)
+        _imprimir_seguro(f"[1/5] OK, modelo listo: {self.modelo}")
+
+    def rotar_ia(self, motivo: str) -> None:
+        """Borra la IA actual con `ollama rm`, la anota y marca como fallida."""
+        _imprimir_seguro(f"[VIGILANTE] Borrando {self.modelo} ({motivo}).")
+        _borrar_modelo_ollama(self.endpoint, self.modelo)
+        self.rotaciones.append(f"- {self.modelo} borrada con `ollama rm` (motivo: {motivo})")
+        self.fallidas.add(self.modelo)
+
+    # -- fase FRAGMENTOS ---------------------------------------------------
+    def generar_fragmentos(self) -> None:
+        """Corte en fronteras seguras con solape de contexto entre fragmentos."""
+        lineas = self.contenido.splitlines()
+        actual: list[str] = []
+        for ln in lineas:
+            actual.append(ln)
+            if len(actual) >= LINEAS_POR_FRAGMENTO and (
+                    not ln.strip() or re.match(r"\s*(def |class |if |for |while |try:|else:|elif )", ln)):
+                self.fragmentos.append({"original": "\n".join(actual), "salida": "",
+                                        "irreparable": False})
+                actual = []
+        if actual:
+            self.fragmentos.append({"original": "\n".join(actual), "salida": "",
+                                    "irreparable": False})
+        for i, f in enumerate(self.fragmentos, start=1):
+            f["num"] = i
+        _imprimir_seguro(f"[REFACTOR] {len(lineas)} líneas en {len(self.fragmentos)} "
+                         f"fragmentos con {self.modelo}.")
+
+    def _validar_salida_frag(self, texto: str) -> None:
+        """Valida un fragmento .py con ast (detecta cortes a mitad de string)."""
+        if self.ruta.suffix.lower() == ".py":
+            try:
+                ast.parse(texto, filename=str(self.ruta))
+            except SyntaxError as error:
+                raise ErrorProyecto(f"frag inválido (línea {error.lineno}: {error.msg})")
+
+    def refactorizar_fragmento(self, frag: dict, total: int) -> bool:
+        """Genera un fragmento con solape+validación; True si quedó usable.
+
+        Hasta MAX_REINTENTOS_FRAG re-pidiendo con el error adjunto; si sigue
+        roto se marca irreparable (se conserva el original al ensamblar).
+        """
+        num = frag["num"]
+        contexto = ""
+        if num > 1 and self.fragmentos[num - 2].get("salida"):
+            prev = self.fragmentos[num - 2]["salida"].splitlines()
+            contexto = ("\n[CONTEXTO: el fragmento anterior termina así, continúa "
+                        "con coherencia sin repetirlo:]\n" + "\n".join(prev[-self.SOLAPE_LINEAS:]))
+        for intento in range(1, self.MAX_REINTENTOS_FRAG + 1):
+            try:
+                salida = _generar_fragmento(self.endpoint, self.modelo,
+                                            self.ruta.name, frag["original"] + contexto,
+                                            num, total, 60)
+                self._validar_salida_frag(salida)
+                frag["salida"] = salida
+                _imprimir_seguro(f"[REFACTOR {num}/{total}] OK (intento {intento})")
+                return True
+            except ErrorProyecto as error:
+                self.errores.append(f"- [frag {num}/{total}, intento {intento}] {error}")
+                advertir(f"[REFACTOR {num}/{total}] {error}; reintento con el error adjunto.")
+                # El siguiente intento lleva el error en el contexto del prompt.
+                contexto += f"\n[CORRIJE: tu salida anterior falló con: {error}]"
+        frag["irreparable"] = True
+        self.errores.append(f"- [frag {num}/{total}] IRREPARABLE tras "
+                            f"{self.MAX_REINTENTOS_FRAG} intentos; se conserva el original.")
+        return False
+
+    def ensamblar(self) -> str:
+        """Une salidas OK + originales de irreparables y valida el conjunto."""
+        partes = [f["salida"] if f.get("salida") else f["original"] for f in self.fragmentos]
+        texto = "\n".join(partes).strip()
+        if len(texto.splitlines()) > LIMITE_LINEAS_REFACTOR:
+            texto = "\n".join(texto.splitlines()[:LIMITE_LINEAS_REFACTOR])
+        return _validar_refactor(self.contenido, texto, self.ruta)
+
+    # -- registro ----------------------------------------------------------
+    def registrar(self, modelo: str, descripcion: str) -> None:
+        """Guarda en el .md la nota de LucIA más los bloques de errores/rotación."""
+        extra = ""
+        if self.errores:
+            extra += "\n### Errores\n" + "\n".join(self.errores)
+        if self.rotaciones:
+            extra += "\n### Rotación\n" + "\n".join(self.rotaciones)
+        _registrar_refactor_md(self.ruta, modelo, descripcion.strip() + extra)
+
+    # -- orquestación ------------------------------------------------------
+    def ejecutar(self) -> bool:
+        """Ejecuta las fases [1/5]…[5/5]; devuelve True si el archivo quedó."""
+        if not self.plan_y_confirmacion():
+            return False
+        for intento in range(1, self.MAX_IAS + 1):
+            _imprimir_seguro(f"[1/5] Descargando modelo de IA (intento {intento}/{self.MAX_IAS})...")
+            try:
+                self.asegurar_ia()
+            except (ErrorProyecto, ValueError) as error:
+                reportar_error(str(error))
+                return False
+            _imprimir_seguro("[2/5] Refactorizando por fragmentos...")
+            self.fragmentos = []
+            self.generar_fragmentos()
+            total = len(self.fragmentos)
+            for frag in self.fragmentos:
+                try:
+                    self.refactorizar_fragmento(frag, total)
+                except ErrorProyecto as error:  # timeout del vigilante: rota de IA
+                    reportar_error(f"El modelo local falló: {error}")
+                    self.rotar_ia(str(error))
+                    self.registrar(self.modelo, f"FALLO: {error}")
+                    break
+            else:
+                try:
+                    nuevo = self.ensamblar()
+                except ErrorProyecto as error:
+                    reportar_error(str(error))
+                    self.rotar_ia(f"validación global: {error}")
+                    self.registrar(self.modelo, f"FALLO validación: {error}")
+                    if intento >= self.MAX_IAS:
+                        return self._cierre_openrouter(f"validación: {error}")
+                    if not self.nuevo_diagnostico():
+                        return False
+                    continue
+                # Éxito: nota de LucIA, registro y limpieza final.
+                self.ruta.write_text(nuevo, encoding="utf-8")
+                exito(f"[2/5] Refactorizado ({len(nuevo.splitlines())} líneas): {self.ruta}")
+                _imprimir_seguro("[3/5] Pidiendo a LucIA su nota interna...")
+                self.nota_lucia = self.generador(nuevo, analizar_archivo_local(self.ruta))
+                _imprimir_seguro("[4/5] Registrando en el .md...")
+                self.registrar(self.modelo, self.nota_lucia)
+                _imprimir_seguro("[5/5] Borrando modelo local...")
+                _borrar_modelo_ollama(self.endpoint, self.modelo)
+                exito("Flujo ds ialocal completado.")
+                return True
+            if intento >= self.MAX_IAS:
+                return self._cierre_openrouter("3 IAs locales fallaron")
+            if not self.nuevo_diagnostico():
+                return False
+        return False
+
+    def _cierre_openrouter(self, motivo: str) -> bool:
+        """Agotadas las IAs locales: borra restos y usa free de OpenRouter."""
+        return _fallback_openrouter(self.ruta, self.contenido, self.analisis,
+                                    self.modelo or "local", motivo)
 
 
 # --- Menú interactivo --------------------------------------------------------
