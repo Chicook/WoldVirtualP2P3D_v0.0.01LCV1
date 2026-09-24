@@ -766,7 +766,7 @@ def _modelos_usados_registro() -> set[str]:
     return set()
 
 
-def _asegurar_modelo_codigo() -> str:
+def _asegurar_modelo_codigo(excluir: set[str] | None = None) -> str:
     """Descarga de inmediato un modelo de código NO usado antes (sin repetir IAlocal)."""
     # 1) Peso HF en modelosIAlocal/IAlocalDESCARGADA (corrige "no se descarga el modelo").
     try:
@@ -774,17 +774,27 @@ def _asegurar_modelo_codigo() -> str:
     except Exception as error:
         raise ErrorProyecto(f"No se pudo descargar el peso HF ({error}).")
     usados = {u.lower() for u in _modelos_usados_registro()}
+    usados |= {e.lower() for e in (excluir or set())}
     candidatos = [c for c in _leer_candidatos_codigo() if c.lower() not in usados]
     if not candidatos:  # todos usados: se permite reutilizar desde el primero
-        candidatos = _leer_candidatos_codigo()
+        candidatos = [c for c in _leer_candidatos_codigo()
+                      if c.lower() not in {e.lower() for e in (excluir or set())}]
+    if not candidatos:
+        raise ErrorProyecto("No quedan IAs locales por probar (todas fallaron o se usaron).")
     endpoint, _ = _cargar_configuracion_ia_local()
-    for elegido in candidatos:
-        informar(f"Descargando modelo de IA para código: {elegido}...")
-        if _descargar_modelo_ollama(endpoint, elegido):
-            exito(f"Modelo descargado: {elegido}")
-            return elegido
-        advertir(f"Se probará con el siguiente candidato tras fallar {elegido}.")
-    raise ErrorProyecto("Ningún modelo de código pudo descargarse; revisa Ollama y conexión.")
+    instalados = _modelos_ollama_instalados()
+    for candidato in candidatos:  # reutiliza sin descargar si ya está en Ollama
+        base = candidato.lower().split(":")[0]
+        if candidato.lower() in instalados or base in instalados:
+            informar(f"Modelo reutilizado (ya en Ollama, sin descarga): {candidato}")
+            return candidato
+    # Solo se descarga UN modelo: el primer candidato no usado.
+    elegido = candidatos[0]
+    informar(f"Descargando modelo de IA para código (uno solo): {elegido}...")
+    if _descargar_modelo_ollama(endpoint, elegido):
+        exito(f"Modelo descargado: {elegido}")
+        return elegido
+    raise ErrorProyecto(f"No se pudo descargar {elegido}; revisa Ollama y conexión.")
 
 
 def _borrar_modelo_ollama(endpoint: str, modelo: str) -> None:
@@ -804,25 +814,91 @@ def _borrar_modelo_ollama(endpoint: str, modelo: str) -> None:
     informar(f"Modelo local borrado tras el registro: {modelo}")
 
 
-def _refactorizar_con_modelo(contenido: str, analisis: AnalisisArchivo, modelo: str) -> str:
-    """Pide al modelo local el código refactorizado respetando 400/450 líneas."""
+def _refactorizar_con_modelo(contenido: str, analisis: AnalisisArchivo, modelo: str,
+                             timeout_primer_token: int = 60) -> str:
+    """Pide al modelo local el código refactorizado respetando 400/450 líneas.
+
+    Usa stream con progreso visible. Subsistema vigilante: si pasan
+    ``timeout_primer_token`` segundos sin el primer token, se aborta con
+    ``ErrorProyecto`` para que el llamador borre esa IA y pruebe con otra.
+    """
+    import threading as _th, time as _tm
     endpoint, _ = _cargar_configuracion_ia_local()
     prompt = (
         "Eres LucIA. Refactoriza el código dado sin cambiar su comportamiento. "
-        f"Regla estricta: el archivo resultante debe tener como máximo {LIMITE_LINEAS_REFACTOR} "
-        "líneas (ideal 400). Si lo supera, divide en módulos y devuelve solo el archivo "
-        "principal refactorizado. Responde SOLO con código, sin explicaciones ni cercas."
+        f"LÍMITE OBLIGATORIO: máximo {LIMITE_LINEAS_REFACTOR} líneas en total, ideal 400. "
+        "Cuenta tus líneas mientras escribes y DETENTE antes del límite; resume, compacta "
+        "y elimina duplicados para no superarlo. Responde SOLO con código, sin explicaciones ni cercas."
     )
     carga = {"model": modelo, "messages": [
         {"role": "system", "content": prompt},
-        {"role": "user", "content": f"Archivo: {Path(analisis.ruta).name}\n{contenido[:15000]}"}],
-        "stream": False, "options": {"temperature": 0.2, "num_predict": 4000}}
+        {"role": "user", "content": f"Archivo: {Path(analisis.ruta).name}\n{contenido[:8000]}"}],
+        "stream": True, "keep_alive": "10m",
+        "options": {"temperature": 0.2, "num_predict": 4000}}
     pet = urllib.request.Request(
         f"{endpoint}/api/chat", data=json.dumps(carga).encode("utf-8"),
         headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(pet, timeout=600) as resp:
-        res = json.loads(resp.read().decode("utf-8"))
-    texto = str(res.get("message", {}).get("content", "")).strip()
+    _imprimir_seguro(f"[REFACTOR] Generando con {modelo} (tope {LIMITE_LINEAS_REFACTOR} líneas)...")
+    _imprimir_seguro(f"[VIGILANTE] Si en {timeout_primer_token}s no hay respuesta, "
+                     f"se borra {modelo} y se prueba con otra IA.")
+    piezas: list[str] = []
+    estado: dict = {"error": None, "resp": None, "listo": False}
+    primer_token = _th.Event()
+
+    def _trabajar() -> None:
+        try:
+            with urllib.request.urlopen(pet, timeout=900) as resp:
+                estado["resp"] = resp
+                while True:
+                    linea = resp.readline()
+                    if not linea:
+                        break
+                    try:
+                        evento = json.loads(linea.decode("utf-8"))
+                    except ValueError:
+                        continue
+                    delta = str(evento.get("message", {}).get("content", ""))
+                    if delta:
+                        piezas.append(delta)
+                        primer_token.set()
+                        if delta.count("\n") > 0:
+                            n = "".join(piezas).count("\n") + 1
+                            if n % 100 == 0:
+                                _imprimir_seguro(f"[REFACTOR] ...{n} líneas generadas")
+                            if n >= LIMITE_LINEAS_REFACTOR + 10:
+                                _imprimir_seguro(
+                                    f"[REFACTOR] Tope {LIMITE_LINEAS_REFACTOR} alcanzado; cortando.")
+                                break
+                    if evento.get("done"):
+                        break
+        except Exception as error:  # noqa: BLE001 - se reporta al hilo principal
+            estado["error"] = error
+        finally:
+            estado["listo"] = True
+            primer_token.set()
+
+    _t0 = _tm.time()
+    _hilo = _th.Thread(target=_trabajar, daemon=True)
+    _hilo.start()
+    # Latido + vigilancia: espera el primer token como máximo timeout_primer_token.
+    while not primer_token.wait(20):
+        trasc = int(_tm.time() - _t0)
+        if trasc >= timeout_primer_token:
+            _imprimir_seguro(f"[VIGILANTE] {trasc}s sin respuesta de {modelo}: abortando.")
+            try:
+                if estado["resp"] is not None:
+                    estado["resp"].close()
+            except Exception:
+                pass
+            raise ErrorProyecto(f"{modelo} no generó en {timeout_primer_token}s (vigilante).")
+        _imprimir_seguro(f"[REFACTOR] esperando al modelo... {trasc}s")
+    if estado["error"] is not None and not piezas:
+        raise ErrorProyecto(f"El modelo {modelo} no respondió ({estado['error']}).")
+    _hilo.join(timeout=900)
+    if not piezas:
+        raise ErrorProyecto(f"El modelo {modelo} devolvió vacío.")
+    _imprimir_seguro("[REFACTOR] Generación terminada.")
+    texto = "".join(piezas).strip()
     # Limpia cercas de código si el modelo las añade.
     texto = re.sub(r"^```[a-zA-Z]*\n|```$", "", texto, flags=re.MULTILINE).strip()
     lineas = texto.splitlines()
@@ -867,7 +943,7 @@ def _pedir_extra_o_diagnostico(contenido: str, analisis: AnalisisArchivo) -> Non
 
 
 def comando_ds_ialocal(consultor: Optional[ConsultorIA] = None) -> bool:
-    """Flujo 'ds ialocal': Intro -> descarga modelo -> refactor -> nota de LucIA en .md -> borra modelo."""
+    """Flujo 'ds ialocal': plan LucIA -> s/n -> descarga -> refactor (tope 400/450) -> .md -> borra."""
     entrada = input("Archivo al cual hay que refactorizar: ").strip().strip("\"'")
     if not entrada:
         reportar_error("No se indicó ningún archivo.")
@@ -881,31 +957,80 @@ def comando_ds_ialocal(consultor: Optional[ConsultorIA] = None) -> bool:
     except OSError as error:
         reportar_error(f"No se pudo leer: {error}")
         return False
-    # 1) Al dar Intro se descarga de inmediato un modelo de IA para código.
-    try:
-        endpoint, _ = _cargar_configuracion_ia_local()
-        modelo = _asegurar_modelo_codigo()
-    except (ErrorProyecto, ValueError) as error:
-        reportar_error(str(error))
-        return False
-    # 2) Refactorización con ese modelo (regla 400/450).
+    # Plan de LucIA con sus propias palabras + pregunta s/n.
     analisis = analizar_archivo_local(ruta)
-    try:
-        nuevo = _refactorizar_con_modelo(contenido, analisis, modelo)
-    except Exception as error:
-        reportar_error(f"El modelo local falló: {error}")
-        _borrar_modelo_ollama(endpoint, modelo)
-        return False
-    ruta.write_text(nuevo + "\n", encoding="utf-8")
-    exito(f"Archivo refactorizado ({len(nuevo.splitlines())} líneas): {ruta}")
-    # 3) Respuesta interna a LucIA: ella describe con sus palabras lo hecho.
     generador = consultor or consultar_ia_local
+    plan_lucia = generador(contenido, analisis)
+    print(_panel("LucIA · Plan de refactorización", plan_lucia.strip()))
+    plan = crear_plan_refactorizacion(analisis)
+    print(f"\n{E.negrita}Plan de refactorización{E.reset}")
+    for indice, paso in enumerate(plan, start=1):
+        print(f"  {E.cian}{indice}.{E.reset} {paso}")
+    if not pedir_confirmacion("¿Se aplica el plan?"):
+        _pedir_extra_o_diagnostico(contenido, analisis)  # 1 = añadir algo, 2 = diagnóstico
+        return False
+    # 1) Al aceptar se descarga de inmediato un modelo de IA para código.
+    generador = consultor or consultar_ia_local
+    fallidas: set[str] = set()
+    for intento in range(1, 4):  # vigilante: hasta 3 IAs distintas por archivo
+        _imprimir_seguro(f"[1/5] Descargando modelo de IA para código (intento {intento}/3)...")
+        try:
+            endpoint, _ = _cargar_configuracion_ia_local()
+            modelo = _asegurar_modelo_codigo(excluir=fallidas)
+        except (ErrorProyecto, ValueError) as error:
+            reportar_error(str(error))
+            return False
+        _imprimir_seguro(f"[1/5] OK, modelo listo: {modelo}")
+        # 2) Refactorización con ese modelo (tope explícito 400/450 líneas).
+        _imprimir_seguro("[2/5] Refactorizando con el modelo local...")
+        try:
+            nuevo = _refactorizar_con_modelo(contenido, analisis, modelo,
+                                             timeout_primer_token=60)
+            break  # generó bien: se sale del bucle de reintentos
+        except ErrorProyecto as error:
+            reportar_error(f"El modelo local falló: {error}")
+            # Vigilante: se borra la IA lenta, se anota el fallo y se reinicia
+            # el flujo con otro modelo + nuevo diagnóstico y plan de LucIA.
+            _borrar_modelo_ollama(endpoint, modelo)
+            _registrar_refactor_md(ruta, modelo,
+                f"FALLO: {modelo} no generó en 60s y fue borrada por el vigilante.")
+            fallidas.add(modelo)
+            if intento >= 3:
+                reportar_error("3 IAs fallaron; se aborta este archivo.")
+                return False
+            _imprimir_seguro("[VIGILANTE] Reiniciando flujo con otra IA local...")
+            plan_lucia = generador(contenido, analisis)
+            print(_panel("LucIA · Nuevo diagnóstico", plan_lucia.strip()))
+            plan = crear_plan_refactorizacion(analisis)
+            print(f"\n{E.negrita}Plan de refactorización{E.reset}")
+            for indice, paso in enumerate(plan, start=1):
+                print(f"  {E.cian}{indice}.{E.reset} {paso}")
+            if not pedir_confirmacion("¿Se aplica el plan con la nueva IA?"):
+                _pedir_extra_o_diagnostico(contenido, analisis)
+                return False
+            continue
+        except Exception as error:  # noqa: BLE001 - fallo no previsto
+            reportar_error(f"El modelo local falló: {error}")
+            _borrar_modelo_ollama(endpoint, modelo)
+            return False
+    final_lineas = len(nuevo.splitlines())
+    if final_lineas > LIMITE_LINEAS_REFACTOR:
+        advertir(f"Recorte final a {LIMITE_LINEAS_REFACTOR} líneas (venía con {final_lineas}).")
+        nuevo = "\n".join(nuevo.splitlines()[:LIMITE_LINEAS_REFACTOR])
+    ruta.write_text(nuevo + "\n", encoding="utf-8")
+    exito(f"[2/5] Archivo refactorizado ({len(nuevo.splitlines())} líneas): {ruta}")
+    # 3) Respuesta interna a LucIA: ella describe con sus palabras lo hecho.
+    _imprimir_seguro("[3/5] Pidiendo a LucIA su nota interna...")
     analisis_nuevo = analizar_archivo_local(ruta)
     nota_lucia = generador(nuevo, analisis_nuevo)
+    _imprimir_seguro("[3/5] Nota de LucIA recibida.")
     # 4) LucIA lo apunta en el .md junto con el nombre de la IA local.
+    _imprimir_seguro("[4/5] Registrando en el .md...")
     _registrar_refactor_md(ruta, modelo, nota_lucia)
     # 5) Se borra el modelo para no repetir IAlocal entre archivos.
+    _imprimir_seguro("[5/5] Borrando modelo local...")
     _borrar_modelo_ollama(endpoint, modelo)
+    exito("Flujo ds ialocal completado.")
     return True
 
 
