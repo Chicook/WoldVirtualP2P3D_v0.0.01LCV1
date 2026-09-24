@@ -10,6 +10,7 @@ import os
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import textwrap
 import urllib.error
@@ -122,24 +123,32 @@ class RaizProyectoNoEncontrada(ErrorProyecto):
     """Se lanza cuando no puede localizarse la raíz del proyecto."""
 
 
+def _imprimir_seguro(mensaje: str) -> None:
+    """Print tolerante a consolas cp1252 (sustituye símbolos no representables)."""
+    try:
+        print(mensaje)
+    except UnicodeEncodeError:
+        print(mensaje.encode("ascii", "replace").decode("ascii"))
+
+
 def informar(mensaje: str) -> None:
     """Muestra un mensaje informativo estándar."""
-    print(f"{E.cian}›{E.reset} {mensaje}")
+    _imprimir_seguro(f"{E.cian}›{E.reset} {mensaje}")
 
 
 def exito(mensaje: str) -> None:
     """Muestra un mensaje de operación completada correctamente."""
-    print(f"{E.verde}✔{E.reset} {mensaje}")
+    _imprimir_seguro(f"{E.verde}✔{E.reset} {mensaje}")
 
 
 def advertir(mensaje: str) -> None:
     """Muestra una advertencia no bloqueante."""
-    print(f"{E.amarillo}⚠{E.reset} {mensaje}")
+    _imprimir_seguro(f"{E.amarillo}⚠{E.reset} {mensaje}")
 
 
 def reportar_error(mensaje: str) -> None:
     """Muestra un error de operación al usuario."""
-    print(f"{E.rojo}✖{E.reset} {mensaje}")
+    _imprimir_seguro(f"{E.rojo}✖{E.reset} {mensaje}")
 
 
 def pedir_confirmacion(mensaje: str) -> bool:
@@ -575,6 +584,331 @@ def comando_ia_local(consultor: Optional[ConsultorIA] = None) -> bool:
     return True
 
 
+# --- Refactorización con modelo local de código ("ds ialocal") ------------------
+# Este bloque implementa el comando "ds ialocal": al dar Intro tras pedir el archivo
+# descarga de inmediato un modelo de IA para código (no repetido, según el .md de
+# registro), refactoriza, genera una respuesta interna a LucIA, LucIA lo apunta en el
+# .md con sus propias palabras junto al nombre del modelo, y después se borra el
+# modelo. Así cada archivo usa un modelo distinto sin repetir IAlocal.
+
+#: Candidatos de código ligeros (HuggingFace/Ollama) aptos para 8 VRAM / 8 RAM.
+#: Carpeta donde se descargan los pesos GGUF desde HuggingFace.
+DIR_MODELOS_LOCAL = DESTINO / "LC" / "LC" / "modelosIAlocal" / "IAlocalDESCARGADA"
+#: Repo/archivo GGUF pequeño de código (Qwen2.5-Coder 1.5B Q4, ~1 GB, apto 8 RAM).
+HF_REPO_CODIGO = "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF"
+HF_ARCHIVO_CODIGO = "qwen2.5-coder-1.5b-instruct-q4_k_m.gguf"
+
+#: Candidatos de código ligeros (HuggingFace/Ollama) aptos para 8 VRAM / 8 RAM.
+MODELOS_CODIGO_LIGEROS = (
+    "qwen2.5-coder:7b",
+    "starcoder2:7b",
+    "codellama:7b",
+    "deepseek-coder:6.7b",
+)
+
+#: Límite de líneas por archivo refactorizado (regla 400/450).
+LIMITE_LINEAS_REFACTOR = 450
+
+REGISTRO_REFACTOR_MD = DESTINO / "LC" / "LC" / "modelosIAlocal" / "registro_refactor.md"
+
+
+def _descargar_peso_hf(destino: Path | None = None) -> Path:
+    """Descarga el GGUF de código desde HuggingFace DIRECTO en modelosIAlocal/IAlocalDESCARGADA.
+
+    Stream con progreso visible (MB / %): el archivo crece en la carpeta durante
+    la descarga para que se vea el modelo y su proceso en el explorador/terminal.
+    """
+    from huggingface_hub import hf_hub_url
+    dest = Path(destino) if destino else DIR_MODELOS_LOCAL
+    dest.mkdir(parents=True, exist_ok=True)
+    final = dest / HF_ARCHIVO_CODIGO
+    parcial = dest / (HF_ARCHIVO_CODIGO + ".part")
+    if final.exists() and final.stat().st_size > 0:
+        informar(f"Peso ya presente (sin descarga): {final} ({final.stat().st_size} bytes)")
+        return final
+    # Si quedó un .part completo de una descarga anterior, adoptarlo.
+    if parcial.exists() and parcial.stat().st_size > 1000 * 1024 * 1024:
+        try:
+            parcial.replace(final)
+            exito(f"Modelo HF recuperado: {final} ({final.stat().st_size} bytes)")
+            return final
+        except OSError:
+            informar(f"Peso visible en: {parcial} ({parcial.stat().st_size} bytes)")
+            return parcial
+    url = hf_hub_url(repo_id=HF_REPO_CODIGO, filename=HF_ARCHIVO_CODIGO)
+    _imprimir_seguro(f"[DESCARGA] {HF_REPO_CODIGO}/{HF_ARCHIVO_CODIGO}")
+    _imprimir_seguro(f"[DESCARGA] URL: {url}")
+    _imprimir_seguro(f"[DESCARGA] Destino visible: {final}")
+    req = urllib.request.Request(url, headers={"User-Agent": "WoldVirtualP2P3D"})
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        total = int(resp.headers.get("Content-Length", "0") or 0)
+        _imprimir_seguro(f"[DESCARGA] Tamano total: {total / 1048576:.1f} MB")
+        bajados = 0
+        ultimo_pct = -1
+        with open(final, "wb") as f:
+            while True:
+                bloque = resp.read(4 * 1024 * 1024)
+                if not bloque:
+                    break
+                f.write(bloque)
+                bajados += len(bloque)
+                if total > 0:
+                    pct = int(bajados * 100 / total)
+                    if pct != ultimo_pct and (pct % 5 == 0 or pct == 100):
+                        ultimo_pct = pct
+                        _imprimir_seguro(
+                            f"[DESCARGA] {bajados / 1048576:.1f}/{total / 1048576:.1f} MB ({pct}%)")
+                elif bajados % (100 * 1048576) < 4 * 1024 * 1024:
+                    _imprimir_seguro(f"[DESCARGA] {bajados / 1048576:.1f} MB...")
+    # Limpia resto .part antiguo si ya no está bloqueado.
+    try:
+        if parcial.exists() and final.exists() and parcial.stat().st_size == final.stat().st_size:
+            parcial.unlink()
+    except OSError:
+        pass
+    exito(f"Modelo HF descargado: {final} ({final.stat().st_size} bytes)")
+    return final
+
+
+def _modelos_ollama_instalados() -> set[str]:
+    """Devuelve los modelos ya descargados en Ollama (vacío si no responde)."""
+    try:
+        endpoint, _ = _cargar_configuracion_ia_local()
+        with urllib.request.urlopen(f"{endpoint}/api/tags", timeout=10) as resp:
+            datos = json.loads(resp.read().decode("utf-8"))
+        instalados = set()
+        for m in datos.get("models", []):
+            if not isinstance(m, dict):
+                continue
+            for clave in ("name", "model"):
+                nombre = str(m.get(clave, "") or "").strip().lower()
+                if nombre:
+                    instalados.add(nombre)
+                    # "qwen2.5-coder:7b" y "qwen2.5-coder:latest" deben matchear por base.
+                    instalados.add(nombre.split(":")[0])
+        return instalados
+    except Exception as error:
+        advertir(f"No se pudo listar modelos Ollama ({error}).")
+        return set()
+
+
+def _leer_candidatos_codigo() -> list[str]:
+    """Lee los candidatos de IAlocal.json (models_available) + lista de respaldo."""
+    candidatos: list[str] = []
+    try:
+        with open(CONFIG_IA_LOCAL, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+        for m in cfg.get("models_available", []):
+            nombre = str(m).strip()
+            # Solo modelos de código o pequeños aptos para 8 VRAM / 8 RAM.
+            if nombre and nombre not in candidatos:
+                candidatos.append(nombre)
+    except (OSError, ValueError) as error:
+        advertir(f"No se pudo leer candidatos de IAlocal.json ({error}).")
+    for respaldo in MODELOS_CODIGO_LIGEROS:
+        if respaldo not in candidatos:
+            candidatos.append(respaldo)
+    # Prioriza modelos de código primero.
+    candidatos.sort(key=lambda n: 0 if "coder" in n.lower() or "code" in n.lower() else 1)
+    return candidatos
+
+
+def _descargar_modelo_ollama(endpoint: str, modelo: str) -> bool:
+    """Descarga ``modelo`` vía /api/pull leyendo el stream NDJSON; True si OK."""
+    carga = json.dumps({"model": modelo, "stream": True}).encode("utf-8")
+    pet = urllib.request.Request(
+        f"{endpoint}/api/pull", data=carga,
+        headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(pet, timeout=1800) as resp:
+            # La API devuelve NDJSON por líneas: hay que consumirlo hasta "completed".
+            while True:
+                linea = resp.readline()
+                if not linea:
+                    break
+                try:
+                    evento = json.loads(linea.decode("utf-8"))
+                except ValueError:
+                    continue
+                estado = str(evento.get("status", ""))
+                if estado:
+                    print(f"\r{E.tenue}{modelo}: {estado[:70]}{E.reset}      ", end="", flush=True)
+                if evento.get("status") == "success" or "success" in estado.lower():
+                    print()
+                    return True
+                if "error" in evento:
+                    print()
+                    reportar_error(f"Error al descargar {modelo}: {evento['error']}")
+                    return False
+        print()
+        # Si el stream terminó sin error, verificar con /api/tags.
+        return modelo.lower() in _modelos_ollama_instalados()
+    except Exception as error:
+        print()
+        advertir(f"Fallo /api/pull para {modelo} ({error}); se prueba 'ollama pull'.")
+    # Respaldo: CLI de Ollama (muestra progreso nativo).
+    try:
+        proc = subprocess.run(["ollama", "pull", modelo], timeout=1800)
+        return proc.returncode == 0 and modelo.lower() in _modelos_ollama_instalados()
+    except Exception as error:
+        reportar_error(f"No se pudo descargar {modelo}: {error}")
+        return False
+
+
+def _modelos_usados_registro() -> set[str]:
+    """Lee el .md de registro y devuelve los modelos ya usados (para no repetir)."""
+    try:
+        if REGISTRO_REFACTOR_MD.exists():
+            return set(re.findall(r"[A-Za-z0-9._:-]+:[A-Za-z0-9._-]+",
+                                  REGISTRO_REFACTOR_MD.read_text(encoding="utf-8")))
+    except OSError:
+        pass
+    return set()
+
+
+def _asegurar_modelo_codigo() -> str:
+    """Descarga de inmediato un modelo de código NO usado antes (sin repetir IAlocal)."""
+    # 1) Peso HF en modelosIAlocal/IAlocalDESCARGADA (corrige "no se descarga el modelo").
+    try:
+        _descargar_peso_hf()
+    except Exception as error:
+        raise ErrorProyecto(f"No se pudo descargar el peso HF ({error}).")
+    usados = {u.lower() for u in _modelos_usados_registro()}
+    candidatos = [c for c in _leer_candidatos_codigo() if c.lower() not in usados]
+    if not candidatos:  # todos usados: se permite reutilizar desde el primero
+        candidatos = _leer_candidatos_codigo()
+    endpoint, _ = _cargar_configuracion_ia_local()
+    for elegido in candidatos:
+        informar(f"Descargando modelo de IA para código: {elegido}...")
+        if _descargar_modelo_ollama(endpoint, elegido):
+            exito(f"Modelo descargado: {elegido}")
+            return elegido
+        advertir(f"Se probará con el siguiente candidato tras fallar {elegido}.")
+    raise ErrorProyecto("Ningún modelo de código pudo descargarse; revisa Ollama y conexión.")
+
+
+def _borrar_modelo_ollama(endpoint: str, modelo: str) -> None:
+    """Borra el modelo local tras registrar, para no acumular IAlocal repetidas."""
+    try:
+        carga = json.dumps({"model": modelo}).encode("utf-8")
+        pet = urllib.request.Request(
+            f"{endpoint}/api/delete", data=carga,
+            headers={"Content-Type": "application/json"}, method="DELETE")
+        with urllib.request.urlopen(pet, timeout=120):
+            pass
+    except Exception:
+        try:
+            subprocess.run(["ollama", "rm", modelo], timeout=300)
+        except Exception as error:
+            advertir(f"No se pudo borrar {modelo} ({error}).")
+    informar(f"Modelo local borrado tras el registro: {modelo}")
+
+
+def _refactorizar_con_modelo(contenido: str, analisis: AnalisisArchivo, modelo: str) -> str:
+    """Pide al modelo local el código refactorizado respetando 400/450 líneas."""
+    endpoint, _ = _cargar_configuracion_ia_local()
+    prompt = (
+        "Eres LucIA. Refactoriza el código dado sin cambiar su comportamiento. "
+        f"Regla estricta: el archivo resultante debe tener como máximo {LIMITE_LINEAS_REFACTOR} "
+        "líneas (ideal 400). Si lo supera, divide en módulos y devuelve solo el archivo "
+        "principal refactorizado. Responde SOLO con código, sin explicaciones ni cercas."
+    )
+    carga = {"model": modelo, "messages": [
+        {"role": "system", "content": prompt},
+        {"role": "user", "content": f"Archivo: {Path(analisis.ruta).name}\n{contenido[:15000]}"}],
+        "stream": False, "options": {"temperature": 0.2, "num_predict": 4000}}
+    pet = urllib.request.Request(
+        f"{endpoint}/api/chat", data=json.dumps(carga).encode("utf-8"),
+        headers={"Content-Type": "application/json"}, method="POST")
+    with urllib.request.urlopen(pet, timeout=600) as resp:
+        res = json.loads(resp.read().decode("utf-8"))
+    texto = str(res.get("message", {}).get("content", "")).strip()
+    # Limpia cercas de código si el modelo las añade.
+    texto = re.sub(r"^```[a-zA-Z]*\n|```$", "", texto, flags=re.MULTILINE).strip()
+    lineas = texto.splitlines()
+    if len(lineas) > LIMITE_LINEAS_REFACTOR:
+        advertir(f"El resultado tiene {len(lineas)} líneas; se recorta a {LIMITE_LINEAS_REFACTOR}.")
+        texto = "\n".join(lineas[:LIMITE_LINEAS_REFACTOR])
+    return texto
+
+
+def _registrar_refactor_md(ruta: Path, modelo: str, descripcion: str) -> None:
+    """Añade al .md de registro qué hizo el modelo y su nombre (evita re-descargas)."""
+    REGISTRO_REFACTOR_MD.parent.mkdir(parents=True, exist_ok=True)
+    entrada = (f"\n## {ruta.name} — {modelo}\n"
+               f"Fecha: {__import__('datetime').datetime.now().isoformat(timespec='seconds')}\n"
+               f"Archivo: {ruta}\nDescripción del modelo: {descripcion.strip()}\n")
+    with open(REGISTRO_REFACTOR_MD, "a", encoding="utf-8") as f:
+        f.write(entrada)
+    exito(f"Registro guardado en: {REGISTRO_REFACTOR_MD}")
+
+
+def _pedir_extra_o_diagnostico(contenido: str, analisis: AnalisisArchivo) -> None:
+    """Tras un 'no', ofrece: 1 = el usuario añade algo, 2 = diagnóstico completo."""
+    print(f"{E.negrita}¿Quieres tú añadir algo? ¿Necesitas un diagnóstico más completo?{E.reset}")
+    print("  1 · Añadir algo propio al plan")
+    print("  2 · Diagnóstico más completo")
+    opcion = input("Selecciona 1 o 2: ").strip()
+    if opcion == "1":
+        extra = input("Escribe lo que quieres añadir al plan: ").strip()
+        if extra:
+            informar(f"Añadido a tu plan: {extra}")
+    elif opcion == "2":
+        print(_panel("LucIA · Diagnóstico completo",
+                     f"Archivo {Path(analisis.ruta).name}: {analisis.lineas} líneas, "
+                     f"{analisis.funciones} funciones, {analisis.clases} clases, "
+                     f"{analisis.importaciones} importaciones, {analisis.puntos_decision} "
+                     f"puntos de decisión, {analisis.lineas_largas} líneas largas, "
+                     f"{analisis.marcadores_pendientes} pendientes, sintaxis válida: "
+                     f"{analisis.sintaxis_valida}. Recomiendo dividir por responsabilidad, "
+                     f"documentar, tipar y cubrir con pruebas antes de tocar nada."))
+    else:
+        informar("Opción no válida; no se hizo nada más.")
+
+
+def comando_ds_ialocal(consultor: Optional[ConsultorIA] = None) -> bool:
+    """Flujo 'ds ialocal': Intro -> descarga modelo -> refactor -> nota de LucIA en .md -> borra modelo."""
+    entrada = input("Archivo al cual hay que refactorizar: ").strip().strip("\"'")
+    if not entrada:
+        reportar_error("No se indicó ningún archivo.")
+        return False
+    ruta = Path(os.path.expandvars(os.path.expanduser(entrada))).resolve()
+    if not ruta.is_file():
+        reportar_error(f"Archivo no válido: {ruta}")
+        return False
+    try:
+        contenido = ruta.read_text(encoding="utf-8-sig", errors="replace")
+    except OSError as error:
+        reportar_error(f"No se pudo leer: {error}")
+        return False
+    # 1) Al dar Intro se descarga de inmediato un modelo de IA para código.
+    try:
+        endpoint, _ = _cargar_configuracion_ia_local()
+        modelo = _asegurar_modelo_codigo()
+    except (ErrorProyecto, ValueError) as error:
+        reportar_error(str(error))
+        return False
+    # 2) Refactorización con ese modelo (regla 400/450).
+    analisis = analizar_archivo_local(ruta)
+    try:
+        nuevo = _refactorizar_con_modelo(contenido, analisis, modelo)
+    except Exception as error:
+        reportar_error(f"El modelo local falló: {error}")
+        _borrar_modelo_ollama(endpoint, modelo)
+        return False
+    ruta.write_text(nuevo + "\n", encoding="utf-8")
+    exito(f"Archivo refactorizado ({len(nuevo.splitlines())} líneas): {ruta}")
+    # 3) Respuesta interna a LucIA: ella describe con sus palabras lo hecho.
+    generador = consultor or consultar_ia_local
+    analisis_nuevo = analizar_archivo_local(ruta)
+    nota_lucia = generador(nuevo, analisis_nuevo)
+    # 4) LucIA lo apunta en el .md junto con el nombre de la IA local.
+    _registrar_refactor_md(ruta, modelo, nota_lucia)
+    # 5) Se borra el modelo para no repetir IAlocal entre archivos.
+    _borrar_modelo_ollama(endpoint, modelo)
+    return True
+
+
 # --- Menú interactivo --------------------------------------------------------
 
 def cerrar() -> None:
@@ -590,6 +924,7 @@ def mostrar_menu() -> None:
         ("refactorizar", "Copiar el contenido actual de PRY a RFC"),
         ("actualizar", "Reemplazar PRY con la versión de RFC"),
         ("ia local", "Analizar un archivo con LucIA y crear un plan"),
+        ("ds ialocal", "Plan de LucIA + refactor con modelo local y registro .md"),
         ("cerrar", "Cerrar el sistema"),
     ]
     print(_caja(f"WoldVirtualP2P3D · Gestor de Proyecto  v{__version__}", filas))
@@ -604,6 +939,7 @@ def ejecutar_comandos() -> None:
         "refactorizar": comando_refactorizar,
         "actualizar": actualizar,
         "ia local": comando_ia_local,
+        "ds ialocal": comando_ds_ialocal,
     }
 
     mostrar_menu()
