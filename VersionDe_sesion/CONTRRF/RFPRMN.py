@@ -812,32 +812,65 @@ def _modelos_ollama_instalados() -> set[str]:
         return set()
 
 
+def _es_modelo_codigo(nombre: str) -> bool:
+    """True solo si el nombre indica modelo de código (coder/code/code-lite)."""
+    bajo = nombre.lower()
+    return any(m in bajo for m in ("coder", "code", "starcoder", "codellama", "deepseek"))
+
+
 def _leer_candidatos_codigo() -> list[str]:
-    """Lee los candidatos de IAlocal.json (models_available) + lista de respaldo."""
+    """Candidatos EXCLUSIVAMENTE de código: filtra IAlocal.json y añade respaldos."""
     candidatos: list[str] = []
     try:
         with open(CONFIG_IA_LOCAL, "r", encoding="utf-8") as f:
             cfg = json.load(f)
         for m in cfg.get("models_available", []):
             nombre = str(m).strip()
-            # Solo modelos de código o pequeños aptos para 8 VRAM / 8 RAM.
-            if nombre and nombre not in candidatos:
+            if nombre and _es_modelo_codigo(nombre) and nombre not in candidatos:
                 candidatos.append(nombre)
     except (OSError, ValueError) as error:
         advertir(f"No se pudo leer candidatos de IAlocal.json ({error}).")
     for respaldo in MODELOS_CODIGO_LIGEROS:
         if respaldo not in candidatos:
             candidatos.append(respaldo)
-    # Prioriza código primero y, dentro de eso, modelos PEQUEÑOS primero:
-    # un 7b en CPU (sin GPU) tarda minutos por token y el vigilante lo aborta.
-    def _prioridad(nombre: str) -> tuple[int, float]:
-        bajo = nombre.lower()
-        codigo = 0 if ("coder" in bajo or "code" in bajo) else 1
-        m = re.search(r"(\d+(?:\.\d+)?)\s*b", bajo)
-        tam = float(m.group(1)) if m else 9.0
-        return (codigo, tam)
-    candidatos.sort(key=_prioridad)
-    return candidatos
+    # Solo modelos de código, pequeños primero (un 7b en CPU no llega a 60s).
+    def _tamano(nombre: str) -> float:
+        m = re.search(r"(\d+(?:\.\d+)?)\s*b", nombre.lower())
+        return float(m.group(1)) if m else 9.0
+    candidatos.sort(key=_tamano)
+    # Quita aliases duplicados (qwen2.5-coder:latest == qwen2.5-coder:7b).
+    unicos: list[str] = []
+    bases: set[str] = set()
+    for nombre in candidatos:
+        base = nombre.lower().split(":")[0]
+        if base not in bases:
+            bases.add(base)
+            unicos.append(nombre)
+    return unicos
+
+
+def _borrar_peso_local() -> None:
+    """Borra TODO lo descargado en IAlocalDESCARGADA (pesos, .part y carpeta).
+
+    Se invoca en el ``finally`` de ``FlujoRefactorLucIA.ejecutar`` para que
+    nunca queden restos de ~1 GB, ni en éxito ni en error ni al cancelar.
+    """
+    try:
+        if not DIR_MODELOS_LOCAL.exists():
+            return
+        for hijo in DIR_MODELOS_LOCAL.iterdir():
+            if hijo.is_file():
+                try:
+                    hijo.unlink()
+                    exito(f"Peso local borrado: {hijo}")
+                except PermissionError:
+                    advertir(f"Windows bloquea {hijo.name}; se reintentará al cerrar.")
+                    return
+            elif hijo.is_dir():
+                shutil.rmtree(hijo, ignore_errors=True)
+        shutil.rmtree(DIR_MODELOS_LOCAL, ignore_errors=True)
+    except OSError as error:
+        advertir(f"No se pudo limpiar IAlocalDESCARGADA ({error}).")
 
 
 def _descargar_modelo_ollama(endpoint: str, modelo: str) -> bool:
@@ -1188,6 +1221,7 @@ def _fallback_openrouter(ruta: Path, contenido: str, analisis: AnalisisArchivo,
     if not clave:
         reportar_error("[OR] Sin OPENROUTER_API_KEY en RFC/LC/LC/.env; no hay fallback.")
         return False
+    _borrar_peso_local()
     _imprimir_seguro("[OR 1/2] Análisis con IA gratuita de OpenRouter...")
     try:
         nuevo, modelo_or, nota = _refactorizar_con_openrouter(contenido, analisis, clave)
@@ -1358,6 +1392,20 @@ class FlujoRefactorLucIA:
     # -- orquestación ------------------------------------------------------
     def ejecutar(self) -> bool:
         """Ejecuta las fases [1/5]…[5/5]; devuelve True si el archivo quedó."""
+    def ejecutar(self) -> bool:
+        """Ejecuta el flujo completo y GARANTIZA borrar el GGUF local al terminar.
+
+        Envuelve ``_ejecutar_fases`` con try/finally: el peso descargado de
+        HuggingFace se elimina en éxito, error, cancelación o fallback, para no
+        dejar residuos de ~1 GB en ``modelosIAlocal/IAlocalDESCARGADA``.
+        """
+        try:
+            return self._ejecutar_fases()
+        finally:
+            _borrar_peso_local()
+
+    def _ejecutar_fases(self) -> bool:
+        """Fases [1/5]…[5/5] con rotación de IAs y anotación de errores."""
         if not self.plan_y_confirmacion():
             return False
         for intento in range(1, self.MAX_IAS + 1):
@@ -1391,6 +1439,17 @@ class FlujoRefactorLucIA:
                     if not self.nuevo_diagnostico():
                         return False
                     continue
+                # Detecta refactor no-op (IA que devuelve el input sin tocarlo).
+                if nuevo.strip() == self.contenido.strip():
+                    self.errores.append("- [global] el modelo devolvió el código sin cambios")
+                    reportar_error("La IA no cambió nada (refactor no-op); se rota de modelo.")
+                    self.rotar_ia("refactor no-op")
+                    self.registrar(self.modelo, "FALLO: refactor no-op (código idéntico).")
+                    if intento >= self.MAX_IAS:
+                        return self._cierre_openrouter("refactor no-op")
+                    if not self.nuevo_diagnostico():
+                        return False
+                    continue
                 # Éxito: nota de LucIA, registro y limpieza final.
                 self.ruta.write_text(nuevo, encoding="utf-8")
                 exito(f"[2/5] Refactorizado ({len(nuevo.splitlines())} líneas): {self.ruta}")
@@ -1417,7 +1476,8 @@ class FlujoRefactorLucIA:
 # --- Menú interactivo --------------------------------------------------------
 
 def cerrar() -> None:
-    """Finaliza la sesión interactiva."""
+    """Finaliza la sesión interactiva y limpia restos de modelos descargados."""
+    _borrar_peso_local()
     informar("Cerrando el sistema...")
 
 
@@ -1448,16 +1508,20 @@ def ejecutar_comandos() -> None:
     }
 
     mostrar_menu()
-    while True:
-        entrada = input("> ").strip().lower()
-        if entrada == "cerrar":
-            cerrar()
-            break
-        accion = despachador.get(entrada)
-        if accion is None:
-            reportar_error(f"Comando no reconocido: '{entrada}'")
-            continue
-        accion()
+    try:
+        while True:
+            entrada = input("> ").strip().lower()
+            if entrada == "cerrar":
+                cerrar()
+                break
+            accion = despachador.get(entrada)
+            if accion is None:
+                reportar_error(f"Comando no reconocido: '{entrada}'")
+                continue
+            accion()
+    except (KeyboardInterrupt, EOFError):
+        _borrar_peso_local()
+        informar("Sesión interrumpida; se limpiaron los modelos descargados.")
 
 
 if __name__ == "__main__":
