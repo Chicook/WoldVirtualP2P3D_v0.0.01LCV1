@@ -932,15 +932,26 @@ def _refactorizar_con_modelo(contenido: str, analisis: AnalisisArchivo, modelo: 
     import time as _tm
     endpoint, _ = _cargar_configuracion_ia_local()
     lineas = contenido.splitlines()
-    fragmentos = ["\n".join(lineas[i:i + LINEAS_POR_FRAGMENTO])
-                  for i in range(0, len(lineas), LINEAS_POR_FRAGMENTO)]
-    total = len(fragmentos)
+    # Corte en fronteras seguras (línea en blanco o def/class), nunca a mitad
+    # de llamada/expresión: previene el caso mainLCSTM.py:153 '(' sin cerrar.
+    fragmentos: list[list[str]] = []
+    actual: list[str] = []
+    for ln in lineas:
+        actual.append(ln)
+        if len(actual) >= LINEAS_POR_FRAGMENTO and (
+                not ln.strip() or re.match(r"\s*(def |class |if |for |while |try:|else:|elif )", ln)):
+            fragmentos.append(actual)
+            actual = []
+    if actual:
+        fragmentos.append(actual)
+    fragmentos_txt = ["\n".join(f) for f in fragmentos]
+    total = len(fragmentos_txt)
     _imprimir_seguro(f"[REFACTOR] {len(lineas)} líneas en {total} fragmentos con {modelo}.")
     _imprimir_seguro(f"[VIGILANTE] {timeout_primer_token}s por fragmento; si falla, "
                      f"se borra {modelo} y se prueba con otra IA.")
     nombre = Path(analisis.ruta).name
     salidas: list[str] = []
-    for num, frag in enumerate(fragmentos, start=1):
+    for num, frag in enumerate(fragmentos_txt, start=1):
         _t0 = _tm.time()
         salidas.append(_generar_fragmento(endpoint, modelo, nombre, frag, num, total,
                                           timeout_primer_token))
@@ -952,6 +963,44 @@ def _refactorizar_con_modelo(contenido: str, analisis: AnalisisArchivo, modelo: 
         texto = "\n".join(lineas_out[:LIMITE_LINEAS_REFACTOR])
     _imprimir_seguro("[REFACTOR] Generación terminada.")
     return texto
+
+
+def _validar_refactor(original: str, nuevo: str, ruta: Path) -> str:
+    """Previene refactors rotos: valida sintaxis, tope 400/450 y fidelidad mínima.
+
+    - ``.py``: debe compilar con ``ast`` (evita paréntesis sin cerrar, cortes
+      entre fragmentos como el de ``mainLCSTM.py:153``).
+    - No vacío y como máximo ``LIMITE_LINEAS_REFACTOR`` líneas.
+    - Conserva al menos el 80% de las funciones/clases originales (detecta
+      fragmentos perdidos o inventados).
+    Lanza ``ErrorProyecto`` con el motivo si no es seguro sobrescribir.
+    """
+    texto = nuevo.strip()
+    if not texto:
+        raise ErrorProyecto("Refactor vacío: no se sobrescribe.")
+    lineas = texto.splitlines()
+    if len(lineas) > LIMITE_LINEAS_REFACTOR:
+        raise ErrorProyecto(f"Refactor con {len(lineas)} líneas (tope {LIMITE_LINEAS_REFACTOR}).")
+    if ruta.suffix.lower() == ".py":
+        try:
+            ast.parse(texto, filename=str(ruta))
+        except SyntaxError as error:
+            raise ErrorProyecto(
+                f"Sintaxis inválida (línea {error.lineno}: {error.msg}): no se sobrescribe.")
+
+        def _nombres(src: str) -> set[str]:
+            try:
+                arbol = ast.parse(src)
+            except SyntaxError:
+                return set()
+            return {n.name for n in ast.walk(arbol)
+                    if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))}
+
+        orig, sal = _nombres(original), _nombres(texto)
+        if orig and len(orig - sal) / len(orig) > 0.2:
+            faltan = sorted(orig - sal)[:8]
+            raise ErrorProyecto(f"Se perderían definiciones {faltan}: no se sobrescribe.")
+    return texto + "\n"
 
 
 def _registrar_refactor_md(ruta: Path, modelo: str, descripcion: str) -> None:
@@ -1060,11 +1109,14 @@ def comando_ds_ialocal(consultor: Optional[ConsultorIA] = None) -> bool:
             reportar_error(f"El modelo local falló: {error}")
             _borrar_modelo_ollama(endpoint, modelo)
             return False
-    final_lineas = len(nuevo.splitlines())
-    if final_lineas > LIMITE_LINEAS_REFACTOR:
-        advertir(f"Recorte final a {LIMITE_LINEAS_REFACTOR} líneas (venía con {final_lineas}).")
-        nuevo = "\n".join(nuevo.splitlines()[:LIMITE_LINEAS_REFACTOR])
-    ruta.write_text(nuevo + "\n", encoding="utf-8")
+    # Validación previa: si el refactor está roto NO se sobrescribe el original.
+    try:
+        nuevo = _validar_refactor(contenido, nuevo, ruta)
+    except ErrorProyecto as error:
+        reportar_error(str(error))
+        _registrar_refactor_md(ruta, modelo, f"FALLO validación: {error}")
+        return False
+    ruta.write_text(nuevo, encoding="utf-8")
     exito(f"[2/5] Archivo refactorizado ({len(nuevo.splitlines())} líneas): {ruta}")
     # 3) Respuesta interna a LucIA: ella describe con sus palabras lo hecho.
     _imprimir_seguro("[3/5] Pidiendo a LucIA su nota interna...")
