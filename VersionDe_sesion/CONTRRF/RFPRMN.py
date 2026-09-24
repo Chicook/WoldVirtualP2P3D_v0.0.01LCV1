@@ -10,6 +10,7 @@ import os
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import textwrap
 import urllib.error
@@ -122,24 +123,32 @@ class RaizProyectoNoEncontrada(ErrorProyecto):
     """Se lanza cuando no puede localizarse la raíz del proyecto."""
 
 
+def _imprimir_seguro(mensaje: str) -> None:
+    """Print tolerante a consolas cp1252 (sustituye símbolos no representables)."""
+    try:
+        print(mensaje)
+    except UnicodeEncodeError:
+        print(mensaje.encode("ascii", "replace").decode("ascii"))
+
+
 def informar(mensaje: str) -> None:
     """Muestra un mensaje informativo estándar."""
-    print(f"{E.cian}›{E.reset} {mensaje}")
+    _imprimir_seguro(f"{E.cian}›{E.reset} {mensaje}")
 
 
 def exito(mensaje: str) -> None:
     """Muestra un mensaje de operación completada correctamente."""
-    print(f"{E.verde}✔{E.reset} {mensaje}")
+    _imprimir_seguro(f"{E.verde}✔{E.reset} {mensaje}")
 
 
 def advertir(mensaje: str) -> None:
     """Muestra una advertencia no bloqueante."""
-    print(f"{E.amarillo}⚠{E.reset} {mensaje}")
+    _imprimir_seguro(f"{E.amarillo}⚠{E.reset} {mensaje}")
 
 
 def reportar_error(mensaje: str) -> None:
     """Muestra un error de operación al usuario."""
-    print(f"{E.rojo}✖{E.reset} {mensaje}")
+    _imprimir_seguro(f"{E.rojo}✖{E.reset} {mensaje}")
 
 
 def pedir_confirmacion(mensaje: str) -> bool:
@@ -575,10 +584,900 @@ def comando_ia_local(consultor: Optional[ConsultorIA] = None) -> bool:
     return True
 
 
+# --- Refactorización con modelo local de código ("ds ialocal") ------------------
+# Este bloque implementa el comando "ds ialocal": al dar Intro tras pedir el archivo
+# descarga de inmediato un modelo de IA para código (no repetido, según el .md de
+# registro), refactoriza, genera una respuesta interna a LucIA, LucIA lo apunta en el
+# .md con sus propias palabras junto al nombre del modelo, y después se borra el
+# modelo. Así cada archivo usa un modelo distinto sin repetir IAlocal.
+
+#: Candidatos de código ligeros (HuggingFace/Ollama) aptos para 8 VRAM / 8 RAM.
+#: Carpeta donde se descargan los pesos GGUF desde HuggingFace.
+DIR_MODELOS_LOCAL = DESTINO / "LC" / "LC" / "modelosIAlocal" / "IAlocalDESCARGADA"
+#: Repo/archivo GGUF pequeño de código (Qwen2.5-Coder 1.5B Q4, ~1 GB, apto 8 RAM).
+HF_REPO_CODIGO = "Qwen/Qwen2.5-Coder-1.5B-Instruct-GGUF"
+HF_ARCHIVO_CODIGO = "qwen2.5-coder-1.5b-instruct-q4_k_m.gguf"
+
+#: Candidatos de código ligeros (HuggingFace/Ollama) aptos para 8 VRAM / 8 RAM.
+MODELOS_CODIGO_LIGEROS = (
+    "qwen2.5-coder:7b",
+    "starcoder2:7b",
+    "codellama:7b",
+    "deepseek-coder:6.7b",
+)
+
+#: Límite de líneas por archivo refactorizado (regla 400/450).
+LIMITE_LINEAS_REFACTOR = 450
+
+REGISTRO_REFACTOR_MD = DESTINO / "LC" / "LC" / "modelosIAlocal" / "registro_refactor.md"
+
+#: Modelos de código gratuitos de OpenRouter (fallback cuando la IA local falla).
+MODELOS_OR_CODIGO = (
+    "cohere/north-mini-code:free",
+    "poolside/laguna-xs-2.1:free",
+    "poolside/laguna-s-2.1:free",
+    "openrouter/free",
+)
+ENDPOINT_OPENROUTER = "https://openrouter.ai/api/v1/chat/completions"
+
+
+def _leer_openrouter_key() -> str:
+    """Lee OPENROUTER_API_KEY del .env real (RFC/LC/LC/.env) o del entorno."""
+    candidatos = [
+        DESTINO / "LC" / "LC" / ".env",  # ubicación real del usuario
+        DESTINO / "LC" / ".env",
+        DESTINO / ".env",
+    ]
+    for ruta in candidatos:
+        try:
+            if ruta.exists():
+                for linea in ruta.read_text(encoding="utf-8-sig", errors="replace").splitlines():
+                    if linea.strip().startswith("OPENROUTER_API_KEY="):
+                        clave = linea.strip().split("=", 1)[1].strip().strip("'\"")
+                        if len(clave) > 10:
+                            return clave
+        except OSError:
+            pass
+    return os.getenv("OPENROUTER_API_KEY", "").strip()
+
+
+def _chat_openrouter(modelo_id: str, clave: str, mensajes: list[dict],
+                     max_tokens: int = 1500, timeout: int = 120) -> str:
+    """Una llamada chat a OpenRouter; rota con error si 429/404/timeout."""
+    carga = json.dumps({"model": modelo_id, "messages": mensajes,
+                        "temperature": 0.2, "max_tokens": max_tokens}).encode("utf-8")
+    pet = urllib.request.Request(
+        ENDPOINT_OPENROUTER, data=carga,
+        headers={"Authorization": f"Bearer {clave}", "Content-Type": "application/json",
+                 "HTTP-Referer": "https://woldvirtualp2p3d.network",
+                 "X-Title": "WoldVirtualP2P3D-ds-ialocal"}, method="POST")
+    try:
+        with urllib.request.urlopen(pet, timeout=timeout) as resp:
+            datos = json.loads(resp.read().decode("utf-8"))
+        msg = datos["choices"][0].get("message", {})
+        texto = (msg.get("content") or "").strip()
+        if not texto:  # algunos free devuelven reasoning en vez de content
+            texto = str(msg.get("reasoning", "") or "").strip()
+        if not texto:
+            raise ErrorProyecto(f"OpenRouter {modelo_id} devolvió vacío (se rota).")
+        return texto
+    except urllib.error.HTTPError as error:
+        raise ErrorProyecto(f"OpenRouter {modelo_id} HTTP {error.code}.")
+    except Exception as error:
+        raise ErrorProyecto(f"OpenRouter {modelo_id} falló ({error}).")
+
+
+def _refactorizar_con_openrouter(contenido: str, analisis: AnalisisArchivo,
+                                 clave: str) -> tuple[str, str, str]:
+    """Fallback OpenRouter: 1) análisis de IA free + 2) refactor por fragmentos.
+
+    Devuelve (código, modelo_id, diagnóstico). Rota entre modelos free de código.
+    """
+    lineas = contenido.splitlines()
+    fragmentos: list[list[str]] = []
+    actual: list[str] = []
+    for ln in lineas:
+        actual.append(ln)
+        if len(actual) >= LINEAS_POR_FRAGMENTO and (
+                not ln.strip() or re.match(r"\s*(def |class |if |for |while |try:|else:|elif )", ln)):
+            fragmentos.append(actual)
+            actual = []
+    if actual:
+        fragmentos.append(actual)
+    nombre = Path(analisis.ruta).name
+    modelos = [m for m in MODELOS_OR_CODIGO]
+    salidas: list[str] = []
+    usado = ""
+    for num, frag in enumerate(["\n".join(f) for f in fragmentos], start=1):
+        ok = False
+        for modelo_id in modelos:
+            _imprimir_seguro(f"[OR {num}/{len(fragmentos)}] {modelo_id}...")
+            try:
+                texto = _chat_openrouter(modelo_id, clave, [
+                    {"role": "system", "content": (
+                        "Refactoriza el fragmento sin cambiar su comportamiento. "
+                        "Responde SOLO con código, sin explicaciones ni cercas.")},
+                    {"role": "user", "content": f"Archivo: {nombre} (parte {num})\n{frag}"}],
+                    max_tokens=1500)
+                salidas.append(re.sub(r"^```[a-zA-Z]*\n|```$", "", texto,
+                                      flags=re.MULTILINE).strip())
+                usado = usado or modelo_id
+                ok = True
+                break
+            except ErrorProyecto as error:
+                advertir(str(error))
+                continue
+        if not ok:
+            raise ErrorProyecto("Todas las IAs free de OpenRouter fallaron en fragmento "
+                                f"{num}.")
+    diagnostico = ""
+    for modelo_id in modelos:
+        try:
+            diagnostico = _chat_openrouter(modelo_id, clave, [
+                {"role": "system", "content": (
+                    "Eres LucIA, programadora. En primera persona, máximo 90 palabras, "
+                    "sin código: qué se refactorizó y primer paso seguro.")},
+                {"role": "user", "content": (
+                    f"Archivo: {nombre}, {analisis.lineas} líneas, {analisis.funciones} "
+                    f"funciones, {analisis.clases} clases.")}],
+                max_tokens=300)
+            usado = usado or modelo_id
+            break
+        except ErrorProyecto:
+            continue
+    texto = "\n".join(salidas).strip()
+    if len(texto.splitlines()) > LIMITE_LINEAS_REFACTOR:
+        texto = "\n".join(texto.splitlines()[:LIMITE_LINEAS_REFACTOR])
+    return texto, (usado or MODELOS_OR_CODIGO[0]), (diagnostico or
+        f"Yo, LucIA, refactoricé {nombre} con IA gratuita de OpenRouter.")
+
+
+def _descargar_peso_hf(destino: Path | None = None) -> Path:
+    """Descarga el GGUF de código desde HuggingFace DIRECTO en modelosIAlocal/IAlocalDESCARGADA.
+
+    Stream con progreso visible (MB / %): el archivo crece en la carpeta durante
+    la descarga para que se vea el modelo y su proceso en el explorador/terminal.
+    """
+    from huggingface_hub import hf_hub_url
+    dest = Path(destino) if destino else DIR_MODELOS_LOCAL
+    dest.mkdir(parents=True, exist_ok=True)
+    final = dest / HF_ARCHIVO_CODIGO
+    parcial = dest / (HF_ARCHIVO_CODIGO + ".part")
+    if final.exists() and final.stat().st_size > 0:
+        informar(f"Peso ya presente (sin descarga): {final} ({final.stat().st_size} bytes)")
+        return final
+    # Si quedó un .part completo de una descarga anterior, adoptarlo.
+    if parcial.exists() and parcial.stat().st_size > 1000 * 1024 * 1024:
+        try:
+            parcial.replace(final)
+            exito(f"Modelo HF recuperado: {final} ({final.stat().st_size} bytes)")
+            return final
+        except OSError:
+            informar(f"Peso visible en: {parcial} ({parcial.stat().st_size} bytes)")
+            return parcial
+    url = hf_hub_url(repo_id=HF_REPO_CODIGO, filename=HF_ARCHIVO_CODIGO)
+    _imprimir_seguro(f"[DESCARGA] {HF_REPO_CODIGO}/{HF_ARCHIVO_CODIGO}")
+    _imprimir_seguro(f"[DESCARGA] URL: {url}")
+    _imprimir_seguro(f"[DESCARGA] Destino visible: {final}")
+    req = urllib.request.Request(url, headers={"User-Agent": "WoldVirtualP2P3D"})
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        total = int(resp.headers.get("Content-Length", "0") or 0)
+        _imprimir_seguro(f"[DESCARGA] Tamano total: {total / 1048576:.1f} MB")
+        bajados = 0
+        ultimo_pct = -1
+        with open(final, "wb") as f:
+            while True:
+                bloque = resp.read(4 * 1024 * 1024)
+                if not bloque:
+                    break
+                f.write(bloque)
+                bajados += len(bloque)
+                if total > 0:
+                    pct = int(bajados * 100 / total)
+                    if pct != ultimo_pct and (pct % 5 == 0 or pct == 100):
+                        ultimo_pct = pct
+                        _imprimir_seguro(
+                            f"[DESCARGA] {bajados / 1048576:.1f}/{total / 1048576:.1f} MB ({pct}%)")
+                elif bajados % (100 * 1048576) < 4 * 1024 * 1024:
+                    _imprimir_seguro(f"[DESCARGA] {bajados / 1048576:.1f} MB...")
+    # Limpia resto .part antiguo si ya no está bloqueado.
+    try:
+        if parcial.exists() and final.exists() and parcial.stat().st_size == final.stat().st_size:
+            parcial.unlink()
+    except OSError:
+        pass
+    exito(f"Modelo HF descargado: {final} ({final.stat().st_size} bytes)")
+    return final
+
+
+def _modelos_ollama_instalados() -> set[str]:
+    """Devuelve los modelos ya descargados en Ollama (vacío si no responde)."""
+    try:
+        endpoint, _ = _cargar_configuracion_ia_local()
+        with urllib.request.urlopen(f"{endpoint}/api/tags", timeout=10) as resp:
+            datos = json.loads(resp.read().decode("utf-8"))
+        instalados = set()
+        for m in datos.get("models", []):
+            if not isinstance(m, dict):
+                continue
+            for clave in ("name", "model"):
+                nombre = str(m.get(clave, "") or "").strip().lower()
+                if nombre:
+                    instalados.add(nombre)
+                    # "qwen2.5-coder:7b" y "qwen2.5-coder:latest" deben matchear por base.
+                    instalados.add(nombre.split(":")[0])
+        return instalados
+    except Exception as error:
+        advertir(f"No se pudo listar modelos Ollama ({error}).")
+        return set()
+
+
+def _es_modelo_codigo(nombre: str) -> bool:
+    """True solo si el nombre indica modelo de código (coder/code/code-lite)."""
+    bajo = nombre.lower()
+    return any(m in bajo for m in ("coder", "code", "starcoder", "codellama", "deepseek"))
+
+
+def _leer_candidatos_codigo() -> list[str]:
+    """Candidatos EXCLUSIVAMENTE de código: filtra IAlocal.json y añade respaldos."""
+    candidatos: list[str] = []
+    try:
+        with open(CONFIG_IA_LOCAL, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+        for m in cfg.get("models_available", []):
+            nombre = str(m).strip()
+            if nombre and _es_modelo_codigo(nombre) and nombre not in candidatos:
+                candidatos.append(nombre)
+    except (OSError, ValueError) as error:
+        advertir(f"No se pudo leer candidatos de IAlocal.json ({error}).")
+    for respaldo in MODELOS_CODIGO_LIGEROS:
+        if respaldo not in candidatos:
+            candidatos.append(respaldo)
+    # Solo modelos de código, pequeños primero (un 7b en CPU no llega a 60s).
+    def _tamano(nombre: str) -> float:
+        m = re.search(r"(\d+(?:\.\d+)?)\s*b", nombre.lower())
+        return float(m.group(1)) if m else 9.0
+    candidatos.sort(key=_tamano)
+    # Quita aliases duplicados (qwen2.5-coder:latest == qwen2.5-coder:7b).
+    unicos: list[str] = []
+    bases: set[str] = set()
+    for nombre in candidatos:
+        base = nombre.lower().split(":")[0]
+        if base not in bases:
+            bases.add(base)
+            unicos.append(nombre)
+    return unicos
+
+
+def _borrar_peso_local() -> None:
+    """Borra TODO lo descargado en IAlocalDESCARGADA (pesos, .part y carpeta).
+
+    Se invoca en el ``finally`` de ``FlujoRefactorLucIA.ejecutar`` para que
+    nunca queden restos de ~1 GB, ni en éxito ni en error ni al cancelar.
+    """
+    try:
+        if not DIR_MODELOS_LOCAL.exists():
+            return
+        for hijo in DIR_MODELOS_LOCAL.iterdir():
+            if hijo.is_file():
+                try:
+                    hijo.unlink()
+                    exito(f"Peso local borrado: {hijo}")
+                except PermissionError:
+                    advertir(f"Windows bloquea {hijo.name}; se reintentará al cerrar.")
+                    return
+            elif hijo.is_dir():
+                shutil.rmtree(hijo, ignore_errors=True)
+        shutil.rmtree(DIR_MODELOS_LOCAL, ignore_errors=True)
+    except OSError as error:
+        advertir(f"No se pudo limpiar IAlocalDESCARGADA ({error}).")
+
+
+def _descargar_modelo_ollama(endpoint: str, modelo: str) -> bool:
+    """Descarga ``modelo`` vía /api/pull leyendo el stream NDJSON; True si OK."""
+    carga = json.dumps({"model": modelo, "stream": True}).encode("utf-8")
+    pet = urllib.request.Request(
+        f"{endpoint}/api/pull", data=carga,
+        headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(pet, timeout=1800) as resp:
+            # La API devuelve NDJSON por líneas: hay que consumirlo hasta "completed".
+            while True:
+                linea = resp.readline()
+                if not linea:
+                    break
+                try:
+                    evento = json.loads(linea.decode("utf-8"))
+                except ValueError:
+                    continue
+                estado = str(evento.get("status", ""))
+                if estado:
+                    print(f"\r{E.tenue}{modelo}: {estado[:70]}{E.reset}      ", end="", flush=True)
+                if evento.get("status") == "success" or "success" in estado.lower():
+                    print()
+                    return True
+                if "error" in evento:
+                    print()
+                    reportar_error(f"Error al descargar {modelo}: {evento['error']}")
+                    return False
+        print()
+        # Si el stream terminó sin error, verificar con /api/tags.
+        return modelo.lower() in _modelos_ollama_instalados()
+    except Exception as error:
+        print()
+        advertir(f"Fallo /api/pull para {modelo} ({error}); se prueba 'ollama pull'.")
+    # Respaldo: CLI de Ollama (muestra progreso nativo).
+    try:
+        proc = subprocess.run(["ollama", "pull", modelo], timeout=1800)
+        return proc.returncode == 0 and modelo.lower() in _modelos_ollama_instalados()
+    except Exception as error:
+        reportar_error(f"No se pudo descargar {modelo}: {error}")
+        return False
+
+
+def _modelos_usados_registro() -> set[str]:
+    """Lee el .md de registro y devuelve los modelos ya usados (para no repetir)."""
+    try:
+        if REGISTRO_REFACTOR_MD.exists():
+            return set(re.findall(r"[A-Za-z0-9._:-]+:[A-Za-z0-9._-]+",
+                                  REGISTRO_REFACTOR_MD.read_text(encoding="utf-8")))
+    except OSError:
+        pass
+    return set()
+
+
+def _asegurar_modelo_codigo(excluir: set[str] | None = None) -> str:
+    """Descarga de inmediato un modelo de código NO usado antes (sin repetir IAlocal)."""
+    # 1) Peso HF en modelosIAlocal/IAlocalDESCARGADA (corrige "no se descarga el modelo").
+    try:
+        _descargar_peso_hf()
+    except Exception as error:
+        raise ErrorProyecto(f"No se pudo descargar el peso HF ({error}).")
+    usados = {u.lower() for u in _modelos_usados_registro()}
+    usados |= {e.lower() for e in (excluir or set())}
+    candidatos = [c for c in _leer_candidatos_codigo() if c.lower() not in usados]
+    if not candidatos:  # todos usados: se permite reutilizar desde el primero
+        candidatos = [c for c in _leer_candidatos_codigo()
+                      if c.lower() not in {e.lower() for e in (excluir or set())}]
+    if not candidatos:
+        raise ErrorProyecto("No quedan IAs locales por probar (todas fallaron o se usaron).")
+    endpoint, _ = _cargar_configuracion_ia_local()
+    instalados = _modelos_ollama_instalados()
+    for candidato in candidatos:  # reutiliza sin descargar si ya está en Ollama
+        base = candidato.lower().split(":")[0]
+        if candidato.lower() in instalados or base in instalados:
+            informar(f"Modelo reutilizado (ya en Ollama, sin descarga): {candidato}")
+            return candidato
+    # Solo se descarga UN modelo: el primer candidato no usado.
+    elegido = candidatos[0]
+    informar(f"Descargando modelo de IA para código (uno solo): {elegido}...")
+    if _descargar_modelo_ollama(endpoint, elegido):
+        exito(f"Modelo descargado: {elegido}")
+        return elegido
+    raise ErrorProyecto(f"No se pudo descargar {elegido}; revisa Ollama y conexión.")
+
+
+def _borrar_modelo_ollama(endpoint: str, modelo: str) -> None:
+    """Borra el modelo local tras registrar, para no acumular IAlocal repetidas."""
+    try:
+        carga = json.dumps({"model": modelo}).encode("utf-8")
+        pet = urllib.request.Request(
+            f"{endpoint}/api/delete", data=carga,
+            headers={"Content-Type": "application/json"}, method="DELETE")
+        with urllib.request.urlopen(pet, timeout=120):
+            pass
+    except Exception:
+        try:
+            subprocess.run(["ollama", "rm", modelo], timeout=300)
+        except Exception as error:
+            advertir(f"No se pudo borrar {modelo} ({error}).")
+    informar(f"Modelo local borrado tras el registro: {modelo}")
+
+
+def _liberar_ollama(excepto: str = "") -> None:
+    """Descarga de CPU/RAM los modelos Ollama cargados salvo ``excepto``.
+
+    Ollama en este equipo corre 100% CPU (GPU Intel Arc no soportada): dos
+    modelos a la vez se reparten el Ryzen y ninguno genera a tiempo.
+    """
+    try:
+        proc = subprocess.run(["ollama", "ps"], timeout=30, capture_output=True, text=True)
+        for linea in proc.stdout.splitlines()[1:]:
+            nombre = linea.split()[0] if linea.split() else ""
+            if nombre and nombre.lower() != excepto.lower():
+                _imprimir_seguro(f"[VIGILANTE] Liberando CPU: ollama stop {nombre}")
+                try:
+                    subprocess.run(["ollama", "stop", nombre], timeout=120,
+                                   capture_output=True)
+                except Exception:
+                    pass
+    except Exception as error:
+        advertir(f"No se pudo liberar Ollama ({error}).")
+
+
+#: Líneas por fragmento en refactorización por chunks (calibrado en CPU:
+#: 60 líneas -> primer token ~11s, completo ~2 min con qwen2.5-coder:3b).
+LINEAS_POR_FRAGMENTO = 60
+
+
+def _generar_fragmento(endpoint: str, modelo: str, nombre_archivo: str,
+                       fragmento: str, num: int, total: int,
+                       timeout_primer_token: int) -> str:
+    """Refactoriza UN fragmento (~60 líneas) con el modelo local en stream."""
+    import threading as _th, time as _tm
+    carga = {"model": modelo, "messages": [
+        {"role": "system", "content": (
+            "Eres LucIA. Refactoriza el fragmento de código sin cambiar su "
+            "comportamiento: nombres claros, sin duplicados, documenta lo esencial. "
+            "Responde SOLO con código, sin explicaciones ni cercas.")},
+        {"role": "user", "content": f"Archivo: {nombre_archivo} (parte {num}/{total})\n{fragmento}"}],
+        "stream": True, "keep_alive": "10m",
+        "options": {"temperature": 0.2, "num_predict": 800, "num_ctx": 2048}}
+    pet = urllib.request.Request(
+        f"{endpoint}/api/chat", data=json.dumps(carga).encode("utf-8"),
+        headers={"Content-Type": "application/json"}, method="POST")
+    piezas: list[str] = []
+    estado: dict = {"error": None, "resp": None}
+    primer_token = _th.Event()
+    terminado = _th.Event()
+
+    def _trabajar() -> None:
+        try:
+            with urllib.request.urlopen(pet, timeout=900) as resp:
+                estado["resp"] = resp
+                while True:
+                    linea = resp.readline()
+                    if not linea:
+                        break
+                    try:
+                        evento = json.loads(linea.decode("utf-8"))
+                    except ValueError:
+                        continue
+                    delta = str(evento.get("message", {}).get("content", ""))
+                    if delta:
+                        piezas.append(delta)
+                        primer_token.set()
+                    if evento.get("done"):
+                        break
+        except Exception as error:  # noqa: BLE001 - se reporta al hilo principal
+            estado["error"] = error
+        finally:
+            primer_token.set()
+            terminado.set()
+
+    _t0 = _tm.time()
+    _th.Thread(target=_trabajar, daemon=True).start()
+    while not primer_token.wait(20):
+        trasc = int(_tm.time() - _t0)
+        if trasc >= timeout_primer_token:
+            try:
+                if estado["resp"] is not None:
+                    estado["resp"].close()
+            except Exception:
+                pass
+            raise ErrorProyecto(f"{modelo} sin respuesta en {timeout_primer_token}s (frag {num}).")
+        _imprimir_seguro(f"[REFACTOR {num}/{total}] esperando... {trasc}s")
+    if estado["error"] is not None and not piezas:
+        raise ErrorProyecto(f"El modelo {modelo} no respondió ({estado['error']}).")
+    # Espera al fin del stream con progreso por líneas (tope 10 min/fragmento).
+    _t1, ultimo_n = _tm.time(), 0
+    while not terminado.wait(15):
+        n = "".join(piezas).count("\n") + 1
+        if n != ultimo_n:
+            _imprimir_seguro(f"[REFACTOR {num}/{total}] ...{n} líneas")
+            ultimo_n = n
+        if _tm.time() - _t1 > 600:
+            _imprimir_seguro(f"[REFACTOR {num}/{total}] Tope 10 min; se usa lo generado.")
+            break
+    if not piezas:
+        raise ErrorProyecto(f"El modelo {modelo} devolvió vacío (frag {num}).")
+    texto = "".join(piezas).strip()
+    return re.sub(r"^```[a-zA-Z]*\n|```$", "", texto, flags=re.MULTILINE).strip()
+
+
+def _refactorizar_con_modelo(contenido: str, analisis: AnalisisArchivo, modelo: str,
+                             timeout_primer_token: int = 60) -> str:
+    """Refactoriza POR FRAGMENTOS de 60 líneas (viable en CPU) y une el resultado.
+
+    Cada fragmento entra en el vigilante de ``timeout_primer_token`` segundos;
+    el total respeta el tope 400/450 líneas.
+    """
+    import time as _tm
+    endpoint, _ = _cargar_configuracion_ia_local()
+    lineas = contenido.splitlines()
+    # Corte en fronteras seguras (línea en blanco o def/class), nunca a mitad
+    # de llamada/expresión: previene el caso mainLCSTM.py:153 '(' sin cerrar.
+    fragmentos: list[list[str]] = []
+    actual: list[str] = []
+    for ln in lineas:
+        actual.append(ln)
+        if len(actual) >= LINEAS_POR_FRAGMENTO and (
+                not ln.strip() or re.match(r"\s*(def |class |if |for |while |try:|else:|elif )", ln)):
+            fragmentos.append(actual)
+            actual = []
+    if actual:
+        fragmentos.append(actual)
+    fragmentos_txt = ["\n".join(f) for f in fragmentos]
+    total = len(fragmentos_txt)
+    _imprimir_seguro(f"[REFACTOR] {len(lineas)} líneas en {total} fragmentos con {modelo}.")
+    _imprimir_seguro(f"[VIGILANTE] {timeout_primer_token}s por fragmento; si falla, "
+                     f"se borra {modelo} y se prueba con otra IA.")
+    nombre = Path(analisis.ruta).name
+    salidas: list[str] = []
+    for num, frag in enumerate(fragmentos_txt, start=1):
+        _t0 = _tm.time()
+        salidas.append(_generar_fragmento(endpoint, modelo, nombre, frag, num, total,
+                                          timeout_primer_token))
+        _imprimir_seguro(f"[REFACTOR {num}/{total}] OK en {int(_tm.time() - _t0)}s")
+    texto = "\n".join(salidas).strip()
+    lineas_out = texto.splitlines()
+    if len(lineas_out) > LIMITE_LINEAS_REFACTOR:
+        advertir(f"El resultado tiene {len(lineas_out)} líneas; se recorta a {LIMITE_LINEAS_REFACTOR}.")
+        texto = "\n".join(lineas_out[:LIMITE_LINEAS_REFACTOR])
+    _imprimir_seguro("[REFACTOR] Generación terminada.")
+    return texto
+
+
+def _validar_refactor(original: str, nuevo: str, ruta: Path) -> str:
+    """Previene refactors rotos: valida sintaxis, tope 400/450 y fidelidad mínima.
+
+    - ``.py``: debe compilar con ``ast`` (evita paréntesis sin cerrar, cortes
+      entre fragmentos como el de ``mainLCSTM.py:153``).
+    - No vacío y como máximo ``LIMITE_LINEAS_REFACTOR`` líneas.
+    - Conserva al menos el 80% de las funciones/clases originales (detecta
+      fragmentos perdidos o inventados).
+    Lanza ``ErrorProyecto`` con el motivo si no es seguro sobrescribir.
+    """
+    texto = nuevo.strip()
+    if not texto:
+        raise ErrorProyecto("Refactor vacío: no se sobrescribe.")
+    lineas = texto.splitlines()
+    if len(lineas) > LIMITE_LINEAS_REFACTOR:
+        raise ErrorProyecto(f"Refactor con {len(lineas)} líneas (tope {LIMITE_LINEAS_REFACTOR}).")
+    if ruta.suffix.lower() == ".py":
+        try:
+            ast.parse(texto, filename=str(ruta))
+        except SyntaxError as error:
+            raise ErrorProyecto(
+                f"Sintaxis inválida (línea {error.lineno}: {error.msg}): no se sobrescribe.")
+
+        def _nombres(src: str) -> set[str]:
+            try:
+                arbol = ast.parse(src)
+            except SyntaxError:
+                return set()
+            return {n.name for n in ast.walk(arbol)
+                    if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))}
+
+        orig, sal = _nombres(original), _nombres(texto)
+        if orig and len(orig - sal) / len(orig) > 0.2:
+            faltan = sorted(orig - sal)[:8]
+            raise ErrorProyecto(f"Se perderían definiciones {faltan}: no se sobrescribe.")
+    return texto + "\n"
+
+
+def _registrar_refactor_md(ruta: Path, modelo: str, descripcion: str) -> None:
+    """Añade al .md de registro qué hizo el modelo y su nombre (evita re-descargas)."""
+    REGISTRO_REFACTOR_MD.parent.mkdir(parents=True, exist_ok=True)
+    entrada = (f"\n## {ruta.name} — {modelo}\n"
+               f"Fecha: {__import__('datetime').datetime.now().isoformat(timespec='seconds')}\n"
+               f"Archivo: {ruta}\nDescripción del modelo: {descripcion.strip()}\n")
+    with open(REGISTRO_REFACTOR_MD, "a", encoding="utf-8") as f:
+        f.write(entrada)
+    exito(f"Registro guardado en: {REGISTRO_REFACTOR_MD}")
+
+
+def _pedir_extra_o_diagnostico(contenido: str, analisis: AnalisisArchivo) -> None:
+    """Tras un 'no', ofrece: 1 = el usuario añade algo, 2 = diagnóstico completo."""
+    print(f"{E.negrita}¿Quieres tú añadir algo? ¿Necesitas un diagnóstico más completo?{E.reset}")
+    print("  1 · Añadir algo propio al plan")
+    print("  2 · Diagnóstico más completo")
+    opcion = input("Selecciona 1 o 2: ").strip()
+    if opcion == "1":
+        extra = input("Escribe lo que quieres añadir al plan: ").strip()
+        if extra:
+            informar(f"Añadido a tu plan: {extra}")
+    elif opcion == "2":
+        print(_panel("LucIA · Diagnóstico completo",
+                     f"Archivo {Path(analisis.ruta).name}: {analisis.lineas} líneas, "
+                     f"{analisis.funciones} funciones, {analisis.clases} clases, "
+                     f"{analisis.importaciones} importaciones, {analisis.puntos_decision} "
+                     f"puntos de decisión, {analisis.lineas_largas} líneas largas, "
+                     f"{analisis.marcadores_pendientes} pendientes, sintaxis válida: "
+                     f"{analisis.sintaxis_valida}. Recomiendo dividir por responsabilidad, "
+                     f"documentar, tipar y cubrir con pruebas antes de tocar nada."))
+    else:
+        informar("Opción no válida; no se hizo nada más.")
+
+
+def comando_ds_ialocal(consultor: Optional[ConsultorIA] = None) -> bool:
+    """Comando 'ds ialocal': delega todo el pipeline en FlujoRefactorLucIA."""
+    entrada = input("Archivo al cual hay que refactorizar: ").strip().strip("\"'")
+    if not entrada:
+        reportar_error("No se indicó ningún archivo.")
+        return False
+    ruta = Path(os.path.expandvars(os.path.expanduser(entrada))).resolve()
+    if not ruta.is_file():
+        reportar_error(f"Archivo no válido: {ruta}")
+        return False
+    try:
+        contenido = ruta.read_text(encoding="utf-8-sig", errors="replace")
+    except OSError as error:
+        reportar_error(f"No se pudo leer: {error}")
+        return False
+    return FlujoRefactorLucIA(ruta, contenido, consultor).ejecutar()
+
+
+def _fallback_openrouter(ruta: Path, contenido: str, analisis: AnalisisArchivo,
+                         modelo_local: str, motivo: str) -> bool:
+    """La IA local falló: se borra y se usa una free de OpenRouter (1 análisis + 2 refactor)."""
+    _imprimir_seguro(f"[OR] La IA local {modelo_local} falló ({motivo}). Se borra.")
+    try:
+        endpoint, _ = _cargar_configuracion_ia_local()
+        _borrar_modelo_ollama(endpoint, modelo_local)
+    except Exception:
+        pass
+    clave = _leer_openrouter_key()
+    if not clave:
+        reportar_error("[OR] Sin OPENROUTER_API_KEY en RFC/LC/LC/.env; no hay fallback.")
+        return False
+    _borrar_peso_local()
+    _imprimir_seguro("[OR 1/2] Análisis con IA gratuita de OpenRouter...")
+    try:
+        nuevo, modelo_or, nota = _refactorizar_con_openrouter(contenido, analisis, clave)
+        nuevo = _validar_refactor(contenido, nuevo, ruta)
+    except ErrorProyecto as error:
+        reportar_error(f"[OR] Falló también OpenRouter: {error}")
+        _registrar_refactor_md(ruta, modelo_or if 'modelo_or' in dir() else "openrouter",
+                               f"FALLO OpenRouter: {error}")
+        return False
+    ruta.write_text(nuevo, encoding="utf-8")
+    exito(f"[OR 2/2] Refactorizado con {modelo_or} ({len(nuevo.splitlines())} líneas).")
+    _registrar_refactor_md(ruta, modelo_or, nota)
+    exito("Flujo ds ialocal completado vía OpenRouter.")
+    return True
+
+
+# --- Flujo de refactorización con LucIA --------------------------------------
+# Esta clase centraliza el pipeline "ds ialocal": plan, IA local por fragmentos
+# con validación inmediata y auto-reparación, rotación con `ollama rm` ante fallo,
+# fallback a OpenRouter free y anotación de errores en registro_refactor.md.
+
+
+class FlujoRefactorLucIA:
+    """Máquina de estados del flujo ds ialocal para un archivo.
+
+    Decisiones aplicadas: ante fallo de validación se borra la IA local con
+    ``ollama rm``; el fragmento irreparable (2 reintentos) se escala a otra IA
+    y todos los errores se anotan en ``registro_refactor.md``.
+    """
+
+    MAX_IAS = 3
+    MAX_REINTENTOS_FRAG = 2
+    SOLAPE_LINEAS = 10
+
+    def __init__(self, ruta: Path, contenido: str, consultor: Optional[ConsultorIA] = None) -> None:
+        self.ruta = ruta
+        self.contenido = contenido
+        self.analisis = analizar_archivo_local(ruta)
+        self.generador = consultor or consultar_ia_local
+        self.modelo = ""
+        self.endpoint = ""
+        self.fallidas: set[str] = set()
+        self.errores: list[str] = []      # líneas "### Errores" para el .md
+        self.rotaciones: list[str] = []   # líneas "### Rotación" para el .md
+        self.fragmentos: list[dict] = []  # {num, original, salida, irreparable}
+        self.nota_lucia = ""
+
+    # -- fase PLAN ---------------------------------------------------------
+    def plan_y_confirmacion(self) -> bool:
+        """Muestra diagnóstico+plan de LucIA y pide s/n (con opciones 1/2)."""
+        plan_lucia = self.generador(self.contenido, self.analisis)
+        print(_panel("LucIA · Plan de refactorización", plan_lucia.strip()))
+        plan = crear_plan_refactorizacion(self.analisis)
+        print(f"\n{E.negrita}Plan de refactorización{E.reset}")
+        for indice, paso in enumerate(plan, start=1):
+            print(f"  {E.cian}{indice}.{E.reset} {paso}")
+        if not pedir_confirmacion("¿Se aplica el plan?"):
+            _pedir_extra_o_diagnostico(self.contenido, self.analisis)
+            return False
+        return True
+
+    def nuevo_diagnostico(self) -> bool:
+        """Tras rotar de IA: nuevo diagnóstico+plan de LucIA y confirmación."""
+        _imprimir_seguro("[VIGILANTE] Reiniciando flujo con otra IA local...")
+        plan_lucia = self.generador(self.contenido, self.analisis)
+        print(_panel("LucIA · Nuevo diagnóstico", plan_lucia.strip()))
+        plan = crear_plan_refactorizacion(self.analisis)
+        print(f"\n{E.negrita}Plan de refactorización{E.reset}")
+        for indice, paso in enumerate(plan, start=1):
+            print(f"  {E.cian}{indice}.{E.reset} {paso}")
+        if not pedir_confirmacion("¿Se aplica el plan con la nueva IA?"):
+            _pedir_extra_o_diagnostico(self.contenido, self.analisis)
+            return False
+        return True
+
+    # -- fase IA -----------------------------------------------------------
+    def asegurar_ia(self) -> None:
+        """Descarga/elige IA local no usada y libera la CPU para ella."""
+        self.endpoint, _ = _cargar_configuracion_ia_local()
+        self.modelo = _asegurar_modelo_codigo(excluir=self.fallidas)
+        _liberar_ollama(excepto=self.modelo)
+        _imprimir_seguro(f"[1/5] OK, modelo listo: {self.modelo}")
+
+    def rotar_ia(self, motivo: str) -> None:
+        """Borra la IA actual con `ollama rm`, la anota y marca como fallida."""
+        _imprimir_seguro(f"[VIGILANTE] Borrando {self.modelo} ({motivo}).")
+        _borrar_modelo_ollama(self.endpoint, self.modelo)
+        self.rotaciones.append(f"- {self.modelo} borrada con `ollama rm` (motivo: {motivo})")
+        self.fallidas.add(self.modelo)
+
+    # -- fase FRAGMENTOS ---------------------------------------------------
+    def generar_fragmentos(self) -> None:
+        """Corte en fronteras seguras con solape de contexto entre fragmentos."""
+        lineas = self.contenido.splitlines()
+        actual: list[str] = []
+        for ln in lineas:
+            actual.append(ln)
+            if len(actual) >= LINEAS_POR_FRAGMENTO and (
+                    not ln.strip() or re.match(r"\s*(def |class |if |for |while |try:|else:|elif )", ln)):
+                self.fragmentos.append({"original": "\n".join(actual), "salida": "",
+                                        "irreparable": False})
+                actual = []
+        if actual:
+            self.fragmentos.append({"original": "\n".join(actual), "salida": "",
+                                    "irreparable": False})
+        for i, f in enumerate(self.fragmentos, start=1):
+            f["num"] = i
+        _imprimir_seguro(f"[REFACTOR] {len(lineas)} líneas en {len(self.fragmentos)} "
+                         f"fragmentos con {self.modelo}.")
+
+    def _validar_salida_frag(self, texto: str) -> None:
+        """Valida un fragmento .py con ast (detecta cortes a mitad de string)."""
+        if self.ruta.suffix.lower() == ".py":
+            try:
+                ast.parse(texto, filename=str(self.ruta))
+            except SyntaxError as error:
+                raise ErrorProyecto(f"frag inválido (línea {error.lineno}: {error.msg})")
+
+    def refactorizar_fragmento(self, frag: dict, total: int) -> bool:
+        """Genera un fragmento con solape+validación; True si quedó usable.
+
+        Hasta MAX_REINTENTOS_FRAG re-pidiendo con el error adjunto; si sigue
+        roto se marca irreparable (se conserva el original al ensamblar).
+        """
+        num = frag["num"]
+        contexto = ""
+        if num > 1 and self.fragmentos[num - 2].get("salida"):
+            prev = self.fragmentos[num - 2]["salida"].splitlines()
+            contexto = ("\n[CONTEXTO: el fragmento anterior termina así, continúa "
+                        "con coherencia sin repetirlo:]\n" + "\n".join(prev[-self.SOLAPE_LINEAS:]))
+        for intento in range(1, self.MAX_REINTENTOS_FRAG + 1):
+            try:
+                salida = _generar_fragmento(self.endpoint, self.modelo,
+                                            self.ruta.name, frag["original"] + contexto,
+                                            num, total, 60)
+                self._validar_salida_frag(salida)
+                frag["salida"] = salida
+                _imprimir_seguro(f"[REFACTOR {num}/{total}] OK (intento {intento})")
+                return True
+            except ErrorProyecto as error:
+                self.errores.append(f"- [frag {num}/{total}, intento {intento}] {error}")
+                advertir(f"[REFACTOR {num}/{total}] {error}; reintento con el error adjunto.")
+                # El siguiente intento lleva el error en el contexto del prompt.
+                contexto += f"\n[CORRIJE: tu salida anterior falló con: {error}]"
+        frag["irreparable"] = True
+        self.errores.append(f"- [frag {num}/{total}] IRREPARABLE tras "
+                            f"{self.MAX_REINTENTOS_FRAG} intentos; se conserva el original.")
+        return False
+
+    def ensamblar(self) -> str:
+        """Une salidas OK + originales de irreparables y valida el conjunto."""
+        partes = [f["salida"] if f.get("salida") else f["original"] for f in self.fragmentos]
+        texto = "\n".join(partes).strip()
+        if len(texto.splitlines()) > LIMITE_LINEAS_REFACTOR:
+            texto = "\n".join(texto.splitlines()[:LIMITE_LINEAS_REFACTOR])
+        return _validar_refactor(self.contenido, texto, self.ruta)
+
+    # -- registro ----------------------------------------------------------
+    def registrar(self, modelo: str, descripcion: str) -> None:
+        """Guarda en el .md la nota de LucIA más los bloques de errores/rotación."""
+        extra = ""
+        if self.errores:
+            extra += "\n### Errores\n" + "\n".join(self.errores)
+        if self.rotaciones:
+            extra += "\n### Rotación\n" + "\n".join(self.rotaciones)
+        _registrar_refactor_md(self.ruta, modelo, descripcion.strip() + extra)
+
+    # -- orquestación ------------------------------------------------------
+    def ejecutar(self) -> bool:
+        """Ejecuta las fases [1/5]…[5/5]; devuelve True si el archivo quedó."""
+    def ejecutar(self) -> bool:
+        """Ejecuta el flujo completo y GARANTIZA borrar el GGUF local al terminar.
+
+        Envuelve ``_ejecutar_fases`` con try/finally: el peso descargado de
+        HuggingFace se elimina en éxito, error, cancelación o fallback, para no
+        dejar residuos de ~1 GB en ``modelosIAlocal/IAlocalDESCARGADA``.
+        """
+        try:
+            return self._ejecutar_fases()
+        finally:
+            _borrar_peso_local()
+
+    def _ejecutar_fases(self) -> bool:
+        """Fases [1/5]…[5/5] con rotación de IAs y anotación de errores."""
+        if not self.plan_y_confirmacion():
+            return False
+        for intento in range(1, self.MAX_IAS + 1):
+            _imprimir_seguro(f"[1/5] Descargando modelo de IA (intento {intento}/{self.MAX_IAS})...")
+            try:
+                self.asegurar_ia()
+            except (ErrorProyecto, ValueError) as error:
+                reportar_error(str(error))
+                return False
+            _imprimir_seguro("[2/5] Refactorizando por fragmentos...")
+            self.fragmentos = []
+            self.generar_fragmentos()
+            total = len(self.fragmentos)
+            for frag in self.fragmentos:
+                try:
+                    self.refactorizar_fragmento(frag, total)
+                except ErrorProyecto as error:  # timeout del vigilante: rota de IA
+                    reportar_error(f"El modelo local falló: {error}")
+                    self.rotar_ia(str(error))
+                    self.registrar(self.modelo, f"FALLO: {error}")
+                    break
+            else:
+                try:
+                    nuevo = self.ensamblar()
+                except ErrorProyecto as error:
+                    reportar_error(str(error))
+                    self.rotar_ia(f"validación global: {error}")
+                    self.registrar(self.modelo, f"FALLO validación: {error}")
+                    if intento >= self.MAX_IAS:
+                        return self._cierre_openrouter(f"validación: {error}")
+                    if not self.nuevo_diagnostico():
+                        return False
+                    continue
+                # Detecta refactor no-op (IA que devuelve el input sin tocarlo).
+                if nuevo.strip() == self.contenido.strip():
+                    self.errores.append("- [global] el modelo devolvió el código sin cambios")
+                    reportar_error("La IA no cambió nada (refactor no-op); se rota de modelo.")
+                    self.rotar_ia("refactor no-op")
+                    self.registrar(self.modelo, "FALLO: refactor no-op (código idéntico).")
+                    if intento >= self.MAX_IAS:
+                        return self._cierre_openrouter("refactor no-op")
+                    if not self.nuevo_diagnostico():
+                        return False
+                    continue
+                # Éxito: nota de LucIA, registro y limpieza final.
+                self.ruta.write_text(nuevo, encoding="utf-8")
+                exito(f"[2/5] Refactorizado ({len(nuevo.splitlines())} líneas): {self.ruta}")
+                _imprimir_seguro("[3/5] Pidiendo a LucIA su nota interna...")
+                self.nota_lucia = self.generador(nuevo, analizar_archivo_local(self.ruta))
+                _imprimir_seguro("[4/5] Registrando en el .md...")
+                self.registrar(self.modelo, self.nota_lucia)
+                _imprimir_seguro("[5/5] Borrando modelo local...")
+                _borrar_modelo_ollama(self.endpoint, self.modelo)
+                exito("Flujo ds ialocal completado.")
+                return True
+            if intento >= self.MAX_IAS:
+                return self._cierre_openrouter("3 IAs locales fallaron")
+            if not self.nuevo_diagnostico():
+                return False
+        return False
+
+    def _cierre_openrouter(self, motivo: str) -> bool:
+        """Agotadas las IAs locales: borra restos y usa free de OpenRouter."""
+        return _fallback_openrouter(self.ruta, self.contenido, self.analisis,
+                                    self.modelo or "local", motivo)
+
+
 # --- Menú interactivo --------------------------------------------------------
 
 def cerrar() -> None:
-    """Finaliza la sesión interactiva."""
+    """Finaliza la sesión interactiva y limpia restos de modelos descargados."""
+    _borrar_peso_local()
     informar("Cerrando el sistema...")
 
 
@@ -590,6 +1489,7 @@ def mostrar_menu() -> None:
         ("refactorizar", "Copiar el contenido actual de PRY a RFC"),
         ("actualizar", "Reemplazar PRY con la versión de RFC"),
         ("ia local", "Analizar un archivo con LucIA y crear un plan"),
+        ("ds ialocal", "Plan de LucIA + refactor con modelo local y registro .md"),
         ("cerrar", "Cerrar el sistema"),
     ]
     print(_caja(f"WoldVirtualP2P3D · Gestor de Proyecto  v{__version__}", filas))
@@ -604,19 +1504,24 @@ def ejecutar_comandos() -> None:
         "refactorizar": comando_refactorizar,
         "actualizar": actualizar,
         "ia local": comando_ia_local,
+        "ds ialocal": comando_ds_ialocal,
     }
 
     mostrar_menu()
-    while True:
-        entrada = input("> ").strip().lower()
-        if entrada == "cerrar":
-            cerrar()
-            break
-        accion = despachador.get(entrada)
-        if accion is None:
-            reportar_error(f"Comando no reconocido: '{entrada}'")
-            continue
-        accion()
+    try:
+        while True:
+            entrada = input("> ").strip().lower()
+            if entrada == "cerrar":
+                cerrar()
+                break
+            accion = despachador.get(entrada)
+            if accion is None:
+                reportar_error(f"Comando no reconocido: '{entrada}'")
+                continue
+            accion()
+    except (KeyboardInterrupt, EOFError):
+        _borrar_peso_local()
+        informar("Sesión interrumpida; se limpiaron los modelos descargados.")
 
 
 if __name__ == "__main__":
