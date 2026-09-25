@@ -1,5 +1,63 @@
 # WoldVirtualP2P3D - Sistema Cognitivo LucIA (v0.0.01LCV1 - 2026)
 
+## Actualización general del sistema — 2026-09-25 (verificada en ejecución)
+
+> Lo anterior a esta sección describe el árbol heredado `LC/` (referencia histórica).
+> El árbol vivo actual es `VersionDe_sesion/CONTRRF/` y todo lo verificado abajo
+> se probó arrancando el sistema de verdad (4/4 subsistemas en verde + inferencia real).
+
+### Nuevo layout
+
+```text
+VersionDe_sesion/
+├── CONTRRF/
+│   ├── TLLDCD/
+│   │   ├── src/                        # árbol de trabajo (único módulo en raíz: STMGNRL/mainLCSTM.py)
+│   │   │   ├── STMGNRL/mainLCSTM.py    # orquestador (449 líneas, límite 450)
+│   │   │   ├── SBSTM/                  # sesión P2P, IAFREE, STYLOS, RPLC, voz, selector_modelos, accesores
+│   │   │   ├── STM_BKCH/               # BKSVCB + bksvcb_net + compat_local (shims PSNRCV/IPFS)
+│   │   │   ├── STM_SGR/vault_openrouter.py  # key cifrada, s/n sin desvelarla, solo :free
+│   │   │   ├── STM_CH/                 # TODO el runtime (pycache, PSNRL/, ledger, cachés) + rutas.limpiar()
+│   │   │   ├── STM_JSON/               # registro central de los 5 JSON (canónicos + volátiles)
+│   │   │   ├── STM_HRTS/               # pyproject.toml + registro_hrts.py + CI
+│   │   │   ├── STM_IA/                 # IAlocalDESCARGADA + registro_refactor.md
+│   │   │   ├── STM_DOC/                # README del sistema, desarrollo.md, memoria.md
+│   │   │   ├── STMIPFS/                # launcher Kubo + bat_runner + repo .ipfs
+│   │   │   └── LC_STM/red_neuronal/    # 50 neuronas (ENRN/RF_EN/RF_SL/RNP/SLRN, ≤450 líneas c/u)
+│   │   └── STM_RFC/RFPRMN.py           # herramienta de proyecto (enviar/refactorizar/actualizar/ia local/ds ialocal)
+│   └── RFC/                            # zona de entrega (se vacía al actualizar)
+└── Sistema_Principal/PRY/              # versiones actualizacion_<id> (solo la última)
+```
+
+### Arranque verificado (responde `s`, sale con `salir`)
+
+```powershell
+python VersionDe_sesion/CONTRRF/TLLDCD/src/STMGNRL/mainLCSTM.py
+# [1/4] BKSVCB ACTIVA · [2/4] PSNRCV OK 50 sinapsis · [3/4] Ledger->Pesos
+# [4/4] Sesión ACOPLADA · [JSON] 4/5 · [HRTS] woldvirtualp2p3d 0.0.1
+python VersionDe_sesion/CONTRRF/TLLDCD/STM_RFC/RFPRMN.py   # herramienta interactiva
+```
+
+### Flujo de entrega (todo verificado con conteo de ficheros, 614/614)
+
+`enviar` (src→RFC, bidireccional, registra en `envios.json`, verifica antes de borrar) →
+`refactorizar` (PRY/última/src→RFC/src) → `actualizar` (RFC→PRY/`actualizacion_<id>`, purga viejas, vacía RFC).
+
+### Seguridad
+
+Vault con key cifrada embebida: la terminal solo pregunta
+`¿Desea confirmar conexión con OpenRouter a modelos IA free? s/n` y muestra
+`sk-o...****`. Filtro duro a modelos `:free`. `.env` ignorado por git;
+rotar la key si se expuso (ver `STM_DOC/README.md` D3).
+
+### Deuda técnica y hoja de ruta
+
+Ver detalle en `VersionDe_sesion/CONTRRF/TLLDCD/src/STM_DOC/README.md`:
+autonomía en 10 fases (F1–F10) y deuda D1–D10 (shims PSNRCV/IPFS por portar,
+`RFPRMN.py` ~1800 líneas por dividir, `.ipfs` dentro de `src/`, sin tests).
+
+---
+
 Plataforma distribuida de computación cognitiva neuronal, consenso blockchain inmutable y persistencia descentralizada IPFS, con inferencia híbrida (modelos locales vía Ollama/LM Studio y catálogo gratuito de OpenRouter), motor de voz neuronal y diseño de terminal interactiva cyber-bioluminiscente.
 
 ---
@@ -237,13 +295,14 @@ WoldVirtualP2P3D_v0.0.01LCV1/
 ## 🚀 Requisitos e Inicio Rápido
 
 ### Requisitos Previos
-- **Python 3.10+** (recomendado Python 3.11 o 3.12).
-- Dependencias estándar y científicas: `numpy`, `edge-tts` (opcional para voz neuronal de alta calidad).
-- Nodo **IPFS Kubo** local corriendo en `http://127.0.0.1:5001` (opcional, opera con fallback si no está disponible).
-- Clave de API de OpenRouter configurada en `.env` (si se usa `IAFREE`):
-  ```env
-  OPENROUTER_API_KEY=tu_api_key_aqui
-  ```
+- **Python 3.10+** (verificado en 3.14).
+- Dependencias: `numpy` (voz `edge-tts` opcional).
+- Nodo **IPFS Kubo** en `http://127.0.0.1:5001` (opcional, hay fallback local).
+- **Sin clave manual:** la API de OpenRouter va cifrada dentro del propio sistema
+  (`STM_SGR/vault_openrouter.py`). Al arrancar solo se pregunta
+  `¿Desea confirmar conexión con OpenRouter a modelos IA free? s/n` y la key
+  nunca se muestra (`sk-o...****`). Solo modelos `:free`.
+  Opcional: override con `OPENROUTER_VAULT_PW` o `OPENROUTER_API_KEY` en entorno.
 
 ### Ejecución
 Para iniciar el orquestador maestro interactivo:
