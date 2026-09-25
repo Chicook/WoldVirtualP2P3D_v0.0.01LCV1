@@ -34,8 +34,11 @@ logger: logging.Logger = logging.getLogger("WoldVirtualP2P3D.CMFG.SBSTM")
 PACKAGE_ROOT: Final[Path] = Path(__file__).parent.resolve()
 CMFG_DIR: Final[Path] = PACKAGE_ROOT.parent.resolve()
 CELEBRO_DIR: Final[Path] = CMFG_DIR.parent.resolve()
-PSNRL_DIR: Final[Path] = CELEBRO_DIR / "PSNRL"
-LEDGER_PATH: Final[Path] = CELEBRO_DIR / "blockchain_ledger.json"
+try:
+    from STM_CH.rutas import PSNRL_DIR as PSNRL_DIR, LEDGER_PATH as LEDGER_PATH
+except ImportError:
+    PSNRL_DIR: Final[Path] = CELEBRO_DIR / "PSNRL"
+    LEDGER_PATH: Final[Path] = CELEBRO_DIR / "blockchain_ledger.json"
 
 # ─── ESTADO GLOBAL DEL SUBSISTEMA SBSTM ──────────────────────────────────────
 _SBSTM_STATE: Dict[str, Any] = {

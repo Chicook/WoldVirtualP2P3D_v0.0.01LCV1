@@ -37,7 +37,10 @@ CELEBRO_DIR: Final[Path] = CMFG_DIR.parent.resolve()
 LC_DIR: Final[Path] = CELEBRO_DIR.parent.resolve()
 ROOT_DIR: Final[Path] = LC_DIR.parent.resolve()
 ENV_FILE: Final[Path] = ROOT_DIR / ".env"
-CACHE_FILE: Final[Path] = PACKAGE_ROOT / "openrouter_free_cache.json"
+try:
+    from STM_CH.rutas import CACHE_IAFREE as CACHE_FILE
+except ImportError:
+    CACHE_FILE: Final[Path] = PACKAGE_ROOT / "openrouter_free_cache.json"
 
 # ─── LISTA BASE DE MODELOS GRATUITOS VERIFICADOS (2026) ─────────────────────
 # Obtenidos en vivo desde https://openrouter.ai/models?q=free

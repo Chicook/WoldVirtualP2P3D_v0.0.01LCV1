@@ -33,6 +33,11 @@ if str(ROOT_DIR) not in sys.path:
 if str(CONTRRF_DIR) not in sys.path:
     sys.path.insert(0, str(CONTRRF_DIR))
 try:
+    from STM_CH.rutas import inicializar as _stmch_init
+    _stmch_init()
+except Exception:
+    pass
+try:
     import RFPRMN as _RFPRMN  # pyrefly: ignore[missing-import]
     _RFPRMN_DISPONIBLE = True
 except Exception:
@@ -349,6 +354,12 @@ class OrquestadorSistemaLucIA(SelectorModelos):
                 print(f"  \033[38;5;214mCierre IPFS: {e_close}\033[0m")
             print("\033[38;5;51m" + "=" * 76 + "\033[0m\n")
             self.servidor_bks = None
+            try:
+                from STM_CH.rutas import limpiar as _stmch_limpiar
+                res = _stmch_limpiar()
+                print(f"  STM_CH limpiado: {res.get('borrados', 0)} artefactos.")
+            except Exception as e_stmch:
+                print(f"  STM_CH: {e_stmch}")
 class ContextoOrquestadorLucIA:
     """Gestor de contexto para pruebas, evaluacion o invocacion programatica."""
     def __init__(self) -> None:

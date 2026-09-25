@@ -25,8 +25,14 @@ __server_name__ = "CelebroBlockchainServer-BKSVCB"
 
 CELEBRO_DIR: Path = Path(__file__).parent.resolve()
 ROOT_DIR: Path = CELEBRO_DIR.parent.parent.resolve()
-PSNRL_DIR: Path = CELEBRO_DIR / "PSNRL"
-LEDGER_PATH: Path = CELEBRO_DIR / "blockchain_ledger.json"
+try:
+    from STM_CH.rutas import PSNRL_DIR as PSNRL_DIR, LEDGER_PATH as LEDGER_PATH
+except ImportError:
+    try:
+        from STM_CH.rutas import PSNRL_DIR, LEDGER_PATH
+    except ImportError:
+        PSNRL_DIR: Path = CELEBRO_DIR / "PSNRL"
+        LEDGER_PATH: Path = CELEBRO_DIR / "blockchain_ledger.json"
 
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))

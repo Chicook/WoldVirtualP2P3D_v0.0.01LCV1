@@ -22,8 +22,24 @@ class ConversorRespuestaPesos:
         self.deriva_acumulada: float = 0.0
 
     def persistir_pesos_en_psnrl(self, etiqueta: str = "checkpoint"):
+        import json
         from pathlib import Path
-        return (Path(f"{etiqueta}.npz"), Path(f"{etiqueta}.json"))
+        try:
+            from STM_CH.rutas import PSNRL_DIR
+        except ImportError:
+            PSNRL_DIR = Path("STM_CH") / "PSNRL"
+        PSNRL_DIR.mkdir(parents=True, exist_ok=True)
+        pesos = [n["peso"] for n in self.neuronas]
+        npz_p = PSNRL_DIR / f"{etiqueta}.npz"
+        js_p = PSNRL_DIR / f"{etiqueta}.json"
+        try:
+            import numpy as np
+            np.savez(str(npz_p), pesos=np.array(pesos, dtype=np.float32))
+        except Exception:
+            npz_p.write_bytes(repr(pesos).encode("utf-8", "replace"))
+        js_p.write_text(json.dumps({"etiqueta": etiqueta, "deriva": self.deriva_acumulada,
+                                    "neuronas": len(self.neuronas)}, ensure_ascii=False), encoding="utf-8")
+        return (npz_p, js_p)
 
     def procesar_consulta_a_pesos(self, prompt: str) -> Dict[str, Any]:
         h = int(hashlib.sha256(prompt.encode()).hexdigest()[:8], 16)
@@ -56,7 +72,19 @@ class IPFSManager:
         return {"ipfs_cid": f"QmLocal{sello}", "ok": True}
 
     def subir_y_limpiar_psnrl(self, forzar_borrado_sin_daemon: bool = False) -> Dict[str, Any]:
-        return {"ok": True, "modo": "local-sin-daemon"}
+        borrados: list = []
+        try:
+            from STM_CH.rutas import PSNRL_DIR
+            if PSNRL_DIR.exists():
+                for hijo in list(PSNRL_DIR.iterdir()):
+                    try:
+                        hijo.unlink(missing_ok=True)
+                        borrados.append(hijo.name)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        return {"ok": True, "modo": "local-sin-daemon", "cids": [], "borrados": borrados}
 
 
 _ipfs_inst: Optional[IPFSManager] = None

@@ -19,7 +19,10 @@ SBSTM_DIR   = Path(__file__).resolve().parent
 CMFG_DIR    = SBSTM_DIR.parent
 CELEBRO_DIR = CMFG_DIR.parent
 ROOT_DIR    = CELEBRO_DIR.parent.parent
-PSNRL_DIR   = CELEBRO_DIR / "PSNRL"
+try:
+    from STM_CH.rutas import PSNRL_DIR as PSNRL_DIR
+except ImportError:
+    PSNRL_DIR = CELEBRO_DIR / "PSNRL"
 PSNRL_DIR.mkdir(parents=True, exist_ok=True)
 
 if str(ROOT_DIR) not in sys.path:
