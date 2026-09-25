@@ -20,6 +20,15 @@ class ConversorRespuestaPesos:
             for i in range(1, 11)
         ]
         self.deriva_acumulada: float = 0.0
+        self.pasos_sesion: int = 0
+
+    def asimilar_respuestas_y_calcular_sintesis(self, prompt: str, respuesta: str,
+                                                     modelo: str = "") -> Dict[str, Any]:
+        info = self.procesar_consulta_a_pesos(f"{prompt} || {respuesta}")
+        info["modelo"] = modelo
+        info["sintesis"] = f"Turno asimilado en {len(self.neuronas)} neuronas."
+        info["pasos_sesion"] = self.pasos_sesion
+        return info
 
     def persistir_pesos_en_psnrl(self, etiqueta: str = "checkpoint"):
         import json
@@ -46,6 +55,7 @@ class ConversorRespuestaPesos:
         val = ((h % 2000) / 1000.0) - 1.0
         norma = round((h % 100000) / 100000.0, 5)
         self.deriva_acumulada = round(self.deriva_acumulada + norma * 0.001, 6)
+        self.pasos_sesion += 1
         tonos = ("reflexivo", "analitico", "creativo", "pragmatico")
         return {
             "tono_cognitivo": tonos[h % len(tonos)],
@@ -67,9 +77,13 @@ def get_conversor_pesos() -> ConversorRespuestaPesos:
 class IPFSManager:
     """IPFS no-op: devuelve CIDs sintéticos sin requerir daemon."""
 
-    def almacenar_pesos(self, datos: Any = None, **kw: Any) -> Dict[str, Any]:
-        sello = hashlib.sha256(repr((str(datos)[:200], time.time())).encode()).hexdigest()[:16]
-        return {"ipfs_cid": f"QmLocal{sello}", "ok": True}
+    def almacenar_pesos(self, datos: Any = None, origen: Any = None,
+                          nombre_modelo: str = "", eliminar_local: bool = False,
+                          **kw: Any) -> Dict[str, Any]:
+        base = datos if datos is not None else origen
+        sello = hashlib.sha256(repr((str(base)[:200], time.time())).encode()).hexdigest()[:16]
+        cid = f"QmLocal{sello}"
+        return {"cid": cid, "ipfs_cid": cid, "ok": True, "borrado_local": False}
 
     def subir_y_limpiar_psnrl(self, forzar_borrado_sin_daemon: bool = False) -> Dict[str, Any]:
         borrados: list = []

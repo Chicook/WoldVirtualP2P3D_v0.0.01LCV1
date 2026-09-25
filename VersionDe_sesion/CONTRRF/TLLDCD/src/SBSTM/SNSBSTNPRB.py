@@ -72,7 +72,11 @@ def _importar_nucleo():
 
 # ─── CLIENTE OLLAMA ──────────────────────────────────────────────────────────
 OLLAMA_URL  = "http://localhost:11434"
-IA_CFG_PATH = ROOT_DIR / "LC" / "modelosIAlocal" / "IAlocal.json"
+try:
+    from STM_JSON.registro_json import ruta_de as _ruta_json
+    IA_CFG_PATH = _ruta_json("ialocal")
+except Exception:
+    IA_CFG_PATH = ROOT_DIR / "LC" / "modelosIAlocal" / "IAlocal.json"
 
 
 def _cargar_config_ia() -> Dict[str, Any]:

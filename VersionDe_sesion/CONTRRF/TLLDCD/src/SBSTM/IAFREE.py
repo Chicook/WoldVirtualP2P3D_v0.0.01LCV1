@@ -100,6 +100,13 @@ class GestorModelosGratuitos:
                                 return clave
             except Exception:
                 pass
+        try:
+            from STM_SGR.vault_openrouter import obtener_key
+            clave_vault = obtener_key()
+            if clave_vault and len(clave_vault) > 10:
+                return clave_vault
+        except Exception:
+            pass
         return os.getenv("OPENROUTER_API_KEY", "").strip()
 
     def obtener_modelo_activo(self) -> Dict[str, Any]:

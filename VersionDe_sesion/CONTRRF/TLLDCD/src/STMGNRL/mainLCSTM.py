@@ -14,18 +14,22 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Final, List, Optional, Tuple, Union
 
 CURRENT_FILE: Final[Path] = Path(__file__).resolve()
-LC_DIR: Final[Path] = CURRENT_FILE.parent
-ROOT_DIR: Final[Path] = LC_DIR.parent
+GNRL_DIR: Final[Path] = CURRENT_FILE.parent
+LC_DIR: Final[Path] = GNRL_DIR.parent
+SRC_DIR: Final[Path] = GNRL_DIR.parent
+ROOT_DIR: Final[Path] = SRC_DIR.parent
 CONTRRF_DIR: Final[Path] = CURRENT_FILE.parents[3]
 ENV_FILE: Final[Path] = next(
-    (c for c in (LC_DIR / ".env", ROOT_DIR / ".env")  # RFC/LC/LC/.env (real), RFC/LC/.env
+    (c for c in (GNRL_DIR / ".env", SRC_DIR / ".env", ROOT_DIR / ".env")
      if c.exists()),
-    LC_DIR / ".env",
+    SRC_DIR / ".env",
 )
-CELEBRO_DIR: Final[Path] = LC_DIR / "celebro"
-PSNRL_DIR: Final[Path] = CELEBRO_DIR / "PSNRL"
-CMFG_DIR: Final[Path] = CELEBRO_DIR / "CMFG"
-SBSTM_DIR: Final[Path] = CMFG_DIR / "SBSTM"
+CELEBRO_DIR: Final[Path] = SRC_DIR / "STM_CH"
+PSNRL_DIR: Final[Path] = SRC_DIR / "STM_CH" / "PSNRL"
+CMFG_DIR: Final[Path] = SRC_DIR
+SBSTM_DIR: Final[Path] = SRC_DIR / "SBSTM"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 if str(LC_DIR) not in sys.path:
     sys.path.insert(0, str(LC_DIR))
 if str(ROOT_DIR) not in sys.path:
@@ -130,6 +134,41 @@ except ImportError:
         from src.SBSTM.selector_modelos import SelectorModelos
     except ImportError:
         SelectorModelos = object
+class GestorJSONLucIA:
+    """Puerta del orquestador al registro central STM_JSON."""
+    def __init__(self) -> None:
+        try:
+            from STM_JSON.registro_json import get_registro
+            self.registro = get_registro()
+        except Exception:
+            self.registro = None
+    def config_ia(self) -> Dict[str, Any]:
+        try:
+            return self.registro.config_ia_local() if self.registro else {}
+        except Exception:
+            return {}
+    def linea_estado(self) -> str:
+        if not self.registro:
+            return "STM_JSON no disponible"
+        try:
+            res = self.registro.resumen()
+            ok = sum(1 for r in res if r["existe"])
+            return f"STM_JSON: {ok}/{len(res)} registrados"
+        except Exception:
+            return "STM_JSON error"
+class GestorHRTLucIA:
+    """Puerta del orquestador al manifiesto STM_HRTS/pyproject.toml."""
+    def __init__(self) -> None:
+        try:
+            from STM_HRTS.registro_hrts import get_registro_hrts
+            self.registro = get_registro_hrts()
+        except Exception:
+            self.registro = None
+    def linea_estado(self) -> str:
+        try:
+            return self.registro.linea_estado() if self.registro else "STM_HRTS no disponible"
+        except Exception:
+            return "STM_HRTS error"
 class OrquestadorSistemaLucIA(SelectorModelos):
     '\n    Orquestador maestro que integra BKSVCB, SNSBSTNPRB, IAFREE, STYLOS y las 50 neuronas.\n    '
     def __init__(self) -> None:
@@ -198,6 +237,16 @@ class OrquestadorSistemaLucIA(SelectorModelos):
             print(f"  [4/4] Sesion SNSBSTNPRB    : \033[38;5;48mACOPLADA\033[0m | Motor STYLOS: \033[38;5;51mACTIVO\033[0m\n")
         except Exception as e_sbs:
             print(f"  [4/4] Sesion SNSBSTNPRB    : \033[38;5;214mAVISO ({e_sbs})\033[0m\n")
+        try:
+            self.gestor_json = GestorJSONLucIA()
+            print(f"  [JSON] {self.gestor_json.linea_estado()}")
+        except Exception:
+            pass
+        try:
+            self.gestor_hrts = GestorHRTLucIA()
+            print(f"  [HRTS] {self.gestor_hrts.linea_estado()}")
+        except Exception:
+            pass
         self.activa = True
         return True
     def procesar_turno_dialogo(self, prompt: str) -> None:
