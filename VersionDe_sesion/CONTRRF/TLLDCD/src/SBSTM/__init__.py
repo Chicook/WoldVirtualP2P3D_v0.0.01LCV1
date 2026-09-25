@@ -142,7 +142,7 @@ def obtener_clase_sesion() -> Any:
     Garantiza aislamiento ante inicializaciones circulares del paquete Celebro.
     """
     try:
-        from LC.celebro.CMFG.SBSTM.SNSBSTNPRB import SesionNeuronalP2P
+        from LC.celebro.CMFG.SBSTM.SNSBSTNPRB import SesionNeuronalP2P  # pyrefly: ignore[missing-import]
         return SesionNeuronalP2P
     except Exception:
         pass
@@ -371,14 +371,14 @@ def purgar_archivos_temporales(max_edad_segundos: float = 86400.0) -> int:
 # ─── ACCESO DIRECTO AL SUBSISTEMA IAFREE (MODELOS GRATIS) ───────────────────
 def obtener_servicio_iafree() -> Any:
     """Devuelve el cliente de inferencia gratuita OpenRouter del modulo IAFREE."""
-    from LC.celebro.CMFG.SBSTM.IAFREE import get_cliente_iafree
+    from LC.celebro.CMFG.SBSTM.IAFREE import get_cliente_iafree  # pyrefly: ignore[missing-import]
     return get_cliente_iafree()
 
 
 # ─── ACCESO DIRECTO AL MOTOR DE ESTILOS STYLOS ───────────────────────────────
 def obtener_motor_stylos() -> Any:
     """Devuelve el motor de estilos visuales y tarjetas de terminal de STYLOS."""
-    from LC.celebro.CMFG.SBSTM.STYLOS import EstiloTerminalLucIA
+    from LC.celebro.CMFG.SBSTM.STYLOS import EstiloTerminalLucIA  # pyrefly: ignore[missing-import]
     return EstiloTerminalLucIA
 
 
@@ -418,86 +418,28 @@ def _finalizacion_modulo_sbstm() -> None:
 atexit.register(_finalizacion_modulo_sbstm)
 
 
-# ─── INTEGRACIÓN SUBSISTEMA RPLC (Reprocesador Lingüístico-Cognitivo) ──────────
-def obtener_procesador_rplc():
-    """
-    Devuelve la instancia singleton de ProcesadorRPLC.
-    RPLC convierte la respuesta bruta de OpenRouter en la voz propia de LucIA
-    pasándola por 3 capas: vectorización → transformación sináptica → reformulación.
-    """
+try:
+    from SBSTM.accesores import (
+        obtener_procesador_rplc,
+        reprocesar_respuesta_lucia,
+        obtener_motor_voz,
+        reproducir_voz_lucia,
+        cancelar_voz_lucia,
+        obtener_servicio_iafree,
+        obtener_motor_stylos,
+    )
+except ImportError:
     try:
-        from LC.celebro.CMFG.SBSTM.RPLC import get_procesador_rplc
-        return get_procesador_rplc()
-    except Exception as _err:
-        logger.warning("[SBSTM] RPLC no disponible: %s", _err)
-        return None
-
-
-def reprocesar_respuesta_lucia(texto_bruto: str, contexto_neuronal: Optional[Dict[str, Any]] = None) -> str:
-    """
-    Conveniencia: pasa el texto crudo de OpenRouter por el pipeline RPLC
-    y devuelve la respuesta reformulada en la voz propia de LucIA.
-    Si RPLC no está disponible, devuelve el texto original sin modificar.
-    """
-    try:
-        from LC.celebro.CMFG.SBSTM.RPLC import reprocesar_para_lucia
-        return reprocesar_para_lucia(texto_bruto, contexto_neuronal)
-    except Exception:
-        return texto_bruto
-
-
-# ─── EXPORTACIONES PUBLICAS OFICIALES DEL PAQUETE ────────────────────────────
-__all__: Final[List[str]] = [
-    "TerminalColors",
-    "SBSTMSessionContext",
-    "obtener_directorio_sbstm",
-    "obtener_estado_subsistema",
-    "registrar_gancho_post_turno",
-    "verificar_integridad_sbstm",
-    "obtener_clase_sesion",
-    "crear_sesion_neuronal",
-    "ejecutar_orquestador_interactivo",
-    "consultar_modelos_disponibles",
-    "recopilar_estadisticas_sesion",
-    "notificar_turno_completado",
-    "verificar_cadena_bloques_activa",
-    "obtener_ultimo_hash_bloque",
-    "forzar_checkpoint_psnrl",
-    "purgar_archivos_temporales",
-    "obtener_servicio_iafree",
-    "obtener_motor_stylos",
-    # RPLC
-    "obtener_procesador_rplc",
-    "reprocesar_respuesta_lucia",
-    # VOICE ENGINE
-    "obtener_motor_voz",
-    "reproducir_voz_lucia",
-    "cancelar_voz_lucia",
-]
-
-
-def obtener_motor_voz() -> Any:
-    """Retorna la instancia global del motor de voz de LucIA."""
-    try:
-        from LC.celebro.CMFG.SBSTM.voice_engine import get_voice_engine
-        return get_voice_engine()
-    except Exception:
-        return None
-
-
-def reproducir_voz_lucia(texto: str, esperar: bool = False, emocion: Optional[float] = None) -> None:
-    """Reproduce texto con la voz juvenil oficial de LucIA (es-ES-ElviraNeural)."""
-    try:
-        from LC.celebro.CMFG.SBSTM.voice_engine import speak
-        speak(texto, esperar=esperar, emocion=emocion)
-    except Exception:
+        from .accesores import (
+            obtener_procesador_rplc,
+            reprocesar_respuesta_lucia,
+            obtener_motor_voz,
+            reproducir_voz_lucia,
+            cancelar_voz_lucia,
+            obtener_servicio_iafree,
+            obtener_motor_stylos,
+        )
+    except ImportError:
         pass
 
 
-def cancelar_voz_lucia() -> None:
-    """Interrumpe inmediatamente cualquier emision sonora de LucIA."""
-    try:
-        from LC.celebro.CMFG.SBSTM.voice_engine import cancel_speech
-        cancel_speech()
-    except Exception:
-        pass

@@ -51,15 +51,20 @@ class C:
 
 # ─── CARGA DIFERIDA DEL NUCLEO ───────────────────────────────────────────────
 def _importar_nucleo():
-    """Carga los modulos core de Celebro; aborta con mensaje claro si faltan."""
+    """Carga los modulos core; usa equivalentes locales src/ si LC.* no existe."""
     try:
         from LC.celebro.BKSVCB import get_blockchain_server, iniciar_servidor_blockchain
+    except ImportError:
+        from STM_BKCH.BKSVCB import get_blockchain_server, iniciar_servidor_blockchain
+    try:
         from LC.celebro.CMFG.PSNRCV import get_conversor_pesos
+    except ImportError:
+        from STM_BKCH.compat_local import get_conversor_pesos
+    try:
         from LC.celebro.CMFG.pesos_vivos import get_gestor_pesos_vivos
-        return get_blockchain_server, iniciar_servidor_blockchain, get_conversor_pesos, get_gestor_pesos_vivos
-    except ImportError as e:
-        print(C.c(C.RD, f"[ERROR] Dependencia no encontrada: {e}"))
-        sys.exit(1)
+    except ImportError:
+        get_gestor_pesos_vivos = lambda: None
+    return get_blockchain_server, iniciar_servidor_blockchain, get_conversor_pesos, get_gestor_pesos_vivos
 
 
 # ─── CLIENTE OLLAMA ──────────────────────────────────────────────────────────

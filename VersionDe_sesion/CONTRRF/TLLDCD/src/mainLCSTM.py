@@ -26,41 +26,62 @@ CELEBRO_DIR: Final[Path] = LC_DIR / "celebro"
 PSNRL_DIR: Final[Path] = CELEBRO_DIR / "PSNRL"
 CMFG_DIR: Final[Path] = CELEBRO_DIR / "CMFG"
 SBSTM_DIR: Final[Path] = CMFG_DIR / "SBSTM"
+if str(LC_DIR) not in sys.path:
+    sys.path.insert(0, str(LC_DIR))
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 if str(CONTRRF_DIR) not in sys.path:
     sys.path.insert(0, str(CONTRRF_DIR))
 try:
-    import RFPRMN as _RFPRMN
+    import RFPRMN as _RFPRMN  # pyrefly: ignore[missing-import]
     _RFPRMN_DISPONIBLE = True
 except Exception:
     _RFPRMN_DISPONIBLE = False
     _RFPRMN = None
 _COMANDOS_RFPRMN: Final[Dict[str, str]] = { "crear carpeta": "comando_crear_carpeta", "crear archivo": "comando_crear_archivo", "refactorizar": "comando_refactorizar", "actualizar": "actualizar", "ia local": "comando_ia_local", "cerrar": "cerrar", }
 try:
-    from LC.celebro.CMFG.SBSTM.IAFREE import ClienteIAFree, get_cliente_iafree
+    from LC.celebro.CMFG.SBSTM.IAFREE import ClienteIAFree, get_cliente_iafree  # pyrefly: ignore[missing-import]
 except Exception:
-    get_cliente_iafree = None
-    ClienteIAFree = None
+    try:
+        from SBSTM.IAFREE import ClienteIAFree, get_cliente_iafree
+    except Exception:
+        get_cliente_iafree = None
+        ClienteIAFree = None
 try:
-    from LC.celebro.CMFG.SBSTM.STYLOS import ( ColoresLucIA, EstiloTerminalLucIA, Glifos, badge_turno, banner_bienvenida, formatear_respuesta_lucia, panel_ayuda_comandos, )
+    from LC.celebro.CMFG.SBSTM.STYLOS import ( ColoresLucIA, EstiloTerminalLucIA, Glifos, badge_turno, banner_bienvenida, formatear_respuesta_lucia, panel_ayuda_comandos, )  # pyrefly: ignore[missing-import]
 except Exception:
-    EstiloTerminalLucIA = None
+    try:
+        from SBSTM.STYLOS import ( ColoresLucIA, EstiloTerminalLucIA, Glifos, badge_turno, banner_bienvenida, formatear_respuesta_lucia, panel_ayuda_comandos, )
+    except Exception:
+        EstiloTerminalLucIA = None
 try:
-    from LC.celebro.CMFG.SBSTM.RPLC import ( get_procesador_rplc, reprocesar_con_metricas, )
+    from LC.celebro.CMFG.SBSTM.RPLC import ( get_procesador_rplc, reprocesar_con_metricas, )  # pyrefly: ignore[missing-import]
     _RPLC_DISPONIBLE = True
 except Exception:
-    _RPLC_DISPONIBLE = False
-    get_procesador_rplc = None  # type: ignore
-    reprocesar_con_metricas = None  # type: ignore
+    try:
+        from SBSTM.RPLC import ( get_procesador_rplc, reprocesar_con_metricas, )
+        _RPLC_DISPONIBLE = True
+    except Exception:
+        _RPLC_DISPONIBLE = False
+        get_procesador_rplc = None  # type: ignore
+        reprocesar_con_metricas = None  # type: ignore
 try:
-    from LC.celebro.CMFG.SBSTM.voice_engine import ( cancel_speech as _cancelar_voz, configurar_prosodia_juvenil as _prosodia_voz, speak as _hablar_voz, )
+    from LC.celebro.CMFG.SBSTM.voice_engine import ( cancel_speech as _cancelar_voz, configurar_prosodia_juvenil as _prosodia_voz, speak as _hablar_voz, )  # pyrefly: ignore[missing-import]
     _VOZ_DISPONIBLE = True
 except Exception:
-    _VOZ_DISPONIBLE = False
-    _hablar_voz = None  # type: ignore
-    _cancelar_voz = None  # type: ignore
-    _prosodia_voz = None  # type: ignore
+    try:
+        from SBSTM.voice_engine import ( cancel_speech as _cancelar_voz, configurar_prosodia_juvenil as _prosodia_voz, speak as _hablar_voz, )
+        _VOZ_DISPONIBLE = True
+    except Exception:
+        _VOZ_DISPONIBLE = False
+        _hablar_voz = None  # type: ignore
+        _cancelar_voz = None  # type: ignore
+        _prosodia_voz = None  # type: ignore
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 logging.basicConfig(level=logging.CRITICAL)
 for _log_name in ("", "WoldVirtualP2P3D", "LC", "urllib3", "ENRN", "SLRN", "RNP", "httpx"):
     logging.getLogger(_log_name).setLevel(logging.CRITICAL)
@@ -88,9 +109,23 @@ class GestorEntornoSeguro:
         return variables
     @classmethod
     def obtener_openrouter_key(cls) -> str:
+        try:
+            from STM_SGR.vault_openrouter import obtener_key
+            key = obtener_key()
+            if key:
+                return key
+        except Exception:
+            pass
         vars_env = cls.cargar_variables()
         return vars_env.get("OPENROUTER_API_KEY", os.getenv("OPENROUTER_API_KEY", "")).strip()
-class OrquestadorSistemaLucIA:
+try:
+    from SBSTM.selector_modelos import SelectorModelos
+except ImportError:
+    try:
+        from src.SBSTM.selector_modelos import SelectorModelos
+    except ImportError:
+        SelectorModelos = object
+class OrquestadorSistemaLucIA(SelectorModelos):
     '\n    Orquestador maestro que integra BKSVCB, SNSBSTNPRB, IAFREE, STYLOS y las 50 neuronas.\n    '
     def __init__(self) -> None:
         self.lock = threading.Lock()
@@ -105,6 +140,11 @@ class OrquestadorSistemaLucIA:
     def inicializar_subsistemas(self) -> bool:
         """Inicializa en secuencia la blockchain, transductor, IAFREE y credenciales."""
         GestorEntornoSeguro.cargar_variables()
+        try:
+            from STM_SGR.vault_openrouter import confirmar_conexion
+            confirmar_conexion()
+        except Exception:
+            pass
         if get_cliente_iafree is not None:
             self.cliente_iafree = get_cliente_iafree()
             modelo_ini = self.cliente_iafree.gestor.obtener_modelo_activo()["id"]
@@ -115,7 +155,10 @@ class OrquestadorSistemaLucIA:
         else:
             print(f"\n[+] WoldVirtualP2P3D -- LucIA Console 2026 | Mod: {modelo_ini}")
         try:
-            from LC.celebro.BKSVCB import get_blockchain_server, iniciar_servidor_blockchain
+            try:
+                from LC.celebro.BKSVCB import get_blockchain_server, iniciar_servidor_blockchain  # pyrefly: ignore[missing-import]
+            except ImportError:
+                from STM_BKCH.BKSVCB import get_blockchain_server, iniciar_servidor_blockchain
             self.servidor_bks = get_blockchain_server()
             print(f"  [1/4] Blockchain BKSVCB    : \033[38;5;48mACTIVA\033[0m | Bloques: \033[38;5;220m{len(self.servidor_bks.cadena)}\033[0m")
             self.servidor_bks.mostrar_cadena_hashes_terminal()
@@ -124,7 +167,10 @@ class OrquestadorSistemaLucIA:
             print(f"  [1/4] Blockchain BKSVCB    : \033[38;5;203mERROR ({e_bks})\033[0m")
             return False
         try:
-            from LC.celebro.CMFG.PSNRCV import get_conversor_pesos
+            try:
+                from LC.celebro.CMFG.PSNRCV import get_conversor_pesos  # pyrefly: ignore[missing-import]
+            except ImportError:
+                from STM_BKCH.compat_local import get_conversor_pesos
             self.conversor_psn = get_conversor_pesos()
             num_neu = len(self.conversor_psn.neuronas)
             print(f"  [2/4] Conversor PSNRCV     : \033[38;5;48mOK\033[0m | Sinapsis: \033[38;5;141m{num_neu} Activas\033[0m")
@@ -138,7 +184,10 @@ class OrquestadorSistemaLucIA:
         except Exception as e_led:
             print(f"  [3/4] Ledger -> Pesos      : \033[38;5;214mAVISO ({e_led})\033[0m")
         try:
-            from LC.celebro.CMFG.SBSTM import obtener_clase_sesion
+            try:
+                from LC.celebro.CMFG.SBSTM import obtener_clase_sesion  # pyrefly: ignore[missing-import]
+            except ImportError:
+                from SBSTM import obtener_clase_sesion
             cls_sesion = obtener_clase_sesion()
             self.sesion_p2p = cls_sesion()
             print(f"  [4/4] Sesion SNSBSTNPRB    : \033[38;5;48mACOPLADA\033[0m | Motor STYLOS: \033[38;5;51mACTIVO\033[0m\n")
@@ -215,123 +264,6 @@ class OrquestadorSistemaLucIA:
         else:
             for k, v in datos.items():
                 print(f"  {k}: {v}")
-    def _leer_tecla_selector_modelos(self) -> Optional[str]:
-        try:
-            import msvcrt
-        except ImportError:
-            return None
-        try:
-            caracter = msvcrt.getwch()
-        except (KeyboardInterrupt, EOFError):
-            return "cancel"
-        if caracter in ("\x00", "\xe0"):
-            codigo = msvcrt.getwch()
-            return {"H": "up", "P": "down", "K": "left", "M": "right"}.get(codigo)
-        return { "\r": "enter", "\n": "enter", "\x1b": "cancel", "\x03": "cancel", }.get(caracter)
-    def _dibujar_selector_modelos( self, modelos: List[Dict[str, Any]], indice: int, id_activo: str, inicio: int, visibles: int, lineas_previas: int = 0, ) -> int:
-        if lineas_previas:
-            sys.stdout.write(f"\033[{lineas_previas}A")
-        sys.stdout.write("\033[J")
-        try:
-            ancho_consola = max(78, min(92, os.get_terminal_size().columns))
-        except OSError:
-            ancho_consola = 92
-        ancho_id = max(24, min(42, ancho_consola - 50))
-        ancho_nombre = max(10, min(20, ancho_consola - ancho_id - 32))
-        separador = "\033[38;5;51m" + "=" * ancho_consola + "\033[0m"
-        fin = min(inicio + visibles, len(modelos))
-        lineas = [ "", f"  \033[1;37mMODELOS GRATUITOS IAFREE\033[0m  ({inicio + 1}-{fin}/{len(modelos)})", separador, ]
-        for posicion in range(inicio, fin):
-            modelo = modelos[posicion]
-            cursor = "\033[38;5;214m▶\033[0m" if posicion == indice else " "
-            activo = " \033[38;5;48m[ACTIVO]\033[0m" if modelo["id"] == id_activo else ""
-            lineas.append( f" {cursor} {posicion + 1:>2}. \033[38;5;51m{modelo['id']:<{ancho_id}.{ancho_id}}\033[0m | " f"{modelo['contexto']} tok | {modelo['nombre']:<{ancho_nombre}.{ancho_nombre}}{activo}" )
-        lineas.extend( [ separador, "  \033[38;5;214m↑/↓\033[0m mover  \033[38;5;214mENTER\033[0m seleccionar  " "\033[38;5;214mESC\033[0m cancelar", "", ] )
-        print("\n".join(lineas))
-        sys.stdout.flush()
-        return len(lineas)
-    @staticmethod
-    def _limpiar_selector_modelos(lineas: int) -> None:
-        if lineas:
-            sys.stdout.write(f"\033[{lineas}A\033[J")
-            sys.stdout.flush()
-    def _seleccionar_modelo_textual(self, modelos: List[Dict[str, Any]]) -> bool:
-        print(f"\n  \033[1;37mMODELOS GRATUITOS IAFREE ({len(modelos)})\033[0m")
-        id_activo = self.cliente_iafree.gestor.obtener_modelo_activo()["id"]
-        for posicion, modelo in enumerate(modelos, start=1):
-            activo = " [ACTIVO]" if modelo["id"] == id_activo else ""
-            print(f"  {posicion:>2}. {modelo['id']} | {modelo['contexto']} tok{activo}")
-        try:
-            seleccion = input("  Numero o ID del modelo (Enter cancela): ").strip()
-        except (KeyboardInterrupt, EOFError):
-            print("\n  Seleccion cancelada.")
-            return False
-        if not seleccion:
-            print("  Seleccion cancelada.")
-            return False
-        if seleccion.isdigit():
-            posicion = int(seleccion) - 1
-            if posicion < 0 or posicion >= len(modelos):
-                print(f"  La posicion '{seleccion}' no existe.")
-                return False
-            modelo_id = modelos[posicion]["id"]
-        else:
-            modelo_id = seleccion
-        if self.cliente_iafree.gestor.seleccionar_por_id(modelo_id):
-            print(f"  \033[38;5;48mModelo gratuito seleccionado: {modelo_id}\033[0m")
-            return True
-        print(f"  \033[38;5;214mModelo '{modelo_id}' no encontrado en catalogo :free.\033[0m")
-        return False
-    def _seleccionar_modelo_interactivo(self, modelos: List[Dict[str, Any]]) -> bool:
-        if not modelos:
-            print("No hay modelos gratuitos disponibles.")
-            return False
-        if os.name != "nt" or not sys.stdin.isatty() or not sys.stdout.isatty():
-            return self._seleccionar_modelo_textual(modelos)
-        try:
-            import msvcrt
-        except ImportError:
-            return self._seleccionar_modelo_textual(modelos)
-        gestor = self.cliente_iafree.gestor
-        id_activo = gestor.obtener_modelo_activo()["id"]
-        indice = next( (posicion for posicion, modelo in enumerate(modelos) if modelo["id"] == id_activo), 0, )
-        visibles = min(10, len(modelos))
-        inicio = max(0, min(indice - visibles // 2, len(modelos) - visibles))
-        lineas_renderizadas = 0
-        while True:
-            lineas_renderizadas = self._dibujar_selector_modelos( modelos, indice, id_activo, inicio, visibles, lineas_renderizadas, )
-            try:
-                tecla = self._leer_tecla_selector_modelos()
-            except (KeyboardInterrupt, EOFError):
-                tecla = "cancel"
-            if tecla == "up":
-                indice = (indice - 1) % len(modelos)
-            elif tecla == "down":
-                indice = (indice + 1) % len(modelos)
-            elif tecla == "enter":
-                break
-            elif tecla == "cancel":
-                self._limpiar_selector_modelos(lineas_renderizadas)
-                print("\n  Seleccion cancelada.")
-                return False
-            if tecla in ("up", "down"):
-                if indice < inicio:
-                    inicio = indice
-                elif indice >= inicio + visibles:
-                    inicio = indice - visibles + 1
-        self._limpiar_selector_modelos(lineas_renderizadas)
-        modelo_id = modelos[indice]["id"]
-        if gestor.seleccionar_por_id(modelo_id):
-            print(f"  \033[38;5;48mModelo gratuito seleccionado: {modelo_id}\033[0m")
-            return True
-        print(f"  \033[38;5;214mNo se pudo seleccionar el modelo '{modelo_id}'.\033[0m")
-        return False
-    def listar_modelos_gratuitos(self) -> None:
-        """Muestra los modelos gratuitos y permite seleccionar uno con flechas y Enter."""
-        if not self.cliente_iafree:
-            print("Subsistema IAFREE no disponible.")
-            return
-        self._seleccionar_modelo_interactivo(self.cliente_iafree.gestor.listar_modelos())
     def ejecutar_comando_rfprmn(self, comando: str) -> bool:
         if not _RFPRMN_DISPONIBLE or _RFPRMN is None:
             print(f"RFPRMN no esta disponible en: {CONTRRF_DIR / 'RFPRMN.py'}")
@@ -430,7 +362,10 @@ class ContextoOrquestadorLucIA:
         return False
 def obtener_diagnostico_orquestador() -> Dict[str, Any]:
     """Genera un reporte estructural para validar la salud de todo el stack."""
-    from LC.celebro.CMFG.SBSTM.IAFREE import get_cliente_iafree
+    try:
+        from LC.celebro.CMFG.SBSTM.IAFREE import get_cliente_iafree  # pyrefly: ignore[missing-import]
+    except ImportError:
+        from SBSTM.IAFREE import get_cliente_iafree
     cliente_free = get_cliente_iafree()
     return { "orquestador_version": "2026.3.1", "iafree_activo": cliente_free.esta_autenticado(), "modelos_gratuitos_total": len(cliente_free.gestor.listar_modelos()), "modelo_predeterminado": cliente_free.gestor.obtener_modelo_activo()["id"], "costo_acumulado": cliente_free.obtener_metricas_consumo()["costo_acumulado_usd"], "timestamp": time.time(), }
 def main() -> int:

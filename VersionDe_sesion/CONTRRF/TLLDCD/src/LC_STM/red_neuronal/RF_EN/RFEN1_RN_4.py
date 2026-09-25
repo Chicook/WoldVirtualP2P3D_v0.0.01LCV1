@@ -8,7 +8,6 @@ from typing import Tuple, Optional, Dict, Any, List
 LUCIA_RL_CONFIG = {'precision': 'float32', 'random_seed': 42,
                    'default_learning_rate': 0.001}
 
-
 class NeuronaRefuerzoBase:
     """Base minimalista local (evita importar .base inexistente)."""
 
@@ -30,7 +29,6 @@ class NeuronaRefuerzoBase:
     def resetear_historial(self) -> None:
         self.historial_activaciones = []
         self.historial_gradientes = []
-
 
 class InicializadoresRL:
     """Inicializadores minimalistas locales (he/xavier/lecun/ortogonal/espectral)."""
