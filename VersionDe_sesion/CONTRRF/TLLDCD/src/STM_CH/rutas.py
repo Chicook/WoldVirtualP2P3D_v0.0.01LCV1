@@ -28,7 +28,8 @@ def inicializar() -> None:
 def limpiar() -> dict:
     """Borra todo el contenido generado en STM_CH/. Devuelve resumen."""
     resumen = {"borrados": 0, "errores": []}
-    for objetivo in (PYCACHE_DIR, PSNRL_DIR, STM_CH_DIR / "__pycache__"):
+    for objetivo in (PYCACHE_DIR, PSNRL_DIR, STM_CH_DIR / "__pycache__",
+                       STM_CH_DIR.parent / "__pycache__"):
         if objetivo.exists():
             for hijo in list(objetivo.iterdir()):
                 try:
