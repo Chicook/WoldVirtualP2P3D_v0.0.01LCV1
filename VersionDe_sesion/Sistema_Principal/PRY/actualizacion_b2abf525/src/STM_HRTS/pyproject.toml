@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "woldvirtualp2p3d"
+version = "0.0.1"
+description = "WoldVirtualP2P3D - Sistema cognitivo LucIA: blockchain PoNL, IPFS, red neuronal e inferencia hibrida"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [{ name = "Equipo Celebro WoldVirtualP2P3D" }]
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+voz = ["edge-tts>=6.1"]
+dev = [
+    "pytest>=8.0",
+    "pytest-timeout>=2.3",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+lucia = "STMGNRL.mainLCSTM:main"
+
+[tool.setuptools.packages.find]
+include = ["LC*"]
+
+[tool.setuptools.package-data]
+"LC.modelosIAlocal" = ["*.json"]
+"LC.celebro.CMFG" = ["*.json"]
+"LC.compatibility" = ["*.json"]
+"LC" = ["*.json"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+extend-exclude = [
+    "LC/celebro/CMFG/IPFSonl",
+    "**/__pycache__",
+]
+
+[tool.ruff.lint]
+# E722/E402/F401: se relajan en legacy; se endurecerán por fase
+select = ["E9", "F63", "F7", "F82", "E501", "W291", "W293"]
+ignore = []
+
+[tool.pyright]
+extraPaths = ["LC", ".."]
+
+[tool.pytest.ini_options]
+testpaths = ["LC/celebro/test"]
+pythonpath = ["."]
+timeout = 60
+markers = [
+    "slow: test que tarda mas de 2 segundos",
+    "net: requiere conexion de red real",
+    "voice: requiere edge-tts / winmm instalado",
+    "gpu: requiere GPU/CUDA disponible",
+    "ipfs: requiere daemon IPFS Kubo corriendo",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
