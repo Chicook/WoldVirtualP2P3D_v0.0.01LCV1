@@ -29,10 +29,8 @@ logger = logging.getLogger("lucIA.RedNeuronal.Voz")
 # ---------------------------------------------------------------------------
 # Directorio de modelos y prioridad de voces
 # ---------------------------------------------------------------------------
-_MODELS_DIR = Path(
-    r"c:\Users\User\Desktop\WoldVirtualP2P3D_v0.0.01LCV1"
-    r"\VersionDe_sesion\CONTRRF\TLLDCD\RFC\src\SBSTM\tts_models"
-)
+_DIR_SRC = Path(__file__).resolve().parents[3]  # .../RFC/src
+_MODELS_DIR = _DIR_SRC / "SBSTM" / "tts_models"
 
 _MODELOS_PRIORITARIOS: List[Tuple[str, str]] = [
     ("es_AR-daniela-high.onnx",    "Daniela (alta calidad, femenina)"),
@@ -356,7 +354,33 @@ class ProcesadorVozNeuronalLucIA:
             emocion: Valencia emocional 0.0-1.0 (afecta velocidad y brillo).
         """
         if not self._motor.disponible:
-            return None
+            # Fallback a voz oficial gTTS con DSP si no hay pesos ONNX descargados
+            try:
+                import io
+                import soundfile as sf
+                from gtts import gTTS
+                texto_proc = self.modulador.procesar_texto(texto, emocion)
+                tts = gTTS(text=texto_proc, lang="es", tld="es", slow=False)
+                mp3_fp = io.BytesIO()
+                tts.write_to_fp(mp3_fp)
+                mp3_fp.seek(0)
+                audio_raw, sr = sf.read(mp3_fp)
+                if audio_raw.ndim > 1:
+                    audio_raw = audio_raw[:, 0]
+                audio_raw = audio_raw.astype(np.float32)
+                params = self.modulador.calcular_parametros_dsp(emocion)
+                if self._dsp.disponible:
+                    audio_raw = self._dsp.procesar(
+                        audio_raw,
+                        sr,
+                        pitch_semitones=params.get("pitch_semitones", 2.2),
+                        high_shelf_gain=params.get("high_shelf_gain", 2.5),
+                        low_mid_cut_db=params.get("low_mid_cut_db", -2.0),
+                    )
+                return audio_raw, sr
+            except Exception as e_fb:
+                logger.warning(f"[ProcesadorVozNeuronal] Fallback gTTS fallo: {e_fb}")
+                return None
 
         texto_proc = self.modulador.procesar_texto(texto, emocion)
         if not texto_proc:

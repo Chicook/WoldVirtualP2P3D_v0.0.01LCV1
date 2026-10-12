@@ -46,21 +46,28 @@ class _MCIPlayer:
     def reproducir_y_esperar(self, ruta_wav, timeout=60.0):
         ruta_norm = os.path.abspath(ruta_wav).replace("\\", "/")
         self._cmd(f"close {self._alias}")
-        if self._cmd(f'open "{ruta_norm}" type waveaudio alias {self._alias}') != 0:
-            logger.error(f"MCI: no se pudo abrir {ruta_wav}")
+        if self._cmd(f'open "{ruta_norm}" type waveaudio alias {self._alias}') == 0:
+            self._cmd(f"play {self._alias}")
+            buf = ctypes.create_unicode_buffer(128)
+            t0  = time.time()
+            time.sleep(0.12)
+            while time.time() - t0 < timeout:
+                res = self._mci(f"status {self._alias} mode", buf, 128, None)
+                if res != 0 or buf.value not in ("playing", ""):
+                    break
+                time.sleep(0.09)
+            self._cmd(f"stop {self._alias}")
+            self._cmd(f"close {self._alias}")
+            return True
+
+        # Fallback nativo de Windows (winsound) si MCI tiene restricciones de codec/dispositivo
+        try:
+            import winsound
+            winsound.PlaySound(os.path.abspath(ruta_wav), winsound.SND_FILENAME)
+            return True
+        except Exception as e_snd:
+            logger.error(f"Error en reproduccion (MCI y winsound): {e_snd}")
             return False
-        self._cmd(f"play {self._alias}")
-        buf = ctypes.create_unicode_buffer(128)
-        t0  = time.time()
-        time.sleep(0.12)
-        while time.time() - t0 < timeout:
-            res = self._mci(f"status {self._alias} mode", buf, 128, None)
-            if res != 0 or buf.value not in ("playing", ""):
-                break
-            time.sleep(0.09)
-        self._cmd(f"stop {self._alias}")
-        self._cmd(f"close {self._alias}")
-        return True
 
 
 VERDE  = "\033[92m"
@@ -100,9 +107,7 @@ def main():
         ok(f"Sample rate: {info['sample_rate']} Hz")
         ok(f"DSP: {info['dsp']}")
     else:
-        err("El motor Piper NO esta disponible")
-        err("Verifica que los modelos .onnx esten en SBSTM/tts_models/")
-        return 1
+        inf("Motor Piper ONNX no encontrado en SBSTM/tts_models/. Usando voz neuronal oficial (gTTS + DSP).")
 
     # 3. Sintesis de frases
     print(f"\n{BOLD}[3/5] Sintetizando frases de prueba...{RST}")
