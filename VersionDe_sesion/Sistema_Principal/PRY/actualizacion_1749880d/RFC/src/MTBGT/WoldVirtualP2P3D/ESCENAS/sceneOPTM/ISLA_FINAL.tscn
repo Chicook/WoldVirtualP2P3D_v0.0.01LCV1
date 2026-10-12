@@ -1,0 +1,90 @@
+[gd_scene format=3 uid="uid://cct06brrtfpfs"]
+
+[ext_resource type="Script" path="res://ESCENAS/sceneOPTM/ChunkManager.gd" id="1_script"]
+[ext_resource type="Shader" uid="uid://fkfyjn5r735x" path="res://ESCENAS/sceneOPTM/OCEANO.gdshader" id="3_jqncp"]
+[ext_resource type="PackedScene" uid="uid://cqcmde1qu1163" path="res://imbld/ISLA3DCHUNK.blend" id="3_mesh"]
+[ext_resource type="PackedScene" uid="uid://hkyxk1u4jg18" path="res://ESCENAS/sceneOPTM/userbase.tscn" id="4_82bcm"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0phqs"]
+resource_name = "RocaRealistaOptimizada"
+albedo_color = Color(0.72549, 0.72549, 0.72549, 1)
+roughness = 0.85
+normal_scale = 1.25
+ao_light_affect = 0.4
+uv1_scale = Vector3(15, 15, 15)
+uv1_triplanar = true
+uv1_triplanar_sharpness = 1.5
+texture_filter = 5
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_final"]
+sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+ground_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+
+[sub_resource type="Sky" id="Sky_final"]
+sky_material = SubResource("ProceduralSkyMaterial_final")
+
+[sub_resource type="Environment" id="Environment_final"]
+background_mode = 2
+sky = SubResource("Sky_final")
+tonemap_mode = 3
+ssao_enabled = true
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_njqwk"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_b1lj4"]
+noise = SubResource("FastNoiseLite_njqwk")
+seamless = true
+as_normal_map = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_82bcm"]
+render_priority = 0
+shader = ExtResource("3_jqncp")
+shader_parameter/albedo = Color(0.047058824, 0.31764707, 0.46666667, 0.5058824)
+shader_parameter/albedo_texture_size = Vector2i(0, 0)
+shader_parameter/point_size = 1.0
+shader_parameter/roughness = 0.0
+shader_parameter/metallic_texture_channel = Vector4(1, 0, 0, 0)
+shader_parameter/specular = 0.5
+shader_parameter/metallic = 0.0
+shader_parameter/texture_refraction = SubResource("NoiseTexture2D_b1lj4")
+shader_parameter/refraction = 0.05
+shader_parameter/refraction_texture_channel = Vector4(0, 0, 1, 0)
+shader_parameter/texture_normal = SubResource("NoiseTexture2D_b1lj4")
+shader_parameter/normal_scale = 1.0
+shader_parameter/uv1_blend_sharpness = 1.0
+shader_parameter/uv1_scale = Vector3(0.04, 0.04, 0.04)
+shader_parameter/uv1_offset = Vector3(0, 0, 0)
+shader_parameter/uv2_scale = Vector3(1, 1, 1)
+shader_parameter/uv2_offset = Vector3(0, 0, 0)
+
+[sub_resource type="BoxMesh" id="BoxMesh_xrivr"]
+material = SubResource("ShaderMaterial_82bcm")
+size = Vector3(201.01111, 10.027771, 200.69453)
+
+[node name="IslaFinal" type="Node3D" unique_id=2104261715]
+script = ExtResource("1_script")
+material_to_apply = SubResource("StandardMaterial3D_0phqs")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=379703352]
+environment = SubResource("Environment_final")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=578306742]
+transform = Transform3D(-0.8660253, -0.4330129, 0.2500001, 0, 0.49999994, 0.86602545, -0.50000024, 0.74999994, -0.43301257, 0, 45.850403, 0)
+shadow_enabled = true
+directional_shadow_mode = 1
+directional_shadow_blend_splits = true
+directional_shadow_max_distance = 300.0
+
+[node name="ISLA3DCHUNK" parent="." unique_id=1812185181 instance=ExtResource("3_mesh")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0012779236, -9.750241, -0.0044407845)
+
+[node name="Oceano3D" type="Node3D" parent="." unique_id=2095069058]
+
+[node name="Oceano" type="MeshInstance3D" parent="Oceano3D" unique_id=47056974]
+transform = Transform3D(1, 0, 0, 0, 8.704111, 0, 0, 0, 1, -0.80192566, -4.460106, -0.41469955)
+mesh = SubResource("BoxMesh_xrivr")
+
+[node name="USERBASE" parent="." unique_id=1527827746 instance=ExtResource("4_82bcm")]
+transform = Transform3D(0.9999999, 0, 0, 0, 0.9999999, 0, 0, 0, 0.9999999, 1.1641532e-10, 41.952972, 0)
+
+[editable path="ISLA3DCHUNK"]

@@ -137,3 +137,5 @@ $RECYCLE.BIN/
 # Temporary exclusions
 # ------------------------------------------------------------------------------
 VersionDe_sesion/Sistema_Principal/PRY/actualizacion_0c618589/src/MTBGT/
+.godot/
+*/.godot/
