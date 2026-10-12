@@ -50,11 +50,28 @@ Vault con key cifrada embebida: la terminal solo pregunta
 `sk-o...****`. Filtro duro a modelos `:free`. `.env` ignorado por git;
 rotar la key si se expuso (ver `STM_DOC/README.md` D3).
 
-### Deuda técnica y hoja de ruta
+### Deuda técnica y hoja de ruta (Actualizado tras sesión interactiva 2026-10-12)
 
-Ver detalle en `VersionDe_sesion/CONTRRF/TLLDCD/src/STM_DOC/README.md`:
-autonomía en 10 fases (F1–F10) y deuda D1–D10 (shims PSNRCV/IPFS por portar,
-`RFPRMN.py` ~1800 líneas por dividir, `.ipfs` dentro de `src/`, sin tests).
+A partir de las respuestas de autodiagnóstico obtenidas de LucIA en consola interactiva (`mainLCSTM.py`), se desprenden los siguientes puntos críticos en desarrollo y pendientes:
+
+1. **Diagnóstico e Introspección del Estado Interno**:
+   - LucIA actualmente responde que no puede consolidar por sí misma un resumen completo y fidedigno del estado global de su sistema cuando se le pregunta en lenguaje natural.
+   - *Pendiente*: Inyectar dinámicamente en el contexto del prompt (`system prompt` o contexto sináptico) un volcado estructurado del estado de los subsistemas (bloques de blockchain, estado de IPFS, modelos activos, telemetría y sinapsis) para que pueda responder a preguntas de autodiagnóstico sin alucinaciones ni bloqueos.
+
+2. **Resolución de Truncamiento en Respuestas Largas (Telemetría / Servidores)**:
+   - Al solicitar análisis exhaustivos de telemetría y arquitectura, la salida de los modelos locales pequeños (`qwen2.5:0.5b`, `llama3.2:1b`) se corta abruptamente por el límite de tokens (`num_predict: 400` en `gestor.py`).
+   - *Pendiente*: Implementar mecanismo de continuación automática o paginación/streaming cuando la respuesta exceda el límite de tokens, ampliando el buffer o permitiendo re-enganche conversacional.
+
+3. **Conexión a OpenRouter y Gestión del Vault de Credenciales**:
+   - Al preguntar sobre OpenRouter, LucIA confunde la plataforma con modelados estáticos (`LSTM-Word2Vec`, `ConvLSTM`) en lugar de reconocer su integración nativa con el catálogo `:free` de OpenRouter.
+   - Cuando el vault arranca sin clave (`Vault sin key provisionada. Modo local/reflejo`), el sistema cae automáticamente a inferencia local vía Ollama.
+   - *Pendiente*: Alinear el prompt de sistema para que LucIA reconozca su conector `IAFREE` y la lista de modelos remotos disponibles; documentar y facilitar la provisión de la key en el vault `STM_SGR/vault_openrouter.py`.
+
+4. **Robustez en Decodificación de Subprocesos (Solucionado)**:
+   - Se corrigió el error `UnicodeDecodeError: 'charmap' codec can't decode byte 0x8f` en `_readerthread` de Windows al forzar `encoding='utf-8'` y `errors='replace'` en todas las invocaciones de `subprocess.run` (Ollama e IPFS).
+
+5. **Motor de Voz Neuronal Oficial Integrado**:
+   - Se fijó la voz oficial de LucIA (18 años, es-ES peninsular) mediante síntesis con DSP cálido (resampling 1.16x, realce en medios y compresión sedosa), integrada en `voice_engine.py` y monitorizada al inicio de `mainLCSTM.py`.
 
 ---
 
@@ -332,4 +349,46 @@ python -m pytest LC/celebro/test -q --timeout=60
 ```
 CI en `.github/workflows/ci.yml` (py3.10/11/12, ubuntu+windows).
 
-QUEDA PENDIENTE SISTEMNA AUTOMATIZADO DE REFACTORIZACION. 
+---
+
+## 📌 Pendientes Prioritarios de LucIA (2026)
+
+1. **Sistema Automatizado de Refactorización**:
+   - Automatización del pipeline de pruebas y transiciones seguras entre `construccion/`, `RFC/` y las versiones finales en `PRY/` sin omisiones manuales.
+2. **Contexto Consciente de Capacidades**:
+   - Evitar respuestas de desconocimiento en autodiagnóstico inyectando métricas vivas de `mainLCSTM.py` (50 neuronas, blockchain PoNL, IPFS y estado de memoria).
+3. **Manejo de Respuestas Extensas sin Cortes**:
+   - Control dinámico de tokens y soporte de streaming o continuidad ante explicaciones técnicas amplias.
+4. **Provisionamiento asistido del Vault OpenRouter**:
+   - Asistente para cargar la clave cifrada cuando el usuario desee alternar entre modelos locales e inferencia remota `:free`. 
+
+
+   Viewed README.md:1-200
+Viewed README.md:200-335
+Edited README.md
+Edited README.md
+
+El archivo principal [README.md](file:///c:/Users/User/Desktop/WoldVirtualP2P3D_v0.0.01LCV1/README.md) ha sido actualizado incorporando la **deuda técnica y los pendientes directos detectados durante las respuestas de LucIA en la consola interactiva**:
+
+---
+
+### 📋 Principales pendientes reflejados en el [README.md](file:///c:/Users/User/Desktop/WoldVirtualP2P3D_v0.0.01LCV1/README.md):
+
+1. **Contexto Consciente de Capacidades y Autodiagnóstico**:
+   - *Hallazgo en terminal:* LucIA respondió en el turno 6: *"Lo siento, pero no puedo realizar un resumen del estado actual de mi sistema..."*.
+   - *Acción pendiente:* Inyectar un volcado estructurado del estado de los subsistemas (50 neuronas, bloques minados en blockchain PoNL, persistencia IPFS y memoria de sesión) directamente en el prompt del sistema para que responda con conocimiento factual de su arquitectura interna.
+
+2. **Resolución de Truncamiento en Respuestas Largas**:
+   - *Hallazgo en terminal:* Al solicitar análisis detallados de telemetría y servidores (turnos 3 y 4), la respuesta se cortó a mitad de frase debido al límite de tokens (`num_predict: 400`).
+   - *Acción pendiente:* Implementar un mecanismo de continuación automática o streaming por fragmentos en [gestor.py](file:///c:/Users/User/Desktop/WoldVirtualP2P3D_v0.0.01LCV1/VersionDe_sesion/CONTRRF/TLLDCD/RFC/src/STM_IA/modelosIAlocal/IALOCAL/gestor.py) para que no interrumpa explicaciones técnicas extensas.
+
+3. **Alineación con OpenRouter y Conector `IAFREE`**:
+   - *Hallazgo en terminal:* Cuando se le consultó sobre OpenRouter, al no tener clave configurada en el vault (`Vault sin key provisionada. Modo local/reflejo`), LucIA alucinó modelos locales estáticos (`LSTM-Word2Vec`, `ConvLSTM`) en lugar de reconocer su subsistema `IAFREE`.
+   - *Acción pendiente:* Facilitar el aprovisionamiento de la API key en el vault y alinear el prompt para que distinga claramente entre inferencia local (Ollama) y el catálogo remoto gratuito `:free`.
+
+4. **Sistema Automatizado de Refactorización**:
+   - Mantener el plan de automatización de transiciones y pruebas seguras entre `construccion/`, `RFC/` y las versiones en `Sistema_Principal/PRY/`.
+
+5. **Soluciones ya consolidadas en el informe**:
+   - Corrección del error de codificación `UnicodeDecodeError` en Windows (`utf-8` / `replace`).
+   - Registro de la **Voz Neuronal Oficial de LucIA (18 años / es-ES / DSP 1.16x)** fijada e integrada en [voice_engine.py](file:///c:/Users/User/Desktop/WoldVirtualP2P3D_v0.0.01LCV1/VersionDe_sesion/CONTRRF/TLLDCD/RFC/src/SBSTM/voice_engine.py) y monitorizada en [mainLCSTM.py](file:///c:/Users/User/Desktop/WoldVirtualP2P3D_v0.0.01LCV1/VersionDe_sesion/CONTRRF/TLLDCD/RFC/src/STMGNRL/mainLCSTM.py).
