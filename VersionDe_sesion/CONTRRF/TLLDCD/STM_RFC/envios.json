@@ -206,5 +206,21 @@
     "ficheros": 949,
     "estado": "OK actualizar",
     "fecha": "2026-10-12T22:40:01"
+  },
+  {
+    "carpeta": "src",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\TLLDCD\\src",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC\\src",
+    "ficheros": 949,
+    "estado": "OK",
+    "fecha": "2026-10-12T22:56:15"
+  },
+  {
+    "carpeta": "RFC",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\Sistema_Principal\\PRY\\actualizacion_088b6f71",
+    "ficheros": 950,
+    "estado": "OK actualizar",
+    "fecha": "2026-10-12T22:57:01"
   }
 ]
