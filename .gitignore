@@ -85,6 +85,8 @@ LC/modelosIAlocal/*.bin
 LC/modelosIAlocal/*.safetensors
 *.gguf
 *.safetensors
+*.onnx
+**/tts_models/*.onnx
 
 # Logs del sistema y ejecución
 # ------------------------------------------------------------------------------
