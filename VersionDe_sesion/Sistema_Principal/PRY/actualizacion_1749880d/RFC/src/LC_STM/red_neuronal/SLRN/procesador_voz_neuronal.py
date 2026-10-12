@@ -1,16 +1,4 @@
-"""procesador_voz_neuronal.py - Procesador de Voz Neuronal de LucIA 2026.
-Ubicacion: LC_STM/red_neuronal/SLRN/procesador_voz_neuronal.py
-
-Motor de sintesis 100% local integrado con la red neuronal de LucIA (SLRN).
-Genera una voz femenina natural de chica espanola de 18 anos recien cumplidos
-usando Piper TTS + DSP profesional (pedalboard) acelerado por Intel Arc (DirectML).
-
-Arquitectura:
-  1. Piper TTS  -> genera PCM raw con modelo Daniela (es_AR-daniela-high) o es-ES
-  2. DSP (pedalboard) -> pitch shift + ecualizacion para timbre juvenil peninsular
-  3. ModuladorCognitivo -> adapta el texto al registro oral espontaneo de 18 anos
-  4. Fallback en cadena -> Daniela -> es-ES-mls -> es-ES-sharvard -> sin DSP
-"""
+"""Procesador de Voz Neuronal de LucIA 2026 (LC_STM/red_neuronal/SLRN/procesador_voz_neuronal.py)."""
 from __future__ import annotations
 
 import io
@@ -26,17 +14,20 @@ import numpy as np
 
 logger = logging.getLogger("lucIA.RedNeuronal.Voz")
 
-# ---------------------------------------------------------------------------
-# Directorio de modelos y prioridad de voces
-# ---------------------------------------------------------------------------
 _DIR_SRC = Path(__file__).resolve().parents[3]  # .../RFC/src
 _MODELS_DIR = _DIR_SRC / "SBSTM" / "tts_models"
 
-_MODELOS_PRIORITARIOS: List[Tuple[str, str]] = [
-    ("es_AR-daniela-high.onnx",    "Daniela (alta calidad, femenina)"),
-    ("es_ES-sharvard-medium.onnx", "Sharvard (es-ES, media)"),
-    ("es_ES-mls_10246-low.onnx",   "MLS-10246 (es-ES, baja)"),
-    ("es_ES-mls_9972-low.onnx",    "MLS-9972 (es-ES, baja)"),
+_MODELOS_PRIORITARIOS: List[Tuple[str, str, str]] = [
+    (
+        "es_AR-daniela-high.onnx",
+        "Daniela (alta calidad, femenina)",
+        "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/es/es_AR/daniela/high/es_AR-daniela-high.onnx",
+    ),
+    (
+        "es_ES-sharvard-medium.onnx",
+        "Sharvard (es-ES, media)",
+        "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/es/es_ES/sharvard/medium/es_ES-sharvard-medium.onnx",
+    ),
 ]
 
 
@@ -47,21 +38,15 @@ class ModuladorCognitivo18Anos:
     """Adapta el texto al estilo oral espontaneo de una chica espanola de 18 anos."""
 
     MULETILLAS_NATURALES: List[str] = [
-        "Oye, ", "Pues mira, ", "A ver, te cuento: ",
-        "Mira, ", "Fijate que ", "Bueno, a ver, ",
+        "Oye, ", "Pues mira, ", "A ver, te cuento: ", "Mira, ", "Fijate que ", "Bueno, a ver, ",
     ]
 
     PATRONES_ORALES: List[Tuple[str, str]] = [
-        (r"\bpor lo tanto\b", "asi que"),
-        (r"\bpor consiguiente\b", "con lo cual"),
-        (r"\bsin embargo\b", "pero oye,"),
-        (r"\bno obstante\b", "aunque bueno,"),
-        (r"\bes decir\b", "o sea,"),
-        (r"\ben efecto\b", "exactamente,"),
-        (r"\bcabe destacar que\b", "lo que mola es que"),
-        (r"\bciertamente\b", "de verdad,"),
-        (r"\bpor tanto\b", "entonces"),
-        (r"\basimismo\b", "y tambien"),
+        (r"\bpor lo tanto\b", "asi que"), (r"\bpor consiguiente\b", "con lo cual"),
+        (r"\bsin embargo\b", "pero oye,"), (r"\bno obstante\b", "aunque bueno,"),
+        (r"\bes decir\b", "o sea,"), (r"\ben efecto\b", "exactamente,"),
+        (r"\bcabe destacar que\b", "lo que mola es que"), (r"\bciertamente\b", "de verdad,"),
+        (r"\bpor tanto\b", "entonces"), (r"\basimismo\b", "y tambien"),
     ]
 
     def __init__(self) -> None:
@@ -96,22 +81,17 @@ class ModuladorCognitivo18Anos:
         return t
 
     def calcular_parametros_dsp(self, emocion: float = 0.65) -> Dict[str, float]:
-        """
-        Parametros DSP para timbre de chica espanola de 18 anos.
-        Daniela (ar) es ligeramente grave -> pitch up + brillo + corte de pecho.
-        length_scale Piper: < 1.0 = mas rapido; joven habla ~15% mas rapido.
-        """
+        """Parametros DSP para timbre de chica espanola de 18 anos."""
         return {
-            "length_scale":    max(0.72, 0.88 - emocion * 0.10),
+            "length_scale": max(0.72, 0.88 - emocion * 0.10),
             "pitch_semitones": 2.2 + emocion * 0.8,
             "high_shelf_gain": 2.5 + emocion * 1.2,
-            "low_mid_cut_db":  -2.5,
-            "noise_scale":     0.55 + emocion * 0.15,
-            "noise_w_scale":   0.70 + emocion * 0.15,
+            "low_mid_cut_db": -2.5,
+            "noise_scale": 0.55 + emocion * 0.15,
+            "noise_w_scale": 0.70 + emocion * 0.15,
         }
 
     def calcular_parametros_neuronales(self, emocion: float = 0.65) -> Dict[str, float]:
-        """Alias retrocompatible."""
         return self.calcular_parametros_dsp(emocion)
 
 
@@ -136,11 +116,14 @@ class MotorPiperLocal:
             logger.error("[MotorPiper] piper-tts no instalado. pip install piper-tts")
             return
 
-        for nombre_onnx, descripcion in _MODELOS_PRIORITARIOS:
+        self.models_dir.mkdir(parents=True, exist_ok=True)
+        for nombre_onnx, descripcion, url_onnx in _MODELOS_PRIORITARIOS:
             ruta_onnx = self.models_dir / nombre_onnx
             ruta_json = self.models_dir / (nombre_onnx + ".json")
             if not ruta_onnx.exists() or not ruta_json.exists():
-                logger.debug(f"[MotorPiper] No encontrado: {nombre_onnx}")
+                self._descargar_modelo_si_ausente(nombre_onnx, url_onnx, ruta_onnx, ruta_json)
+            if not ruta_onnx.exists() or not ruta_json.exists():
+                logger.debug(f"[MotorPiper] No disponible localmente: {nombre_onnx}")
                 continue
             try:
                 self._voice = PiperVoice.load(
@@ -166,6 +149,28 @@ class MotorPiperLocal:
                 "[MotorPiper] Ningun modelo Piper disponible en tts_models/. "
                 "Verifica que los .onnx y .json esten presentes."
             )
+
+    def _descargar_modelo_si_ausente(
+        self, nombre_onnx: str, url_onnx: str, ruta_onnx: Path, ruta_json: Path
+    ) -> None:
+        """Descarga de forma segura el modelo ONNX y JSON desde Hugging Face si no estan."""
+        import urllib.request
+        url_json = url_onnx + ".json"
+        try:
+            logger.info(f"[MotorPiper] Descargando modelo de voz neuronal {nombre_onnx}...")
+            if not ruta_json.exists():
+                urllib.request.urlretrieve(url_json, str(ruta_json))
+            if not ruta_onnx.exists():
+                urllib.request.urlretrieve(url_onnx, str(ruta_onnx))
+            logger.info(f"[MotorPiper] Descarga de {nombre_onnx} completada con exito.")
+        except Exception as e_dl:
+            logger.warning(f"[MotorPiper] No se pudo descargar {nombre_onnx} automaticamente: {e_dl}")
+            for p in (ruta_onnx, ruta_json):
+                if p.exists() and p.stat().st_size == 0:
+                    try:
+                        p.unlink()
+                    except Exception:
+                        pass
 
     def _intentar_directml(self, ruta_onnx: Path) -> None:
         """Inyecta sesion DirectML (Intel Arc) en PiperVoice si esta disponible."""
@@ -367,17 +372,23 @@ class ProcesadorVozNeuronalLucIA:
                 audio_raw, sr = sf.read(mp3_fp)
                 if audio_raw.ndim > 1:
                     audio_raw = audio_raw[:, 0]
-                audio_raw = audio_raw.astype(np.float32)
+                # Acelerar la cadencia a 1.16x para el tono juvenil espontáneo
+                from scipy import signal
+                factor_vel = 1.16
+                nueva_len = int(len(audio_raw) / factor_vel)
+                audio_resample = signal.resample(audio_raw, nueva_len)
                 params = self.modulador.calcular_parametros_dsp(emocion)
                 if self._dsp.disponible:
-                    audio_raw = self._dsp.procesar(
-                        audio_raw,
+                    audio_final = self._dsp.procesar(
+                        audio_resample,
                         sr,
                         pitch_semitones=params.get("pitch_semitones", 2.2),
                         high_shelf_gain=params.get("high_shelf_gain", 2.5),
                         low_mid_cut_db=params.get("low_mid_cut_db", -2.0),
                     )
-                return audio_raw, sr
+                else:
+                    audio_final = audio_resample
+                return audio_final, sr
             except Exception as e_fb:
                 logger.warning(f"[ProcesadorVozNeuronal] Fallback gTTS fallo: {e_fb}")
                 return None
