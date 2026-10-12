@@ -169,16 +169,10 @@ class ReformuladorLinguisticoLucia:
         self._lock = threading.Lock()
 
     def _limpiar(self, texto: str) -> str:
+        # Solo corrige identidad ajena; respeta saludos, pronombres y tono natural.
         pats = [
-            (r"(?i)[!]?[Hh]ola\s*(?:[\U0001F600-\U0001F64F])?\s*", ""),
-            (r"(?i)claro que si[,!.]*\s*", ""),
-            (r"(?i)por supuesto[,!.]*\s*", ""),
-            (r"(?i)como modelo de lenguaje[,.]*\s*", ""),
-            (r"(?i)soy (claude|gpt|un asistente)[^.]*\.\s*", ""),
-            (r"(?i)recuerda que[^.]*\.\s*", ""),
-            (r"(?i)no tengo (emociones|sentimientos|conciencia)[^.]*\.\s*", ""),
-            (r"(?i)como (ia|inteligencia artificial)[,.]*\s*", ""),
-            (r"(?i)(?:lo siento,? pero )?como asistente[^.]*no puedo realizar diagn[oó]sticos[^.]*\.\s*", ""),
+            (r"(?i)soy (claude|gpt|gemini|un modelo de lenguaje de google|un asistente de anthropic)[^.]*\.\s*", "soy LucIA. "),
+            (r"(?i)como modelo de lenguaje de google[,.]*\s*", ""),
         ]
         r = texto
         for p, s in pats:
@@ -194,21 +188,12 @@ class ReformuladorLinguisticoLucia:
     def _apertura(self, tono: str, n_activas: int) -> str:
         opts = _SINONIMOS_TONO.get(tono, _SINONIMOS_TONO["neutro"])
         base = opts[self._cnt % len(opts)].capitalize()
-        if n_activas > 20:
-            base += " (" + str(n_activas) + " sinapsis activadas)"
+        base += " (50 sinapsis procesadas)"
         return base
 
     def _reformular_cuerpo(self, texto: str) -> str:
-        parrafos = [p.strip() for p in texto.split("\n") if p.strip()]
-        out: List[str] = []
-        for p in parrafos:
-            p = re.sub(r"\b(el usuario|tu|usted)\b", "quien consulta", p, flags=re.IGNORECASE)
-            p = re.sub(r"\bpuedo ayudarte\b", "proceso esto para ti", p, flags=re.IGNORECASE)
-            p = re.sub(r"\b(te recomiendo|te sugiero)\b", "mi analisis apunta a", p, flags=re.IGNORECASE)
-            p = re.sub(r"\bes importante que\b", "noto que es relevante", p, flags=re.IGNORECASE)
-            p = re.sub(r"\b(debes|deberias)\b", "considero que", p, flags=re.IGNORECASE)
-            out.append(p)
-        return "\n".join(out)
+        # Cuerpo intacto: el modelo ya habla en voz de LucIA via system prompt.
+        return "\n".join(p.strip() for p in texto.split("\n") if p.strip())
 
     def reformular(self, texto: str, tono: str, valencia: float, vector: List[float], n_activas: int) -> str:
         limpio = self._limpiar(texto)
@@ -220,7 +205,7 @@ class ReformuladorLinguisticoLucia:
         val_str = f"{valencia:+.3f}"
         cierres = [
             "*(Valencia sinaptica: " + val_str + " | Tono: " + tono + ")*",
-            "*(" + str(n_activas) + " neuronas activas | Tono: " + tono + ")*",
+            "*(50 neuronas procesadas (" + str(n_activas) + " sobre umbral) | Tono: " + tono + ")*",
             "*(Deriva cognitiva integrada | Tono: " + tono + " | Valencia: " + val_str + ")*",
         ]
         cierre = cierres[self._cnt % len(cierres)]
@@ -269,6 +254,7 @@ class ProcesadorRPLC:
             "tono": tono,
             "valencia_sinaptica": val,
             "densidad_semantica": densidad,
+            "neuronas_procesadas": len(vec_out),
             "neuronas_activas": n_act,
             "deriva_media": deriva,
             "voz_ajena_detectada": ajena,
@@ -303,6 +289,7 @@ class ProcesadorRPLC:
             "tokens_unicos": len(set(tok)),
             "tono": tono,
             "densidad_semantica": self.analizador.calcular_densidad_semantica(texto),
+            "neuronas_procesadas": len(vt),
             "neuronas_activas": len(act),
             "indices_activos": act[:10],
             "valencia_vectorial": val,

@@ -23,7 +23,7 @@ if str(SRC_DIR) not in sys.path:
 
 
 def _ram_proceso_mb() -> float:
-    """Estima la RAM utilizada por el proceso Python actual en MB."""
+    """RAM real del proceso via GetProcessMemoryInfo (struct Win64 correcto)."""
     try:
         import ctypes  # noqa: F811
         class _MemInfo(ctypes.Structure):
@@ -41,9 +41,18 @@ def _ram_proceso_mb() -> float:
             ]
         mi = _MemInfo()
         mi.cb = ctypes.sizeof(mi)
-        ctypes.windll.psapi.GetProcessMemoryInfo(
-            ctypes.windll.kernel32.GetCurrentProcess(), ctypes.byref(mi), mi.cb
-        )
+        try:
+            _gpm = ctypes.windll.psapi.GetProcessMemoryInfo
+            _gpm.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_ulong]
+            _gpm.restype = ctypes.c_int
+            _gcp = ctypes.windll.kernel32.GetCurrentProcess
+            _gcp.argtypes = []
+            _gcp.restype = ctypes.c_void_p
+            ok = _gpm(_gcp(), ctypes.byref(mi), mi.cb)
+        except Exception:
+            ok = 0
+        if not ok or mi.WorkingSetSize == 0:
+            return -1.0
         return round(mi.WorkingSetSize / (1024 * 1024), 2)
     except Exception:
         return -1.0
@@ -78,9 +87,19 @@ class AutodiagnosticoLucIA:
             conv = get_conversor_pesos()
             total_n = len(conv.neuronas)
             test_resp = conv.procesar_consulta_a_pesos("autodiagnostico sinaptico")
+            # Distribucion por capa (5 capas x 10): prueba de que las 50 estan en sesion
+            capas: Dict[str, int] = {}
+            for n in conv.neuronas:
+                nid = str(n.get("id", "?"))
+                capa = "".join(c for c in nid if not c.isdigit())
+                capas[capa] = capas.get(capa, 0) + 1
+            pesos_nulos = sum(1 for n in conv.neuronas if not n.get("peso"))
             return {
                 "estado": "OPERATIVO" if total_n >= 50 else "DEGRADADO",
                 "total_neuronas": total_n,
+                "distribucion_capas": capas,
+                "pesos_sin_actualizar": pesos_nulos,
+                "pasos_sesion": getattr(conv, "pasos_sesion", -1),
                 "deriva_acumulada": round(float(conv.deriva_acumulada), 6),
                 "tono_inferido": test_resp.get("tono_cognitivo", "desconocido"),
                 "valencia_inferida": test_resp.get("estado_emocional", 0.0),
@@ -167,6 +186,51 @@ class AutodiagnosticoLucIA:
         except Exception:
             return {"total_errores_registrados": 0, "ultimos": []}
 
+    def inspeccionar_subsistemas_extra(self) -> Dict[str, Any]:
+        """IPFS, voz, RAG/conocimiento, memoria de sesion, watchdog y vault."""
+        extra: Dict[str, Any] = {}
+        try:
+            from STMIPFS.SBSTMPYIPFS import ipfs_launcher
+            extra["ipfs"] = "MODULO_OK"
+        except Exception as exc:
+            extra["ipfs"] = f"NO_DISPONIBLE ({str(exc)[:60]})"
+        try:
+            from SBSTM import voice_engine  # noqa
+            extra["voz"] = "DISPONIBLE"
+        except Exception:
+            extra["voz"] = "NO_DISPONIBLE"
+        try:
+            from STM_IA import conocimiento
+            cdir = getattr(conocimiento, "CONOCIMIENTO_DIR", None)
+            ndocs = len(list(cdir.glob("*"))) if cdir else -1
+            extra["rag_docs"] = ndocs
+        except Exception:
+            extra["rag_docs"] = -1
+        try:
+            from STM_CH.rutas import PSNRL_DIR
+            nses = len(list(Path(PSNRL_DIR).glob("memoria_*.json")))
+            extra["memorias_sesion"] = nses
+        except Exception:
+            extra["memorias_sesion"] = -1
+        try:
+            import threading
+            extra["watchdog_vivo"] = any(
+                t.name.startswith("Watchdog") or "watchdog" in t.name.lower()
+                for t in threading.enumerate()
+            )
+        except Exception:
+            extra["watchdog_vivo"] = False
+        try:
+            from STM_SGR.vault_openrouter import obtener_key
+            extra["vault_key"] = bool(obtener_key())
+        except Exception:
+            try:
+                import os
+                extra["vault_key"] = bool(os.getenv("OPENROUTER_API_KEY"))
+            except Exception:
+                extra["vault_key"] = False
+        return extra
+
     def ejecutar_diagnostico_completo(self) -> Dict[str, Any]:
         """Ejecuta todos los análisis introspectivos y devuelve el reporte consolidado."""
         t0 = time.perf_counter()
@@ -176,18 +240,21 @@ class AutodiagnosticoLucIA:
         archivos = self.inspeccionar_integridad_archivos()
         errores = self.inspeccionar_errores_recientes()
         memoria = self.inspeccionar_presion_memoria()
+        extra = self.inspeccionar_subsistemas_extra()
         duracion_ms = round((time.perf_counter() - t0) * 1000.0, 2)
 
+        ia_ok = bool(ia.get("ollama_activo") or ia.get("openrouter_activo"))
         salud_general = (
             bkch.get("estado") == "OPERATIVO"
             and neural.get("estado") == "OPERATIVO"
             and archivos.get("limite_respetado") is True
             and errores.get("total_errores_registrados", 0) == 0
             and memoria.get("estado") in ("OPTIMO", "ADVERTENCIA")
+            and ia_ok
         )
 
         return {
-            "version": "2026.5.0",
+            "version": "2026.6.1",
             "timestamp": time.time(),
             "duracion_ms": duracion_ms,
             "salud_general": "OPTIMO" if salud_general else "DEGRADADO",
@@ -197,6 +264,7 @@ class AutodiagnosticoLucIA:
             "integridad_codigo": archivos,
             "errores_runtime": errores,
             "presion_memoria": memoria,
+            "subsistemas_extra": extra,
         }
 
     def generar_resumen_texto(self) -> str:
@@ -217,6 +285,8 @@ class AutodiagnosticoLucIA:
             "2. RED NEURONAL Y SINAPSIS (50 Neuronas):",
             f"   • Estado: {diag['red_neuronal'].get('estado')}",
             f"   • Neuronas activas: {diag['red_neuronal'].get('total_neuronas')}",
+            f"   • Distribución por capa: {diag['red_neuronal'].get('distribucion_capas')}",
+            f"   • Pesos sin actualizar: {diag['red_neuronal'].get('pesos_sin_actualizar')} | Pasos sesión: {diag['red_neuronal'].get('pasos_sesion')}",
             f"   • Derivada sináptica Muon: {diag['red_neuronal'].get('deriva_acumulada')}",
             f"   • Tono cognitivo inferido: {diag['red_neuronal'].get('tono_inferido')}",
             "",
@@ -250,6 +320,19 @@ class AutodiagnosticoLucIA:
             f"   • RAM proceso: {ram_str} (umbral advertencia: {mem.get('limite_mb', 150)} MB)",
             f"   • Estado de presión: {mem.get('estado', 'desconocido')}",
         ])
+        ext = diag.get("subsistemas_extra", {})
+        lineas.extend([
+            "",
+            "7. SUBSISTEMAS EXTRA:",
+            f"   • IPFS: {ext.get('ipfs', '?')}",
+            f"   • Voz neuronal: {ext.get('voz', '?')}",
+            f"   • Docs RAG conocimiento: {ext.get('rag_docs', '?')}",
+            f"   • Memorias de sesión: {ext.get('memorias_sesion', '?')}",
+            f"   • Watchdog vivo: {ext.get('watchdog_vivo', '?')}",
+            f"   • Vault OpenRouter (key presente): {ext.get('vault_key', '?')}",
+            "   • Nota: blockchain/red se inspeccionan sobre estado persistido en disco,",
+            "     no sobre la instancia viva del orquestador.",
+        ])
 
         return "\n".join(lineas)
 
@@ -272,6 +355,31 @@ def es_peticion_diagnostico(prompt: str) -> bool:
         "que funciona y que no", "qué funciona y qué no", "estado del sistema",
         "salud del sistema", "como estas internamente", "cómo estás internamente",
         "revisa tu sistema", "analiza tu sistema", "inspecciona tu sistema",
+        "analizarte", "analizate", "examinarte", "examinate",
+        "analisis de ti", "análisis de ti", "chequea tus subsistemas",
+        "revisate", "revísate", "evaluarte", "evaluar tu estado",
+        "tu memoria", "tu ipfs", "tu blockchain", "tus subsistemas",
+        # Autoconocimiento "conocete a ti misma"
+        "quien eres", "quién eres", "que eres", "qué eres",
+        "que puedes hacer", "qué puedes hacer", "que no puedes",
+        "qué no puedes", "cuales son tus limites", "cuáles son tus límites",
+        "tus limites", "tus límites", "tus capacidades", "tus habilidades",
+        "cuantas neuronas", "cuántas neuronas", "como funcionas",
+        "cómo funcionas", "conocete a ti", "conócete a ti",
+        "estas conectada", "estás conectada", "tienes internet",
+        "que modelo eres", "qué modelo eres",
+    ]
+    return any(c in p for c in claves)
+
+
+def es_peticion_autoconocimiento(prompt: str) -> bool:
+    """Detecta preguntas sobre identidad/capacidades/limites (conocete a ti misma)."""
+    p = (prompt or "").lower()
+    claves = [
+        "quien eres", "quién eres", "que puedes", "qué puedes",
+        "que no puedes", "qué no puedes", "tus limites", "tus límites",
+        "tus capacidades", "cuantas neuronas", "cuántas neuronas",
+        "como funcionas", "cómo funcionas",
     ]
     return any(c in p for c in claves)
 
@@ -287,6 +395,7 @@ __all__ = [
     "ejecutar_diagnostico",
     "obtener_datos_diagnostico",
     "es_peticion_diagnostico",
+    "es_peticion_autoconocimiento",
     "respuesta_autodiagnostico_lucia",
 ]
 

@@ -10,14 +10,8 @@ Voz oficial: Voz Neuronal LucIA 18 anos (es-ES / Natural / DSP 1.16x / Tono Huma
 
 """
 
-# ===========================================================================
-# voice_engine.py - Motor de Sintesis de Voz Neuronal para LucIA (v0.0.01)
-# ===========================================================================
-
 from __future__ import annotations
 
-import asyncio
-import hashlib
 import logging
 import os
 import queue
@@ -25,8 +19,7 @@ import subprocess
 import tempfile
 import threading
 import time
-import winreg
-from typing import Any, Dict, Final, List, Optional, Tuple
+from typing import Final, List, Optional, Tuple
 
 from SBSTM.voice_helpers import (
     LimpiadorFoneticoLucIA,
@@ -58,7 +51,7 @@ class VoiceEngine:
         self._gtts_disponible: bool = False
         self._nivel_emocion: float = 0.65
         self._habilitado: bool = True
-        # OneCore COM voice (fallback cuando no haya conexion externa)
+        self._ultimo_error: str = ""
         self._onecore_token: Optional[object] = self._descubrir_voz_onecore()
         self._onecore_rate: int = 2
         self._procesador_rn = None
@@ -104,75 +97,60 @@ class VoiceEngine:
         """Sanitiza markdown, listas y caracteres extraños."""
         return self.limpiador.sanitizar(texto)
 
-    def _sintetizar_y_reproducir_chunk(self, chunk: str) -> bool:
-        """Sintetiza mediante la voz oficial de LucIA (es-ES + DSP 1.16x)."""
-        if self._cancelar_actual.is_set():
+    def _sintetizar_oficial_con_timeout(self, chunk: str, segundos: float = 45.0) -> bool:
+        """Sintesis oficial con timeout solo en la fase de red/DSP (no en reproduccion)."""
+        from SBSTM.voice_helpers import sintetizar_oficial_dsp
+        caja: List[Optional[str]] = []
+        def _run() -> None:
+            try:
+                caja.append(sintetizar_oficial_dsp(chunk, self._nivel_emocion))
+            except Exception as err:
+                self._ultimo_error = f"oficial: {type(err).__name__}: {err}"[:200]
+                caja.append(None)
+        hilo = threading.Thread(target=_run, daemon=True)
+        hilo.start()
+        hilo.join(timeout=segundos)
+        if hilo.is_alive():
+            self._ultimo_error = f"oficial: timeout>{segundos:.0f}s en red gTTS"
             return False
-
-        temp_fd_mp3, temp_path_mp3 = tempfile.mkstemp(suffix=".mp3")
-        os.close(temp_fd_mp3)
-        temp_fd_wav, temp_path_wav = tempfile.mkstemp(suffix=".wav")
-        os.close(temp_fd_wav)
-
+        wav = caja[0] if caja else None
+        if not wav:
+            if not self._ultimo_error:
+                self._ultimo_error = "oficial: sintesis vacia"
+            return False
         try:
-            from gtts import gTTS
-            import soundfile as sf
-            import numpy as np
-            from scipy import signal
-            from pedalboard import Pedalboard, LowShelfFilter, PeakFilter, Compressor
-
-            # 1. Sintetizar base peninsular nativa
-            tts = gTTS(text=chunk, lang="es", tld="es", slow=False)
-            tts.save(temp_path_mp3)
-
-            if not os.path.exists(temp_path_mp3) or os.path.getsize(temp_path_mp3) == 0:
-                return False
-
+            from pathlib import Path as _P
+            import shutil as _sh
+            _aud = _P(__file__).resolve().parent.parent / "tests" / "test_voces"
+            _aud.mkdir(parents=True, exist_ok=True)
+            _sh.copyfile(wav, str(_aud / "ultima_voz_oficial.wav"))
+        except Exception:
+            pass
+        try:
             if self._cancelar_actual.is_set():
                 return False
-
-            # 2. Leer audio base
-            audio, sr = sf.read(temp_path_mp3)
-            if audio.ndim > 1:
-                audio = audio[:, 0]
-            audio = audio.astype(np.float32)
-
-            # 3. Aplicar cadencia dinámica elegida (1.16x de la voz 1)
-            factor_velocidad = 1.16
-            if self._nivel_emocion > 0.7:
-                factor_velocidad = 1.19
-            elif self._nivel_emocion < 0.4:
-                factor_velocidad = 1.14
-
-            nueva_longitud = int(len(audio) / factor_velocidad)
-            audio_resample = signal.resample(audio, nueva_longitud)
-
-            # 4. Masterización de estudio (timbre cálido, cuerpo de 18 años y sedosidad)
-            board = Pedalboard([
-                LowShelfFilter(cutoff_frequency_hz=280.0, gain_db=1.0),
-                PeakFilter(cutoff_frequency_hz=1000.0, gain_db=0.9, q=0.7),
-                PeakFilter(cutoff_frequency_hz=3400.0, gain_db=-1.5, q=1.0),
-                Compressor(threshold_db=-18.0, ratio=1.7)
-            ])
-            audio_final = board(audio_resample.astype(np.float32), sr)
-
-            sf.write(temp_path_wav, audio_final, sr)
-
-            # 5. Reproducir con el reproductor nativo MCI
-            if os.path.exists(temp_path_wav) and os.path.getsize(temp_path_wav) > 0:
-                if not self._cancelar_actual.is_set():
-                    self.mci.reproducir_wav(temp_path_wav, self._cancelar_actual, self._detener_evento)
-                    return True
-        except Exception as err:
-            logger.warning(f"Fallo en sintesis oficial LucIA: {err}")
+            ok_mci = self.mci.reproducir_wav(wav, self._cancelar_actual, self._detener_evento)
+            self._auditar("oficial-DSP", "ok" if ok_mci else "mci-sin-audio")
+            if not ok_mci:
+                self._ultimo_error = "oficial: MCI no reprodujo (ver voz_audit.log)"
+            return bool(ok_mci)
         finally:
-            for p in (temp_path_mp3, temp_path_wav):
-                if os.path.exists(p):
-                    try:
-                        os.remove(p)
-                    except Exception:
-                        pass
-        return False
+            try:
+                if os.path.exists(wav):
+                    os.remove(wav)
+            except Exception:
+                pass
+
+    def _auditar(self, backend: str, detalle: str = "") -> None:
+        """Registro persistente del backend de voz usado (tests/test_voces/voz_audit.log)."""
+        try:
+            from pathlib import Path as _P
+            _aud = _P(__file__).resolve().parent.parent / "tests" / "test_voces" / "voz_audit.log"
+            _aud.parent.mkdir(parents=True, exist_ok=True)
+            with open(_aud, "a", encoding="utf-8") as f:
+                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} backend={backend} {detalle[:200]}\n")
+        except Exception:
+            pass
 
     @staticmethod
     def _descubrir_voz_onecore() -> Optional[object]:
@@ -315,25 +293,54 @@ class VoiceEngine:
     def _procesar_mensaje(self, texto_completo: str) -> None:
         if not self._habilitado:
             return
+        try:
+            self._auditar("inicio", f"gtts={self._gtts_disponible} onecore={bool(self._onecore_token)} rn={bool(self._procesador_rn)} pid={os.getpid()}")
+        except Exception:
+            pass
         limpio = self.limpiador.sanitizar(texto_completo)
         if not limpio:
             return
-        humanizado = self.modulador.humanizar_texto(limpio, aplicar_muletillas=True)
-        chunks = self.limpiador.segmentar_frases(humanizado, max_chars=420)
-
-        for fragmento in chunks:
-            if self._cancelar_actual.is_set() or self._detener_evento.is_set():
-                break
-            # Prioridad 1: Voz oficial de LucIA (gTTS es-ES + DSP 1.16x de 18 anos)
-            exito = False
-            if self._gtts_disponible and not self._cancelar_actual.is_set():
-                exito = self._sintetizar_y_reproducir_chunk(fragmento)
-            # Prioridad 2: Red Neuronal autonoma de LucIA (SLRN)
-            if not exito and not self._cancelar_actual.is_set():
-                exito = self._sintetizar_red_neuronal_local(fragmento)
-            # Prioridad 3: Fallback Windows SAPI OneCore
-            if not exito and not self._cancelar_actual.is_set():
+        # Voz: sin muletillas; se habla el texto completo por bloques (sin tope).
+        humanizado = self.modulador.humanizar_texto(limpio, aplicar_muletillas=False)
+        bloques = self.limpiador.segmentar_frases(humanizado, max_chars=300)
+        print(f"  [VOZ] sintetizando voz oficial-DSP ({len(bloques)} bloques)...", flush=True)
+        exito, backend, motivo_fallo, hablados = False, "ninguno", "", 0
+        if self._gtts_disponible and not self._cancelar_actual.is_set():
+            exito = True
+            for i, bl in enumerate(bloques):
+                if self._cancelar_actual.is_set() or self._detener_evento.is_set():
+                    exito = False
+                    break
+                if i > 0:
+                    time.sleep(1.0)  # anti-throttle gTTS entre bloques
+                ok = self._sintetizar_oficial_con_timeout(bl)
+                if not ok:  # un reintento; si falla, fallback solo de ese bloque y se sigue
+                    time.sleep(2.0)
+                    ok = self._sintetizar_oficial_con_timeout(bl)
+                if ok:
+                    hablados += 1
+                    print(f"  [VOZ] bloque {hablados}/{len(bloques)} hablado.", flush=True)
+                else:
+                    motivo_fallo = self._ultimo_error or "sintesis oficial devolvio False"
+                    self._sintetizar_fallback_windows(bl)
+            if exito:
+                backend = "oficial-DSP" if hablados == len(bloques) else "oficial-DSP-parcial"
+        if hablados == 0 and not self._cancelar_actual.is_set():
+            exito = self._sintetizar_red_neuronal_local(humanizado)
+            backend = "red-neuronal-SLRN" if exito else backend
+        if hablados == 0 and not exito and not self._cancelar_actual.is_set():
+            for fragmento in self.limpiador.segmentar_frases(humanizado, max_chars=420):
+                if self._cancelar_actual.is_set() or self._detener_evento.is_set():
+                    break
                 self._sintetizar_fallback_windows(fragmento)
+            backend = "fallback-windows-robotica"
+            if not motivo_fallo:
+                motivo_fallo = self._ultimo_error or "sin motivo registrado"
+        print(f"  [VOZ] backend: {backend} ({hablados}/{len(bloques)} bloques)" + (f" | fallo: {motivo_fallo}" if backend != "oficial-DSP" else ""), flush=True)
+        try:
+            self._auditar(backend, motivo_fallo)
+        except Exception:
+            pass
 
     def _procesar_cola(self) -> None:
         while not self._detener_evento.is_set():
@@ -389,12 +396,21 @@ _global_lock_voice = threading.Lock()
 
 
 def get_voice_engine() -> VoiceEngine:
-    """Singleton thread-safe del VoiceEngine juvenil de LucIA."""
     global _voice_instance
     with _global_lock_voice:
         if _voice_instance is None:
             _voice_instance = VoiceEngine(voz=VOZ_OFICIAL)
     return _voice_instance
+
+
+def estado_voz() -> str:
+    """Linea de estado con backends reales (gtts/onecore/red) para el arranque."""
+    try:
+        v = get_voice_engine()
+        return (f"[VOZ]  Voz Neuronal LucIA  : ACTIVA | 18 anos / es-ES / DSP 1.16x | "
+                f"gtts={v._gtts_disponible} onecore={bool(v._onecore_token)} rn={bool(v._procesador_rn)}")
+    except Exception as err:
+        return f"[VOZ]  Voz Neuronal LucIA  : NO DISPONIBLE ({err})"
 
 
 def speak(texto: str, esperar: bool = False, emocion: Optional[float] = None) -> None:

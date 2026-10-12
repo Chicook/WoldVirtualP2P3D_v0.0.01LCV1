@@ -89,6 +89,7 @@ except Exception:
 
 
 # 6. Voice Engine (Voz juvenil de LucIA)
+VOZ_MOTIVO: str = ""
 try:
     from SBSTM.voice_engine import (
         cancel_speech as cancelar_voz,
@@ -96,7 +97,7 @@ try:
         speak as hablar_voz,
     )
     VOZ_DISPONIBLE: bool = True
-except Exception:
+except Exception as err_local:
     try:
         from LC.celebro.CMFG.SBSTM.voice_engine import (  # pyrefly: ignore[missing-import]
             cancel_speech as cancelar_voz,
@@ -104,8 +105,10 @@ except Exception:
             speak as hablar_voz,
         )
         VOZ_DISPONIBLE = True
-    except Exception:
+        VOZ_MOTIVO = f"usando copia LC.celebro ({err_local})"
+    except Exception as err_remoto:
         VOZ_DISPONIBLE = False
+        VOZ_MOTIVO = f"local: {err_local} | remoto: {err_remoto}"
         hablar_voz = None  # type: ignore
         cancelar_voz = None  # type: ignore
         prosodia_voz = None  # type: ignore

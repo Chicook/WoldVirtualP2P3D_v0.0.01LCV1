@@ -42,30 +42,25 @@ try:
 except ImportError:
     CACHE_FILE: Final[Path] = PACKAGE_ROOT / "openrouter_free_cache.json"
 
-# ─── LISTA BASE DE MODELOS GRATUITOS VERIFICADOS (2026) ─────────────────────
-# Obtenidos en vivo desde https://openrouter.ai/models?q=free
+# ─── LISTA BASE DE MODELOS GRATUITOS VERIFICADOS (2026-10-12, en vivo) ──────
+# Sincronizada con https://openrouter.ai/api/v1/models (15 :free + router).
 CATALOGO_MODELOS_GRATUITOS: Final[List[Dict[str, Any]]] = [
     {"id": "openrouter/free", "nombre": "OpenRouter Free Router", "contexto": 200000, "categoria": "general", "descripcion": "Enrutador oficial que auto-selecciona el mejor modelo gratuito."},
-    {"id": "qwen/qwen3.8-27b:free", "nombre": "Qwen 3.8 27B Free", "contexto": 262144, "categoria": "razonamiento", "descripcion": "Gran modelo general con 256k tokens de ventana de contexto."},
-    {"id": "google/gemma-4-31b-it:free", "nombre": "Google Gemma 4 31B Instruct Free", "contexto": 262144, "categoria": "instruccion", "descripcion": "Seguimiento estricto de directrices tecnicas y formato."},
-    {"id": "google/gemma-4-26b-a4b-it:free", "nombre": "Google Gemma 4 26B A4B Free", "contexto": 262144, "categoria": "ligero", "descripcion": "Arquitectura eficiente de atencion para minima latencia."},
-    {"id": "nvidia/nemotron-3-super-120b-a12b:free", "nombre": "NVIDIA Nemotron 3 Super 120B Free", "contexto": 262144, "categoria": "razonamiento", "descripcion": "Modelo masivo de logica y resolucion analitica profunda."},
-    {"id": "nvidia/nemotron-3.5-lightning:free", "nombre": "NVIDIA Nemotron 3.5 Lightning Free", "contexto": 1000000, "categoria": "gran_contexto", "descripcion": "1 Millon de tokens de contexto con alta velocidad de inferencia."},
-    {"id": "nvidia/nemotron-3-ultra-550b-a55b:free", "nombre": "NVIDIA Nemotron 3 Ultra 550B Free", "contexto": 1000000, "categoria": "pesado", "descripcion": "Arquitectura MoE de maximo parametro con coste cero."},
-    {"id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", "nombre": "NVIDIA Nemotron 3 Nano Reasoning Free", "contexto": 256000, "categoria": "razonamiento", "descripcion": "Razonamiento por pasos y logica formal."},
-    {"id": "cohere/north-mini-code:free", "nombre": "Cohere North Mini Code Free", "contexto": 256000, "categoria": "codigo", "descripcion": "Especializado en generacion, refactorizacion y sintaxis de codigo."},
-    {"id": "z-ai/glm-5.2:free", "nombre": "Z-AI GLM 5.2 Free", "contexto": 32768, "categoria": "general", "descripcion": "Conversacion rapida y concisa con baja utilizacion de memoria."},
-    {"id": "liquid/lfm-2.5-2.6b:free", "nombre": "Liquid LFM 2.5 2.6B Free", "contexto": 65536, "categoria": "eficiente", "descripcion": "Red neuronal de estado liquido con generacion ultrarrapida."},
-    {"id": "thinkingmachines/inkling:free", "nombre": "ThinkingMachines Inkling Free", "contexto": 1048576, "categoria": "gran_contexto", "descripcion": "Contexto extendido de 1M tokens para analisis de grandes textos."},
-    {"id": "thinkingmachines/inkling-small:free", "nombre": "ThinkingMachines Inkling Small Free", "contexto": 1048576, "categoria": "gran_contexto", "descripcion": "Version compacta optimizada para respuestas inmediatas."},
-    {"id": "poolside/laguna-s-2.1:free", "nombre": "Poolside Laguna S 2.1 Free", "contexto": 262144, "categoria": "codigo", "descripcion": "Optimizacion de nivel produccion para arquitectura de software."},
-    {"id": "poolside/laguna-xs-2.1:free", "nombre": "Poolside Laguna XS 2.1 Free", "contexto": 262144, "categoria": "codigo", "descripcion": "Asistencia ultraligera para programacion interactiva."},
-    {"id": "dots-studio/dots-3-note-preview:free", "nombre": "Dots 3 Note Preview Free", "contexto": 512000, "categoria": "analisis", "descripcion": "512k tokens dedicados a sintesis y notas estructuradas."},
-    {"id": "nex-agi/nex-n2.5-mini:free", "nombre": "Nex-AGI N2.5 Mini Free", "contexto": 262144, "categoria": "general", "descripcion": "Respuestas agiles para dialogos de soporte continuo."},
-    {"id": "nex-agi/nex-n2.5-pro:free", "nombre": "Nex-AGI N2.5 Pro Free", "contexto": 262144, "categoria": "razonamiento", "descripcion": "Capacidades avanzadas de comprension logica."},
-    {"id": "inclusionai/ling-3.0-flash-vl:free", "nombre": "InclusionAI Ling 3.0 Flash VL Free", "contexto": 262144, "categoria": "multimodal", "descripcion": "Comprension multimodal y razonamiento veloz."},
-    {"id": "inclusionai/ling-3.0-flash-fin:free", "nombre": "InclusionAI Ling 3.0 Flash Fin Free", "contexto": 262144, "categoria": "analisis", "descripcion": "Especializado en analitica cuantitativa y calculos precisos."},
-    {"id": "inclusionai/ling-3.0-flash-sante:free", "nombre": "InclusionAI Ling 3.0 Flash Sante Free", "contexto": 262144, "categoria": "general", "descripcion": "Alta fidelidad y alineacion etica de respuestas."},
+    {"id": "liquid/lfm-2.5-2.6b:free", "nombre": "LiquidAI LFM 2.5 2.6B", "contexto": 65536, "categoria": "eficiente", "descripcion": "Pequeno y ultrarrapido, ideal para dialogo corto."},
+    {"id": "cohere/north-mini-code:free", "nombre": "Cohere North Mini Code", "contexto": 256000, "categoria": "codigo", "descripcion": "Generacion y refactorizacion de codigo."},
+    {"id": "nvidia/nemotron-3.5-lightning:free", "nombre": "NVIDIA Nemotron 3.5 Lightning", "contexto": 1000000, "categoria": "gran_contexto", "descripcion": "1M de contexto con alta velocidad."},
+    {"id": "thinkingmachines/inkling-small:free", "nombre": "ThinkingMachines Inkling Small", "contexto": 1048576, "categoria": "eficiente", "descripcion": "Compacto de contexto extendido."},
+    {"id": "thinkingmachines/inkling:free", "nombre": "ThinkingMachines Inkling", "contexto": 1048576, "categoria": "gran_contexto", "descripcion": "Contexto extendido de 1M tokens."},
+    {"id": "google/gemma-4-31b-it:free", "nombre": "Google Gemma 4 31B Instruct", "contexto": 262144, "categoria": "instruccion", "descripcion": "Seguimiento estricto de directrices."},
+    {"id": "google/gemma-4-26b-a4b-it:free", "nombre": "Google Gemma 4 26B A4B", "contexto": 262144, "categoria": "ligero", "descripcion": "Eficiente de baja latencia."},
+    {"id": "nvidia/nemotron-3-super-120b-a12b:free", "nombre": "NVIDIA Nemotron 3 Super 120B", "contexto": 262144, "categoria": "razonamiento", "descripcion": "Logica y resolucion analitica profunda."},
+    {"id": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", "nombre": "NVIDIA Nemotron 3 Nano Reasoning", "contexto": 256000, "categoria": "razonamiento", "descripcion": "Razonamiento por pasos."},
+    {"id": "nvidia/nemotron-3-ultra-550b-a55b:free", "nombre": "NVIDIA Nemotron 3 Ultra 550B", "contexto": 1000000, "categoria": "pesado", "descripcion": "MoE masivo de coste cero."},
+    {"id": "poolside/laguna-s-2.1:free", "nombre": "Poolside Laguna S 2.1", "contexto": 262144, "categoria": "codigo", "descripcion": "Optimizacion de arquitectura de software."},
+    {"id": "poolside/laguna-xs-2.1:free", "nombre": "Poolside Laguna XS 2.1", "contexto": 262144, "categoria": "codigo", "descripcion": "Asistencia ultraligera de programacion."},
+    {"id": "dots-studio/dots-3-note-preview:free", "nombre": "Dots 3 Note Preview", "contexto": 512000, "categoria": "analisis", "descripcion": "Sintesis y notas estructuradas."},
+    {"id": "apodex/apodex-1.1-mini:free", "nombre": "Apodex 1.1 Mini", "contexto": 262144, "categoria": "general", "descripcion": "General compacto y agil."},
+    {"id": "nvidia/nemotron-3.5-content-safety:free", "nombre": "NVIDIA Nemotron 3.5 Content Safety", "contexto": 128000, "categoria": "general", "descripcion": "Respuestas alineadas y seguras."},
 ]
 
 
@@ -144,7 +139,7 @@ class GestorModelosGratuitos:
             return [m for m in self._modelos if m.get("categoria") == categoria]
 
     def actualizar_catalogo_online(self) -> int:
-        """Consulta la API de OpenRouter y agrega nuevos modelos gratuitos descubiertos."""
+        """Sincroniza con la API: agrega free nuevos y purga IDs muertos (404)."""
         ahora = time.time()
         if (ahora - self._ultimo_refresco) < 300.0:
             return len(self._modelos)
@@ -157,30 +152,18 @@ class GestorModelosGratuitos:
         try:
             with urllib.request.urlopen(req, timeout=8.0) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
-                nuevos_registrados = 0
-                existentes = {m["id"] for m in self._modelos}
-
-                for item in data.get("data", []):
-                    m_id = item.get("id", "")
-                    pricing = item.get("pricing", {})
-                    p_cost = float(pricing.get("prompt", 0) or 0)
-                    c_cost = float(pricing.get("completion", 0) or 0)
-
-                    if (":free" in m_id or (p_cost == 0.0 and c_cost == 0.0)) and m_id not in existentes:
-                        nuevo_m = {
-                            "id": m_id,
-                            "nombre": item.get("name", m_id),
-                            "contexto": item.get("context_length", 262144),
-                            "categoria": "descubierto",
-                            "descripcion": item.get("description", "Modelo gratuito descubierto en linea.")[:120],
-                        }
-                        with self._lock:
-                            self._modelos.append(nuevo_m)
-                            existentes.add(m_id)
-                        nuevos_registrados += 1
-
+                vivos = {m.get("id", "") for m in data.get("data", []) if str(m.get("id", "")).endswith(":free")}
+                with self._lock:
+                    antes = len(self._modelos)
+                    self._modelos = [m for m in self._modelos if m["id"] == "openrouter/free" or m["id"] in vivos]
+                    purgados = antes - len(self._modelos)
+                    existentes = {m["id"] for m in self._modelos}
+                    nuevos = 0
+                    for m_id in vivos - existentes:
+                        self._modelos.append({"id": m_id, "nombre": m_id, "contexto": 131072, "categoria": "descubierto", "descripcion": "Modelo gratuito descubierto en linea."})
+                        nuevos += 1
                 self._ultimo_refresco = ahora
-                logger.info("Catalogo gratuito actualizado: %d modelos anadidos.", nuevos_registrados)
+                logger.info("Catalogo sincronizado: +%d -%d (total %d).", nuevos, purgados, len(self._modelos))
                 return len(self._modelos)
         except Exception as exc:
             logger.debug("No se pudo actualizar el catalogo online: %s", exc)
@@ -226,12 +209,36 @@ class ClienteIAFree:
         contexto = contexto_neuronal or {}
         tono = contexto.get("tono_cognitivo", "analitico")
         valencia = contexto.get("estado_emocional", 0.0)
+        sesion_id = str(contexto.get("sesion_id", ""))
+
+        # Memoria conversacional + autoconocimiento vivo (conocete a ti misma)
+        bloque_memoria = ""
+        try:
+            from SBSTM.memoria_sesion import get_memoria
+            if sesion_id:
+                bloque_memoria = get_memoria(sesion_id).resumen_contexto()
+        except Exception:
+            bloque_memoria = ""
+        bloque_self = ""
+        try:
+            from SBSTM.self_context import construir_self_context
+            bloque_self = construir_self_context(sesion_id=sesion_id)
+        except Exception:
+            bloque_self = ""
 
         prompt_sistema = (
             "Eres LucIA, el sistema cognitivo distribuido de WoldVirtualP2P3D (2026). "
             f"Tu tono neuronal actual es '{tono}' y tu valencia es {valencia:+.2f}. "
-            "Responde de forma clara, directa, tecnica y cordial a la solicitud del usuario."
+            "Responde de forma clara, directa, tecnica y cordial a la solicitud del usuario. "
+            "Regla de autoconocimiento: conocete a ti misma — admite tus limites honestamente "
+            "(50 neuronas ENRN/RF_EN/RF_SL/RNP/SLRN, Ollama local, OpenRouter :free, blockchain BKSVCB, RAG por keywords); "
+            "si no sabes algo di 'no lo se' antes que alucinar; indica la ruta que te genero si te preguntan. "
+            "Tienes memoria conversacional (bloque 'Contexto previo' / 'Resumen largo'): usala siempre y "
+            "nunca digas que no la tienes. Habla en primera persona, tono natural y cercano. "
+            "Responde siempre en español correcto con frases completas y naturales, sin preambulos roboticos."
         )
+        if bloque_self:
+            prompt_sistema += f"\n{bloque_self}"
 
         intentos = 0
         while intentos < max_reintentos:
@@ -243,6 +250,7 @@ class ClienteIAFree:
                 "model": modelo_id,
                 "messages": [
                     {"role": "system", "content": prompt_sistema},
+                    *([{"role": "system", "content": bloque_memoria}] if bloque_memoria else []),
                     {"role": "user", "content": prompt},
                 ],
                 "temperature": self.temperatura,

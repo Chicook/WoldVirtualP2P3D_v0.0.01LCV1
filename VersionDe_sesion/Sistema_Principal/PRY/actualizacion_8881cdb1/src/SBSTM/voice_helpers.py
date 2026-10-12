@@ -17,7 +17,7 @@ import random
 import re
 import threading
 import time
-from typing import Final, List, Tuple
+from typing import Final, List, Optional, Tuple
 
 logger = logging.getLogger("lucIA.Voice.Helpers")
 
@@ -62,7 +62,7 @@ class ModuladorExpresivoJuvenil:
         self._contador_turnos: int = 0
         self._lock = threading.Lock()
 
-    def humanizar_texto(self, texto: str, aplicar_muletillas: bool = True) -> str:
+    def humanizar_texto(self, texto: str, aplicar_muletillas: bool = False) -> str:
         """Transforma formulas formales y rigidas en un estilo oral natural."""
         if not texto:
             return ""
@@ -217,13 +217,42 @@ class ReproductorMCIWindows:
                 return False
 
         buf = ctypes.create_unicode_buffer(128)
-        time.sleep(0.05)
-        while not cancel_ev.is_set() and not stop_ev.is_set():
+        time.sleep(0.15)
+        # Validar que MCI realmente esta sonando (si no, avisar en vez de fingir).
+        sono = False
+        for _ in range(22):
             time.sleep(0.09)
             with self._lock:
                 res = mci(f"status {alias_wav} mode", buf, 128, None)
-                if res != 0 or buf.value not in ("playing", ""):
+                if res == 0 and buf.value == "playing":
+                    sono = True
                     break
+            if cancel_ev.is_set() or stop_ev.is_set():
+                break
+        if not sono:
+            with self._lock:
+                try:
+                    mci(f"stop {alias_wav}", None, 0, None)
+                    mci(f"close {alias_wav}", None, 0, None)
+                except Exception:
+                    pass
+            logger.warning("MCI no llego a reproducir (sin dispositivo o formato).")
+            return False
+        # Duracion esperada del WAV: no cerrar antes aunque MCI reporte estados transitorios.
+        try:
+            import wave as _wv
+            with _wv.open(ruta_wav, "rb") as _w:
+                dur_esp = _w.getnframes() / max(1, _w.getframerate())
+        except Exception:
+            dur_esp = 0.0
+        t_ini = time.monotonic()
+        while not cancel_ev.is_set() and not stop_ev.is_set():
+            time.sleep(0.25)
+            with self._lock:
+                res = mci(f"status {alias_wav} mode", buf, 128, None)
+                parado = (res != 0 or buf.value != "playing")
+            if parado and (time.monotonic() - t_ini) >= max(1.0, dur_esp - 0.5):
+                break
 
         with self._lock:
             try:
@@ -232,3 +261,53 @@ class ReproductorMCIWindows:
             except Exception:
                 pass
         return True
+
+
+def sintetizar_oficial_dsp(texto: str, emocion: float = 0.65) -> Optional[str]:
+    """Voz oficial LucIA (gTTS es-ES + 1.16x + EQ). Devuelve ruta WAV temporal o None."""
+    import tempfile
+    temp_fd_mp3, temp_path_mp3 = tempfile.mkstemp(suffix=".mp3")
+    os.close(temp_fd_mp3)
+    temp_fd_wav, temp_path_wav = tempfile.mkstemp(suffix=".wav")
+    os.close(temp_fd_wav)
+    try:
+        from gtts import gTTS
+        import soundfile as sf
+        import numpy as np
+        from scipy import signal
+        from pedalboard import Pedalboard, LowShelfFilter, PeakFilter, Compressor
+
+        tts = gTTS(text=texto, lang="es", tld="es", slow=False)
+        tts.save(temp_path_mp3)
+        if not os.path.exists(temp_path_mp3) or os.path.getsize(temp_path_mp3) == 0:
+            return None
+        audio, sr = sf.read(temp_path_mp3)
+        if audio.ndim > 1:
+            audio = audio[:, 0]
+        audio = audio.astype(np.float32)
+        factor = 1.16
+        if emocion > 0.7:
+            factor = 1.19
+        elif emocion < 0.4:
+            factor = 1.14
+        audio_rs = signal.resample(audio, int(len(audio) / factor))
+        board = Pedalboard([
+            LowShelfFilter(cutoff_frequency_hz=280.0, gain_db=1.0),
+            PeakFilter(cutoff_frequency_hz=1000.0, gain_db=0.9, q=0.7),
+            PeakFilter(cutoff_frequency_hz=3400.0, gain_db=-1.5, q=1.0),
+            Compressor(threshold_db=-18.0, ratio=1.7),
+        ])
+        final = board(audio_rs.astype(np.float32), sr)
+        # PCM16: MCI waveaudio no maneja IEEE-float (cortes/silencio); int16 es universal.
+        pcm16 = np.clip(final, -1.0, 1.0)
+        pcm16 = (pcm16 * 32767.0).astype(np.int16)
+        sf.write(temp_path_wav, pcm16, sr, subtype="PCM_16")
+        if os.path.exists(temp_path_wav) and os.path.getsize(temp_path_wav) > 0:
+            return temp_path_wav
+        return None
+    finally:
+        if os.path.exists(temp_path_mp3):
+            try:
+                os.remove(temp_path_mp3)
+            except Exception:
+                pass

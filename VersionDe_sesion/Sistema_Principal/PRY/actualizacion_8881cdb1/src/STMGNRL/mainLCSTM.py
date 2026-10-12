@@ -46,6 +46,7 @@ try:
         get_procesador_rplc,
         reprocesar_con_metricas,
         VOZ_DISPONIBLE as _VOZ_DISPONIBLE,
+        VOZ_MOTIVO as _VOZ_MOTIVO,
         hablar_voz as _hablar_voz,
         cancelar_voz as _cancelar_voz,
         prosodia_voz as _prosodia_voz,
@@ -84,6 +85,7 @@ except (ImportError, ValueError):
         get_procesador_rplc,
         reprocesar_con_metricas,
         VOZ_DISPONIBLE as _VOZ_DISPONIBLE,
+        VOZ_MOTIVO as _VOZ_MOTIVO,
         hablar_voz as _hablar_voz,
         cancelar_voz as _cancelar_voz,
         prosodia_voz as _prosodia_voz,
@@ -108,15 +110,7 @@ except (ImportError, ValueError):
 init_stmch_rutas()
 
 
-_COMANDOS_RFPRMN: Final[Dict[str, str]] = {
-    "crear carpeta": "comando_crear_carpeta",
-    "crear archivo": "comando_crear_archivo",
-    "refactorizar": "comando_refactorizar",
-    "actualizar": "actualizar",
-    "enviar": "comando_enviar",
-    "ia local": "comando_ia_local",
-    "cerrar": "cerrar",
-}
+_COMANDOS_RFPRMN: Final[Dict[str, str]] = {"crear carpeta": "comando_crear_carpeta", "crear archivo": "comando_crear_archivo", "refactorizar": "comando_refactorizar", "actualizar": "actualizar", "enviar": "comando_enviar", "ia local": "comando_ia_local", "cerrar": "cerrar"}
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -217,10 +211,11 @@ class OrquestadorSistemaLucIA(SelectorModelos):
         self.gestor_hrts = GestorHRTLucIA() if GestorHRTLucIA else None
         if self.gestor_hrts:
             print(f"  [HRTS] {self.gestor_hrts.linea_estado()}")
-        if _VOZ_DISPONIBLE:
-            print("  [VOZ]  Voz Neuronal LucIA  : \033[38;5;48mACTIVA\033[0m | 18 anos / es-ES / DSP 1.16x")
-        else:
-            print("  [VOZ]  Voz Neuronal LucIA  : \033[38;5;214mNO DISPONIBLE\033[0m")
+        try:
+            from SBSTM.voice_engine import estado_voz as _estado_voz
+            print(f"  {_estado_voz()}")
+        except Exception as _e_v:
+            print(f"  [VOZ]  Voz Neuronal LucIA  : \033[38;5;203mNO DISPONIBLE ({_VOZ_MOTIVO or _e_v})\033[0m")
         self.activa = True
         if _WATCHDOG_DISPONIBLE and _arrancar_watchdog is not None:
             try:
@@ -234,6 +229,7 @@ class OrquestadorSistemaLucIA(SelectorModelos):
         self.turno_actual += 1
         t_inicio = time.perf_counter()
         estado_previo = self.conversor_psn.procesar_consulta_a_pesos(prompt)
+        estado_previo["sesion_id"] = self.sesion_id
         respuesta = ""
         modelo_usado = "Reflejo-Interno"
         latencia_llm = 0.0
@@ -265,17 +261,21 @@ class OrquestadorSistemaLucIA(SelectorModelos):
             _hablar_voz(respuesta, esperar=False)
         duracion_ms = (time.perf_counter() - t_inicio) * 1000.0
         if self.memoria:
-            val_emocional = float(estado_previo.get("estado_emocional", 0.0))
-            self.memoria.registrar_turno(prompt, respuesta, tono=estado_previo.get("tono_cognitivo", ""), valencia=val_emocional)
-        def _post_turno_async(pr: str, resp: str, mod: str, tur: int) -> None:
             try:
-                self.servidor_bks.registrar_aprendizaje_neural(prompt=pr, respuesta=resp, modelo=f"LucIA-{mod}")
-                if tur % 3 == 0:
-                    self.servidor_bks.minar_transacciones_pendientes()
+                self.memoria.registrar_turno(prompt, respuesta, tono=estado_previo.get("tono_cognitivo", ""), valencia=float(estado_previo.get("estado_emocional", 0.0)), ms=duracion_ms, modelo=modelo_usado, deriva=float(self.conversor_psn.deriva_acumulada))
             except Exception:
                 pass
-        threading.Thread(target=_post_turno_async, args=(prompt, respuesta, modelo_usado, self.turno_actual), daemon=True).start()
+        threading.Thread(target=self._post_turno_async, args=(prompt, respuesta, modelo_usado, self.turno_actual), daemon=True).start()
         self._imprimir_telemetria_turno(duracion_ms, "async-tx", modelo_usado)
+
+    def _post_turno_async(self, pr: str, resp: str, mod: str, tur: int) -> None:
+        try:
+            b = self.servidor_bks
+            b.registrar_aprendizaje_neural(prompt=pr, respuesta=resp, modelo=f"LucIA-{mod}")
+            if tur % 3 == 0:
+                b.minar_transacciones_pendientes()
+        except Exception:
+            pass
     def _generar_reflejo_interno(self, prompt: str, info: Dict[str, Any]) -> str:
         tono = info.get("tono_cognitivo", "reflexivo")
         val = info.get("estado_emocional", 0.0)

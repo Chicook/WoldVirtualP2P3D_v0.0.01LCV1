@@ -7,7 +7,7 @@ neuronas, deriva_acumulada, procesar_consulta_a_pesos().
 from __future__ import annotations
 import hashlib
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 
 class SimpleEncoder:

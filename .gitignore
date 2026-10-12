@@ -12,6 +12,8 @@
 *.cert
 *.token
 credentials.json
+vault.enc
+*.vault
 /.blend
 
 # Caches y compilados de Python

@@ -506,3 +506,67 @@ La clase `MathematicalPrecision` (álgebra lineal, normas, clipping, Newton-Schu
 4. **Documentación viva**: cada fase actualiza su sección en `ref_info.md` con decisiones, problemas y soluciones, garantizando trazabilidad.
 
 ---
+
+## 13. Sesión 2026-10-12 — Autoconocimiento, Memoria, Voz y OpenRouter Free (TODO lo desarrollado hoy)
+
+**Estado final:** `pytest tests/` **67/67 (100%)**, 0 archivos >450 lín, salud `OPTIMO`.
+
+### 13.1 Fase A — Conversación diagnóstica con LucIA (opción A: ejecutada por el agente)
+Guion de 6 preguntas (identidad, neuronas, conectividad, memoria de nombre/proyecto, humildad, resumen). Hallazgos → causa en código:
+- Cada consulta era nueva: `memoria_sesion.resumen_contexto()` solo se inyectaba en rama local (`SNSBSTNPRB.py:267`), nunca en `IAFREE`.
+- `es_peticion_diagnostico("quién eres…")` → `False`: no distinguía autoconocimiento.
+- `elegir_modelo()` prefería el más pequeño → descargaba tiny 0.5b/1b con respuestas tartamudas ("me has a", "según proceso este patrón").
+
+### 13.2 Fase B — "Conócete a ti misma"
+- `SBSTM/autodiagnostico.py`: +20 claves de detección + `es_peticion_autoconocimiento()`; sección 7 nueva (IPFS, voz, RAG, memorias, watchdog, vault); RAM real (fix handle 32→64 bits, ~20-70 MB); `salud_general` exige backend IA; vault usa `obtener_key()` (antes nombre inexistente → siempre `False`); distribución 10×5 por capa + pesos sin actualizar.
+- `STM_IA/conocimiento/lucia_self.md` + `capacidades.json` (v2026.6.0): ficha versionada de identidad/límites, indexada por el RAG.
+- `SBSTM/self_context.py` (nuevo): telemetría viva por turno (neuronas+deriva, Ollama, blockchain, memoria), caché 15 s.
+- System prompts únicos con reglas (ambos backends): admitir límites, "no lo sé" solo sin datos, indicar ruta (IALocal/OpenRouter/Reflejo), memoria obligatoria, primera persona cercana, sin muletillas robóticas.
+- `STM_IA/.../IALOCAL/gestor.py`: preferencia por calidad (chat 7b primero; `*-coder` relegados; `qwen3.5:latest` roto al final); descargado `qwen2.5:7b` (4.7 GB); **modelo fijo sticky** (no más recarga 4.7 GB por turno) + `rotar_modelo()` solo ante fallo; `borrar_tras_responder=False`; filtro `_es_respuesta_pobre()` con reintento; `temperature` 0.7→0.3; `num_predict` 250 chat / 1400 diagnóstico; `keep_alive 30m`; memoria inyectada en todos los turnos.
+
+### 13.3 Fase C — Memoria conversacional real
+- `SBSTM/memoria_sesion.py`: ventana 8→20, resumen jerárquico (`_resumen_largo`), telemetría del turno (`ms/modelo/deriva`) inyectada para opinar sobre su latencia, contexto capado a últimos 6 turnos en prompt.
+- `STMGNRL/mainLCSTM.py`: `estado_previo["sesion_id"]`, telemetría integrada en `registrar_turno()`, `_post_turno_async` como método.
+
+### 13.4 Las 50 neuronas sí participan
+`RPLC.py`: el vector es de 50 dims y el conversor actualiza los 50 pesos por turno; el "12 activas" era conteo sobre umbral 0.42. Etiquetas honestas ("50 procesadas (N sobre umbral)"), métrica `neuronas_procesadas`. Reformulador suavizado: cuerpo intacto, solo corrige identidad ajena. Fix import `Tuple` en `compat_local.py`.
+
+### 13.5 Voz neuronal (cadena oficial gTTS es-ES + DSP 1.16x + EQ)
+Cadena verificada espectralmente idéntica a `tests/test_voces/lucia_con_mas_influencia_voz1_116.wav` (centroide ~2260 Hz). Cambios en `voice_engine.py`/`voice_helpers.py`:
+- Sin muletillas aleatorias; habla el texto completo por bloques de 300 chars (diagnósticos ~7-8 bloques).
+- WAV a **PCM_16** (MCI no maneja IEEE-float: cortes); MCI validado (exige estado `playing`) + espera por duración esperada del WAV (no cierra en estados transitorios).
+- Una síntesis por bloque + pausa anti-throttle 429 + reintento; timeout 45 s solo en red/DSP (no en reproducción); fallback por bloque sin abortar el mensaje.
+- Auditoría visible `[VOZ] backend:` con `flush=True` + `tests/test_voces/voz_audit.log` + copia `ultima_voz_oficial.wav`; `estado_voz()` al arranque; `VOZ_MOTIVO` en `_imports.py`.
+- Incidencia PowerShell: dos intérpretes (`C:\Python314` 3.14 y Store 3.13); dependencias instaladas en ambos (`gtts pedalboard soundfile scipy comtypes numpy`). Lanzar con ruta completa.
+
+### 13.6 OpenRouter :free activado
+- Key de `STM_SGR/.env` aprovisionada a `vault.enc` cifrado; `vault.enc` añadido al `.gitignore`. **Rotar la key expuesta en el chat.**
+- `IAFREE.py`: `actualizar_catalogo_online()` ahora **purga IDs muertos** además de añadir; catálogo base sincronizado con la API (15 `:free` + router, 12-10-2026). Nota: la key inicial daba `401 User not found`; con key válida, `Conectado: 15 modelos free`.
+
+---
+
+## 14. Hoja de ruta — Sistema de auto-refactorización de LucIA (comandos RFPRMN)
+
+**Configuración real** (`STM_RFC/RFPRMN.py:163-222`, v2.0.0): `PRY_DIR = Sistema_Principal/PRY` (versiones `actualizacion_*`), `RFC_DIR = CONTRRF/RFC` (trabajo en curso). Comandos (`mostrar_menu`, `mainLCSTM._COMANDOS_RFPRMN`): `crear carpeta`, `crear archivo` (12 lenguajes + `godot`/`gdscript` a añadir), `refactorizar` (PRY→RFC), `actualizar` (RFC→PRY versionado), `enviar` (a CONTRRF/RFC), `ia local` (analizar+plan), `ds ialocal` (plan+refactor local+registro `.md`), `cerrar`.
+
+### Orden de ejecución correcto (pipeline, no el del menú)
+1. `refactorizar` — copia PRY actual → `CONTRRF/RFC` (backup implícito en `actualizacion_*`). Requisito: verificar copia completa (hashes) antes de seguir.
+2. `enviar` — coloca el directorio en `CONTRRF/TLLDCD`. Verificación: `pytest` + `autodiagnostico OPTIMO` en destino.
+3. En paralelo: `ia local` (análisis+plan por archivo, `analizar_archivo_local` + `crear_plan_refactorizacion`) y `ds ialocal` (refactor con Ollama + `_validar_refactor` + `_registrar_refactor_md`) **sobre todos** los `.py` de `CONTRRF/TLLDCD/src`.
+4. `crear carpeta` / `crear archivo` — solo para lo nuevo que pida el plan (p. ej. visor 3D estilo Singulariti, lógica GDScript del metaverso): primero carpeta, luego archivos dentro.
+5. `actualizar` — RFC→PRY como `actualizacion_<n>` y limpieza de RFC. `cerrar` al final.
+
+### Brechas a cerrar para que LucIA lo opere sola
+1. **Orquestador secuencial con gates**: hoy cada comando es manual e independiente; crear `RFPRMN.orquestar_refactor()` que ejecute 1→5 encadenado, abortando si un gate falla (copia incompleta, pytest rojo, `ast.parse` inválido tras refactor).
+2. **Inventario total como entrada**: `ia local`/`ds ialocal` operan archivo a archivo; añadir modo `--todos` que recorra `src/**/*.py` y genere un plan global priorizado (límite 450 lín, duplicación, bare-excepts).
+3. **Lenguajes del metaverso**: añadir `godot`/`gdscript` (`.gd`), `cs` ya existe, y plantillas de visor 3D a `EXTENSIONES_POR_LENGUAJE`.
+4. **Registro trazable**: `_registrar_refactor_md` ya existe; conectarlo al ledger BKSVCB (cada refactor = transacción) para que el autoconocimiento incluya su propia evolución.
+5. **Rollback automático**: ante `_validar_refactor` fallido, restaurar desde `actualizacion_*` sin intervención.
+6. **Voz/UX**: anunciar cada fase por voz oficial (ya disponible) con resumen corto.
+
+### Criterios de aceptación del sistema
+- Refactor completo PRY→RFC→PRY sin intervención con pytest 100% y 0 archivos >450 lín en cada gate.
+- Plan `.md` global generado por `ia local --todos` antes de tocar código.
+- Cada cambio con test verde + entrada en ledger + `voz_audit`-style log de comandos.
+
+---
