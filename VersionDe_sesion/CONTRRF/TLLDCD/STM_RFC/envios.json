@@ -118,5 +118,45 @@
     "ficheros": 907,
     "estado": "OK actualizar",
     "fecha": "2026-10-01T19:49:38"
+  },
+  {
+    "carpeta": "src",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\Sistema_Principal\\PRY\\actualizacion_0c618589\\src",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC\\src",
+    "ficheros": 888,
+    "estado": "OK refactorizar",
+    "fecha": "2026-10-12T10:14:50"
+  },
+  {
+    "carpeta": "TLLDCD",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\TLLDCD",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC\\TLLDCD",
+    "ficheros": 2,
+    "estado": "OK",
+    "fecha": "2026-10-12T10:15:52"
+  },
+  {
+    "carpeta": "RFC",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\TLLDCD\\RFC",
+    "ficheros": 888,
+    "estado": "OK",
+    "fecha": "2026-10-12T10:19:16"
+  },
+  {
+    "carpeta": "RFC",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\TLLDCD\\RFC",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC\\RFC",
+    "ficheros": 933,
+    "estado": "OK",
+    "fecha": "2026-10-12T16:09:23"
+  },
+  {
+    "carpeta": "RFC",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\Sistema_Principal\\PRY\\actualizacion_1749880d",
+    "ficheros": 933,
+    "estado": "OK actualizar",
+    "fecha": "2026-10-12T16:09:59"
   }
 ]
