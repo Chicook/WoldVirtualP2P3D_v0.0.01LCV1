@@ -1,6 +1,6 @@
 """Submodulo de RFPRMN (refactor: tope 400/450 lineas)."""
 from __future__ import annotations
-import ast, json, os, re, shutil, stat, subprocess, sys, textwrap, urllib.error, urllib.parse, urllib.request, uuid
+import ast, json, os, re, shutil, stat, subprocess, sys, textwrap, time, urllib.error, urllib.parse, urllib.request, uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable, Optional
@@ -36,19 +36,32 @@ def _forzar_borrado(funcion, ruta: str, _info) -> None:
 def eliminar_ruta(ruta: str) -> None:
     """Elimina un archivo o un árbol de directorios completo.
 
-    Tolera atributos de solo-lectura (repo IPFS) y reintenta;
-    si el sistema lo bloquea, lanza el OSError original.
+    Tolera atributos de solo-lectura (repo IPFS) y bloqueos transitorios
+    de Windows (reintenta con espera); si el sistema lo bloquea de forma
+    persistente, lanza el OSError original.
     """
-    if os.path.isdir(ruta) and not os.path.islink(ruta):
-        shutil.rmtree(ruta, onerror=_forzar_borrado)
-        if os.path.exists(ruta):
-            raise OSError(f"No se pudo eliminar (posible bloqueo): {ruta}")
-    else:
+    ultimo_error: Optional[OSError] = None
+    for intento in range(4):
         try:
-            os.remove(ruta)
-        except PermissionError:
-            os.chmod(ruta, stat.S_IWRITE)
-            os.remove(ruta)
+            if os.path.isdir(ruta) and not os.path.islink(ruta):
+                shutil.rmtree(ruta, onerror=_forzar_borrado)
+            else:
+                try:
+                    os.remove(ruta)
+                except PermissionError:
+                    os.chmod(ruta, stat.S_IWRITE)
+                    os.remove(ruta)
+            if not os.path.exists(ruta):
+                return
+            ultimo_error = OSError(f"No se pudo eliminar (posible bloqueo): {ruta}")
+        except OSError as error:
+            ultimo_error = error
+            try:
+                hacer_escribible(ruta)
+            except OSError:
+                pass
+        time.sleep(0.5 * (intento + 1))
+    raise ultimo_error if ultimo_error is not None else OSError(f"No se pudo eliminar: {ruta}")
 
 
 def borrar_contenido(carpeta: str) -> None:

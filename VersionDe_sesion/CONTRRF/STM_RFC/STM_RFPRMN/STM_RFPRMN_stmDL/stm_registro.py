@@ -339,27 +339,36 @@ def _subir_via_cli(ruta_pesos: Path, timeout: int = 120) -> dict:
             "modelo": ruta_pesos.name, "bytes": ruta_pesos.stat().st_size}
 
 
+def _detallado() -> bool:
+    """True si RFPRMN_DEBUG=1 (muestra cada nivel de subida intentado)."""
+    return os.getenv("RFPRMN_DEBUG", "").strip() == "1"
+
+
 def subir_a_ipfs(ruta_pesos: Path = RUTA_PESOS) -> dict:
     """Sube los pesos a IPFS en 4 niveles (devuelve el recibo).
 
     1) IPFSManager de STM_BKCH; 2) API HTTP del daemon local;
     3) binario ipfs.exe del sistema; 4) CID sintético local-sin-daemon
-    (igual que el shim actual). Cada nivel que falla se anuncia y se
-    prueba el siguiente.
+    (igual que el shim actual). Solo se informa el resultado final,
+    salvo RFPRMN_DEBUG=1 que detalla cada nivel.
     """
     datos = ruta_pesos.read_bytes()
     niveles = [("manager", lambda: _subir_via_manager(datos, ruta_pesos.name)),
                ("api-http", lambda: _subir_via_api(datos, ruta_pesos.name)),
                ("cli", lambda: _subir_via_cli(ruta_pesos))]
+    fallos: list[str] = []
     for nombre, intento in niveles:
         try:
             recibo = intento()
             exito(f"Pesos subidos a IPFS vía {nombre}: {recibo['cid']}")
             return recibo
         except Exception as error:
-            advertir(f"Nivel {nombre} no disponible ({error}); siguiente.")
+            fallos.append(f"{nombre}: {error}")
+            if _detallado():
+                advertir(f"Nivel {nombre} no disponible ({error}); siguiente.")
     cid = _cid_sintetico({"md5": hashlib.md5(datos).hexdigest()})
-    advertir(f"Sin IPFS disponible; pesos marcados como local: {cid}.")
+    informar("IPFS sin daemon disponible; pesos guardados con CID local "
+            f"(RFPRMN_DEBUG=1 para detalle): {cid}.")
     return {"cid": cid, "modo": "local-sin-daemon", "via": "local",
             "modelo": ruta_pesos.name, "bytes": len(datos)}
 
@@ -370,13 +379,32 @@ def _borrar_si_existe(ruta: Path) -> bool:
         if ruta.exists():
             if ruta.is_dir():
                 import shutil as _sh
-                _sh.rmtree(ruta, ignore_errors=True)
+                objetivo = str(ruta)
+                if os.name == "nt" and not objetivo.startswith("\\\\?\\"):
+                    objetivo = "\\\\?\\" + objetivo
+                _sh.rmtree(objetivo, ignore_errors=True)
             else:
                 ruta.unlink()
         return not ruta.exists()
     except OSError as error:
         advertir(f"No se pudo borrar {ruta.name} ({error}).")
         return False
+
+
+def limpiar_caches() -> dict[str, bool]:
+    """Borra las cachés de bytecode de la herramienta al cerrar el ciclo.
+
+    Elimina __pycache__/ de STM_RFPRMN y STM_RFPRMN_stmDL más
+    .pycache_rfprmn (se recrean solas en la próxima ejecución).
+    """
+    objetivos = [MODULO_DIR / "__pycache__",
+                 MODULO_DIR / "STM_RFPRMN_stmDL" / "__pycache__",
+                 MODULO_DIR / ".pycache_rfprmn"]
+    estado = {p.relative_to(MODULO_DIR).as_posix(): _borrar_si_existe(p)
+              for p in objetivos}
+    if all(estado.values()):
+        exito("Cachés de bytecode eliminadas.")
+    return estado
 
 
 def limpiar_registro() -> dict[str, bool]:
@@ -412,6 +440,7 @@ def publicar_registro_actualizar(info: dict) -> dict:
     _borrar_si_existe(RUTA_PESOS)
     informar("registro.md convertido en pesos, subido y borrado.")
     limpiar_registro()
+    limpiar_caches()
     _imprimir_seguro(f"{E.verde}✔{E.reset} Actualización publicada en IPFS: {recibo.get('cid')}")
     if recibo.get("via") != "local":
         _imprimir_seguro(f"Recuperable en: {url_pasarela(str(recibo.get('cid', '')))}")

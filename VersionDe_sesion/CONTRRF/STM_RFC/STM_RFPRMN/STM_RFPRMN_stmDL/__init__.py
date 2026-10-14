@@ -62,7 +62,7 @@ _REGISTRO_SYMS = ["DIR_REGISTRO", "RUTA_JSON", "RUTA_MD", "RUTA_PESOS",
     "leer_eventos", "construir_texto", "texto_a_vector",
     "norma", "seccionar_md", "cuantizar", "desnormalizar",
     "similitud_coseno", "md_a_pesos", "verificar_pesos", "vista_previa",
-    "url_pasarela", "subir_a_ipfs", "limpiar_registro",
+    "url_pasarela", "subir_a_ipfs", "limpiar_registro", "limpiar_caches",
     "publicar_registro_actualizar"]
 for _s in _REGISTRO_SYMS:
     _REGISTRO[_s] = "stm_registro"
@@ -368,7 +368,7 @@ try:
     from .stm_registro import (  # noqa: F401,E402
         DIR_REGISTRO, RUTA_MD, RUTA_PESOS, DIM_VECTOR, leer_eventos,
         construir_texto, texto_a_vector, md_a_pesos, subir_a_ipfs,
-        limpiar_registro, publicar_registro_actualizar, verificar_pesos,
+        limpiar_registro, limpiar_caches, publicar_registro_actualizar, verificar_pesos,
         similitud_coseno, vista_previa, url_pasarela,
     )
 except Exception:

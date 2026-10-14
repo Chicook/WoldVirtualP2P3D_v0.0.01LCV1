@@ -173,10 +173,50 @@ if (TLLDCD_DIR / "src").is_dir():
     SRC_DIR = TLLDCD_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
+#: El bytecode de esta herramienta se guarda en su propio directorio, NUNCA
+#: dentro de los árboles sincronizados (RFC/PRY): antes se redirigía al
+#: pycache de STM_CH dentro de RFC/src, lo que ensuciaba el contenido
+#: sincronizado e impedía vaciar RFC (archivos .pyc bloqueados en Windows).
+PYCACHE_PROPIO = MODULO_DIR / ".pycache_rfprmn"
 try:
-    from STM_CH.rutas import PYCACHE_DIR as _PYCACHE_STMCH  # pyrefly: ignore[missing-import]
-    _PYCACHE_STMCH.mkdir(parents=True, exist_ok=True)
-    sys.pycache_prefix = str(_PYCACHE_STMCH)
+    PYCACHE_PROPIO.mkdir(parents=True, exist_ok=True)
+    sys.pycache_prefix = str(PYCACHE_PROPIO)
+except Exception:
+    pass
+
+
+def _ruta_larga(ruta: Path) -> str:
+    """Devuelve ``ruta`` con prefijo \\\\?\\ en Windows (evita el tope MAX_PATH)."""
+    texto = str(ruta)
+    if os.name == "nt" and not texto.startswith("\\\\?\\"):
+        return "\\\\?\\" + texto
+    return texto
+
+
+def limpiar_caches_arranque() -> None:
+    """Borra las cachés de bytecode de la herramienta (silencioso).
+
+    Se ejecuta al salir del proceso (atexit): cada ejecución deja el
+    directorio limpio aunque después se lancen más comandos que
+    recompilen e importen de nuevo.
+    """
+    import shutil as _shutil
+
+    for objetivo in (MODULO_DIR / "__pycache__",
+                     MODULO_DIR / "STM_RFPRMN_stmDL" / "__pycache__",
+                     PYCACHE_PROPIO):
+        try:
+            if objetivo.is_dir() and not objetivo.is_symlink():
+                _shutil.rmtree(_ruta_larga(objetivo), ignore_errors=True)
+            elif objetivo.exists():
+                objetivo.unlink()
+        except OSError:
+            pass
+
+
+try:
+    import atexit as _atexit
+    _atexit.register(limpiar_caches_arranque)
 except Exception:
     pass
 
