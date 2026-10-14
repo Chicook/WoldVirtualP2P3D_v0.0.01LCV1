@@ -1,0 +1,50 @@
+[
+  {
+    "carpeta": "src",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\Sistema_Principal\\PRY\\actualizacion_088b6f71\\src",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC\\src",
+    "ficheros": 927,
+    "estado": "OK refactorizar",
+    "fecha": "2026-10-14T12:38:25"
+  },
+  {
+    "carpeta": "RFC",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\Sistema_Principal\\PRY\\actualizacion_639939f8",
+    "ficheros": 927,
+    "estado": "OK actualizar",
+    "fecha": "2026-10-14T12:38:56"
+  },
+  {
+    "carpeta": "src",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\Sistema_Principal\\PRY\\actualizacion_639939f8\\src",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC\\src",
+    "ficheros": 927,
+    "estado": "OK refactorizar",
+    "fecha": "2026-10-14T12:52:47"
+  },
+  {
+    "carpeta": "src",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC\\src",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\TLLDCD\\src",
+    "ficheros": 927,
+    "estado": "OK",
+    "fecha": "2026-10-14T12:53:33"
+  },
+  {
+    "carpeta": "src",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\TLLDCD\\src",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC\\src",
+    "ficheros": 927,
+    "estado": "OK",
+    "fecha": "2026-10-14T12:54:34"
+  },
+  {
+    "carpeta": "RFC",
+    "origen": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\CONTRRF\\RFC",
+    "destino": "C:\\Users\\User\\Desktop\\WoldVirtualP2P3D_v0.0.01LCV1\\VersionDe_sesion\\Sistema_Principal\\PRY\\actualizacion_aaee848a",
+    "ficheros": 927,
+    "estado": "OK actualizar",
+    "fecha": "2026-10-14T12:55:01"
+  }
+]
