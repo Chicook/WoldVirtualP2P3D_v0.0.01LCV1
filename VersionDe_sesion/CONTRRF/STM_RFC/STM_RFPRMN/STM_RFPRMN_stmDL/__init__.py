@@ -13,7 +13,7 @@ from typing import Any, Callable, Optional
 
 __version__ = "2.0.0"
 
-_MODULOS = ("stm_base", "stm_gestion", "stm_analisis", "stm_modelos", "stm_refactor", "stm_flujo")
+_MODULOS = ("stm_base", "stm_gestion", "stm_analisis", "stm_modelos", "stm_refactor", "stm_flujo", "stm_registro")
 
 # Mapa simbolo -> modulo que lo define (resolucion perezosa).
 _REGISTRO: dict[str, str] = {}
@@ -57,6 +57,15 @@ for _s in _REFACTOR_SYMS:
 _FLUJO_SYMS = ["FlujoRefactorLucIA", "cerrar", "mostrar_menu", "ejecutar_comandos"]
 for _s in _FLUJO_SYMS:
     _REGISTRO[_s] = "stm_flujo"
+_REGISTRO_SYMS = ["DIR_REGISTRO", "RUTA_JSON", "RUTA_MD", "RUTA_PESOS",
+    "DIM_VECTOR", "IPFS_API_URL", "IPFS_GATEWAY_URL", "NOMBRE_PESOS",
+    "leer_eventos", "construir_texto", "texto_a_vector",
+    "norma", "seccionar_md", "cuantizar", "desnormalizar",
+    "similitud_coseno", "md_a_pesos", "verificar_pesos", "vista_previa",
+    "url_pasarela", "subir_a_ipfs", "limpiar_registro",
+    "publicar_registro_actualizar"]
+for _s in _REGISTRO_SYMS:
+    _REGISTRO[_s] = "stm_registro"
 _REGISTRO["LINEAS_POR_FRAGMENTO"] = "stm_modelos"
 
 __all__ = sorted(_REGISTRO.keys()) + ["RegistroRFPRMN", "crear_instancia", "version_info",
@@ -352,6 +361,15 @@ except Exception:
 try:
     from .stm_flujo import (  # noqa: F401,E402
         FlujoRefactorLucIA, cerrar, mostrar_menu, ejecutar_comandos,
+    )
+except Exception:
+    pass
+try:
+    from .stm_registro import (  # noqa: F401,E402
+        DIR_REGISTRO, RUTA_MD, RUTA_PESOS, DIM_VECTOR, leer_eventos,
+        construir_texto, texto_a_vector, md_a_pesos, subir_a_ipfs,
+        limpiar_registro, publicar_registro_actualizar, verificar_pesos,
+        similitud_coseno, vista_previa, url_pasarela,
     )
 except Exception:
     pass

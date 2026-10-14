@@ -341,7 +341,8 @@ def _actualizar_layout_actual() -> None:
 
     Copia verificada (conteo), purga las versiones anteriores de PRY
     (solo queda la nueva) y vacía RFC por completo, verificando que
-    no quede ningún resto. Todo se registra en envios.json.
+    no quede ningún resto. Al terminar publica registro.md en lenguaje
+    natural, lo convierte en pesos, lo sube a IPFS y limpia el registro.
     """
     if not RFC_DIR.is_dir() or not os.listdir(RFC_DIR):
         reportar_error("No hay contenido en RFC para actualizar.")
@@ -371,11 +372,13 @@ def _actualizar_layout_actual() -> None:
             return
         exito(f"Actualización completada en: {destino} ({n_destino} ficheros verificados)")
         _registrar_envio(Path(origen), destino, n_destino, "OK actualizar")
+        purgadas: list[str] = []
         for hijo in list(PRY_DIR.iterdir()):
             if hijo == destino or not hijo.name.startswith("actualizacion_"):
                 continue
             try:
                 eliminar_ruta(str(hijo))
+                purgadas.append(hijo.name)
                 exito(f"Versión anterior purgada: {hijo.name}")
             except OSError as error_hijo:
                 advertir(f"No se pudo purgar {hijo.name}: {error_hijo}")
@@ -388,6 +391,13 @@ def _actualizar_layout_actual() -> None:
             reportar_error(f"RFC no quedó vacío (posible bloqueo): {restos}. Reintenta tras cerrar el daemon IPFS.")
         else:
             informar(f"Contenido eliminado de: {RFC_DIR}")
+            try:
+                from .stm_registro import publicar_registro_actualizar
+                publicar_registro_actualizar({
+                    "origen": str(origen), "destino": str(destino),
+                    "ficheros": n_destino, "purgadas": purgadas})
+            except Exception as error_pub:
+                advertir(f"No se pudo publicar el registro ({error_pub}).")
     except OSError as error:
         reportar_error(f"Error al actualizar: {error}")
 

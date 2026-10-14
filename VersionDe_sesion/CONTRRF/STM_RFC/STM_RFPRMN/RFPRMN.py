@@ -59,6 +59,10 @@ from STM_RFPRMN_stmDL.stm_flujo import (  # noqa: E402,F401
     cerrar as _cerrar_flujo, mostrar_menu as _mostrar_menu,
     ejecutar_comandos as _ejecutar_comandos,
 )
+from STM_RFPRMN_stmDL.stm_registro import (  # noqa: E402,F401
+    DIR_REGISTRO, RUTA_MD, RUTA_PESOS, publicar_registro_actualizar,
+    limpiar_registro, verificar_pesos, vista_previa, similitud_coseno,
+)
 
 __all__ = sorted(set(_Registro.nombres()) | {"RFPRMN", "cerrar", "mostrar_menu",
     "ejecutar_comandos", "__version__"})
@@ -177,6 +181,22 @@ class RFPRMN:
         """Valida un refactor (sintaxis, tope 400/450, fidelidad mínima)."""
         return _validar_refactor(original, nuevo, ruta)
 
+    def publicar_registro(self, info: dict) -> dict:
+        """Publica el registro de actualizar: md -> pesos -> IPFS -> limpieza."""
+        return publicar_registro_actualizar(info)
+
+    def limpiar_registro(self) -> dict:
+        """Borra json, md y pesos del registro (directorio limpio)."""
+        return limpiar_registro()
+
+    def vista_previa_registro(self, info: dict) -> str:
+        """Muestra cómo quedaría registro.md sin escribir ni publicar."""
+        return vista_previa(info)
+
+    def verificar_pesos(self) -> bool:
+        """Verifica la integridad de registro_pesos.json si existe."""
+        return verificar_pesos()
+
     # -- UI y ciclo de vida ---------------------------------------------------
     def mostrar_menu(self) -> None:
         """Imprime la lista de comandos disponibles."""
@@ -256,7 +276,8 @@ def version_info() -> dict:
     """Versión de la fachada y nº de símbolos públicos re-exportados."""
     return {"version": __version__, "simbolos": len(__all__),
             "modulos": ["stm_base", "stm_gestion", "stm_analisis",
-                        "stm_modelos", "stm_refactor", "stm_flujo"]}
+                        "stm_modelos", "stm_refactor", "stm_flujo",
+                        "stm_registro"]}
 
 
 def estado_sistema() -> dict:
