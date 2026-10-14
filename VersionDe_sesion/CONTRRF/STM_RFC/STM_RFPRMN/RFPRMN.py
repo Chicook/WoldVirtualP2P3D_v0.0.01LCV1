@@ -67,7 +67,6 @@ from STM_RFPRMN_stmDL.stm_registro import (  # noqa: E402,F401
 __all__ = sorted(set(_Registro.nombres()) | {"RFPRMN", "cerrar", "mostrar_menu",
     "ejecutar_comandos", "__version__"})
 
-
 class RFPRMN:
     """Fachada del sistema: cada método delega al submódulo que lo implementa.
 
@@ -224,21 +223,17 @@ class RFPRMN:
         from STM_RFPRMN_stmDL import verificar_presupuesto
         return verificar_presupuesto(max_lineas)
 
-
 def cerrar() -> None:
     """Finaliza la sesión interactiva y limpia restos de modelos."""
     return _cerrar_flujo()
-
 
 def mostrar_menu() -> None:
     """Imprime la lista de comandos disponibles."""
     return _mostrar_menu()
 
-
 def ejecutar_comandos() -> None:
     """Bucle principal de la shell interactiva."""
     return _ejecutar_comandos()
-
 
 _COMANDOS_AYUDA: dict[str, str] = {
     "crear carpeta": "Crea una carpeta nueva (pide ruta y nombre).",
@@ -254,16 +249,13 @@ _COMANDOS_AYUDA: dict[str, str] = {
     "ayuda": "Muestra esta ayuda.",
 }
 
-
 def listar_comandos() -> list[str]:
     """Nombres de comandos aceptados por la shell interactiva."""
     return sorted(_COMANDOS_AYUDA.keys())
 
-
 def ayuda_comando(comando: str) -> str:
     """Texto de ayuda para ``comando`` (cadena vacía si no existe)."""
     return _COMANDOS_AYUDA.get(comando.strip().lower(), "")
-
 
 def imprimir_ayuda() -> None:
     """Imprime la ayuda de todos los comandos en una caja."""
@@ -271,14 +263,12 @@ def imprimir_ayuda() -> None:
     _imprimir_seguro(_caja(f"WoldVirtualP2P3D · Ayuda  v{__version__}", filas, color="verde"))
     print()
 
-
 def version_info() -> dict:
     """Versión de la fachada y nº de símbolos públicos re-exportados."""
     return {"version": __version__, "simbolos": len(__all__),
             "modulos": ["stm_base", "stm_gestion", "stm_analisis",
                         "stm_modelos", "stm_refactor", "stm_flujo",
                         "stm_registro"]}
-
 
 def estado_sistema() -> dict:
     """Estado de import + líneas de cada submódulo del paquete.
@@ -290,7 +280,6 @@ def estado_sistema() -> dict:
     filas = [(m, f"{v['import']} · {v['lineas']} líneas") for m, v in estado.items()]
     _imprimir_seguro(_caja("Estado de submódulos", filas, color="azul"))
     return estado
-
 
 def verificar_sistema(max_lineas: int = 450) -> dict:
     """Verifica el presupuesto de líneas e informa del resultado.
@@ -307,7 +296,6 @@ def verificar_sistema(max_lineas: int = 450) -> dict:
             reportar_error(f"{modulo}: {n} líneas (tope {max_lineas}).")
     return resultado
 
-
 def _ejecutar_extra(entrada: str) -> bool:
     """Ejecuta los comandos extra de la fachada (estado/presupuesto/ayuda).
 
@@ -323,7 +311,6 @@ def _ejecutar_extra(entrada: str) -> bool:
         imprimir_ayuda()
         return True
     return False
-
 
 def ejecutar_interactiva() -> None:
     """Shell interactiva: despacha comandos clásicos + extras de la fachada."""
@@ -353,7 +340,6 @@ def ejecutar_interactiva() -> None:
     except (KeyboardInterrupt, EOFError):
         _borrar_peso_local()
         informar("Sesión interrumpida; se limpiaron los modelos descargados.")
-
 
 def main(argv: list[str] | None = None) -> int:
     """Punto de entrada CLI no interactivo.
@@ -399,7 +385,6 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     reportar_error(f"Argumento no reconocido: {args[0]} (prueba --ayuda)")
     return 2
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
