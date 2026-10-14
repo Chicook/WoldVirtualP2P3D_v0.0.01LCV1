@@ -1,6 +1,9 @@
 [gd_scene format=3 uid="uid://cct06brrtfpfs"]
 
 [ext_resource type="Script" path="res://ESCENAS/sceneOPTM/ChunkManager.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://b8tpman202601" path="res://ESCENAS/sceneOPTM/TeleportManager.gd" id="5_tpman"]
+[ext_resource type="Script" uid="uid://c9tppanel2601" path="res://ESCENAS/sceneOPTM/TeleportPanel.gd" id="6_tppanel"]
+[ext_resource type="Script" uid="uid://d7playersync01" path="res://ESCENAS/sceneOPTM/PlayerSync.gd" id="7_psync"]
 [ext_resource type="Shader" uid="uid://fkfyjn5r735x" path="res://ESCENAS/sceneOPTM/OCEANO.gdshader" id="3_jqncp"]
 [ext_resource type="PackedScene" uid="uid://cqcmde1qu1163" path="res://imbld/ISLA3DCHUNK.blend" id="3_mesh"]
 [ext_resource type="PackedScene" uid="uid://hkyxk1u4jg18" path="res://ESCENAS/sceneOPTM/userbase.tscn" id="4_82bcm"]
@@ -86,5 +89,14 @@ mesh = SubResource("BoxMesh_xrivr")
 
 [node name="USERBASE" parent="." unique_id=1527827746 instance=ExtResource("4_82bcm")]
 transform = Transform3D(0.9999999, 0, 0, 0, 0.9999999, 0, 0, 0, 0.9999999, 1.1641532e-10, 41.952972, 0)
+
+[node name="TeleportManager" type="Node3D" parent="." unique_id=910101001]
+script = ExtResource("5_tpman")
+
+[node name="TeleportPanel" type="CanvasLayer" parent="." unique_id=910101002]
+script = ExtResource("6_tppanel")
+
+[node name="PlayerSync" type="Node3D" parent="." unique_id=910101003]
+script = ExtResource("7_psync")
 
 [editable path="ISLA3DCHUNK"]

@@ -175,3 +175,18 @@ Pregunta: ¿si  tubieras  un sistema de comandos que pudieras utilizar  para ref
 
 ## qwen2.5:7b — OK
 Pregunta: " crear carpeta  Crear una carpeta nueva, crear archivo  Crear un archivo nuevo,  refactorizar   Copiar el contenido act
+
+## qwen2.5:7b — OK
+Pregunta: ¿actualmente  lucia  openrouter lo tienes  conectado y se ve en terminal asi., "Conectado: 15 modelos free. Key: sk-o...
+
+## qwen2.5:7b — OK
+Pregunta: ¿puedes  hacer esto por ti misma? "Conectado: 15 modelos free. Key: sk-o...****0aa2,  Sí, puedo ajustar el mensaje para 
+
+## qwen2.5:7b — OK
+Pregunta: si
+
+## qwen2.5:7b — OK
+Pregunta: Conectado: 15 modelos free. Key: sk-o...****0aa2 esto  que  solo aparezca  openrouter conectado 15 modelos free
+
+## qwen2.5:7b — OK
+Pregunta: si
