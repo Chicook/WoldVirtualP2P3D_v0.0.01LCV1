@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://5bh8su08n101"]
+
+[ext_resource type="PackedScene" uid="uid://cct06brrtfpfs" path="res://ESCENAS/sceneOPTM/constructor/chunk3DBLOCK/ISLA3Dblock.tscn" id="1_houmd"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_m353q"]
+sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+ground_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+
+[sub_resource type="Sky" id="Sky_final"]
+sky_material = SubResource("ProceduralSkyMaterial_m353q")
+
+[sub_resource type="Environment" id="Environment_houmd"]
+background_mode = 2
+sky = SubResource("Sky_final")
+tonemap_mode = 3
+ssao_enabled = true
+
+[node name="WoldVirtual3DP2P" type="Node3D" unique_id=1218821308]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1656305883]
+environment = SubResource("Environment_houmd")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1562894551]
+transform = Transform3D(-0.89583594, -0.444384, 0.00091978797, 0.006283601, -0.010597514, 0.99992406, -0.4443405, 0.8957736, 0.012285961, 0, 127.98155, 0)
+shadow_enabled = true
+directional_shadow_mode = 1
+directional_shadow_blend_splits = true
+directional_shadow_max_distance = 300.0
+
+[node name="ISLA3Dblock" parent="." unique_id=2104261715 instance=ExtResource("1_houmd")]
+
+[node name="USERBASE" parent="ISLA3Dblock" index="2" unique_id=1527827746]
+transform = Transform3D(0.9999999, 0, 0, 0, 0.9999999, 0, 0, 0, 0.9999999, 1.1641532e-10, 41.077682, 0)
+
+[editable path="ISLA3Dblock"]
+[editable path="ISLA3Dblock/ISLA3DCHUNK"]

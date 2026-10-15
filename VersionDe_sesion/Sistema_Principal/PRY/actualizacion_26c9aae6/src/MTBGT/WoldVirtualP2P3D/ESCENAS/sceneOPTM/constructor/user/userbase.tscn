@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://hkyxk1u4jg18"]
 
-[ext_resource type="Script" uid="uid://cvt5jockpy2jq" path="res://ESCENAS/sceneOPTM/userbase.gd" id="1_8xa45"]
+[ext_resource type="Script" uid="uid://cvt5jockpy2jq" path="res://gdscrip/userbase.gd" id="1_8xa45"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_13qdw"]
 
@@ -16,4 +16,4 @@ shape = SubResource("CapsuleShape3D_13qdw")
 mesh = SubResource("CapsuleMesh_13qdw")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=591973747]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.79652)
+transform = Transform3D(0.9996945, -0.01576689, -0.019031134, 0.018869352, 0.9842513, 0.17576498, 0.01596015, -0.1760704, 0.98424816, 0, 0.44749135, 1.9366009)
