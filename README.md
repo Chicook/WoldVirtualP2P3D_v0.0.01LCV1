@@ -1,5 +1,20 @@
 # WoldVirtualP2P3D - Sistema Cognitivo LucIA (v0.0.01LCV1 - 2026)
 
+## Sesión 2026-10-16 — metaverso WoldVirtualP2P3D (verificado en ejecución Godot 4.7.2)
+
+Rama principal: `WoldVirtualP2P3Dv0001LCV1`. Release: `v0.0.02_1_actualizacion_86bea3a9`
+(tag + asset `v0.0.02_1_actualizacion_86bea3a9.zip` con el proyecto Godot jugable de rutas cortas).
+Código: `VersionDe_sesion/Sistema_Principal/PRY/actualizacion_86bea3a9/src/MTBGT/WoldVirtualP2P3D/`.
+
+- **Arranque en 4 fases** (`gdscrip/Boot.gd`): registro con avatar (nick en `user://registro.cfg`) → zona del portal (se cruza andando) → ventana "Conectando a la red P2P..." → isla al llegar `ChunkManager.mi_isla_lista`.
+- **Avatar humanoide hm1** sustituye a la cápsula (`ISLA3Dblock.tscn`): cámara orbital con retardo, sprint AltGr, `snap_camera()` tras teleporte/spawn.
+- **Panel de islas**: `Isla {nombre} ({uuid6})`, etiqueta superior sin solapes; nicks únicos (`Ana#2`) y visibles en todos los peers (`island_owners` viaja en el RPC de spawn).
+- **Clones remotos** (`PlayerSync.gd`): avatar hm1 real con nick y animación replicada (idle/andar/correr/aire), sin cápsulas.
+- **Avisos del analizador** corregidos; accesos entre scripts por señal/`call()`/`get()`.
+- Detalle en `src/MTBGT/RESUMEN_SESION.md` (qué se hizo, deuda técnica y hoja de ruta del selector de avatares).
+
+Limitaciones conocidas: release con zips automáticos gigantes (500 MB) y rutas de 345 caracteres en bloques IPFS → usar el asset adjunto, no el zip automático; `owner_names` se pierde parcialmente al migrar de anfitrión; réplicas sin strafe.
+
 ## Actualización general del sistema — 2026-09-25 (verificada en ejecución)
 
 > Lo anterior a esta sección describe el árbol heredado `LC/` (referencia histórica).
