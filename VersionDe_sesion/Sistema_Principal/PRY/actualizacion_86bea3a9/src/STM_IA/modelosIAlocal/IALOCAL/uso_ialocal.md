@@ -190,3 +190,6 @@ Pregunta: Conectado: 15 modelos free. Key: sk-o...****0aa2 esto  que  solo apare
 
 ## qwen2.5:7b — OK
 Pregunta: si
+
+## qwen2.5:7b — OK
+Pregunta: hola  lucia  como te encuentras de  gradientes
